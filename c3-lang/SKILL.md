@@ -66,6 +66,10 @@ fn void Point.translate(Point* self, int dx, int dy) {
     self.y += dy;
 }
 
+// Receiver shorthand: `&self` expands to `Point* self`, `self` to `Point self`
+fn int Point.dist_sq(&self)        { return self.x*self.x + self.y*self.y; }
+fn Point Point.scaled(self, int k) { return { self.x*k, self.y*k }; }
+
 // Named arguments
 add(a: 1, b: 2);
 
@@ -77,7 +81,10 @@ fn void log(String fmt, args...) { io::printfn(fmt, ...args); }
 ```c3
 struct Point { int x; int y; }  // no trailing semicolon
 
-enum Status : uint { IDLE, BUSY, DONE }  // backed by uint
+enum Status : uint { IDLE, BUSY, DONE }  // backed by uint (must have ≥1 value)
+
+// constdef inference works through binary ops — no need to qualify each operand:
+Status combo = IDLE | BUSY;
 
 // Enum with associated values (0.7.10+)
 enum Shape {
@@ -139,6 +146,7 @@ do { ... } while (cond);
 
 foreach (value : arr) { ... }             // value
 foreach (index, value : arr) { ... }      // index + value
+foreach (&value : arr) { *value *= 2; }   // by reference (mutate in place)
 foreach_r (value : arr) { ... }           // reverse
 
 // break / continue with labels
@@ -157,8 +165,13 @@ int deref = *ptr;      // dereference
 *ptr = 100;            // write through pointer
 
 // Slices (preferred over pointer+length)
-int[] s = arr[1..4];   // indices 1, 2, 3 (exclusive end)
-int[] s2 = arr[1:3];   // same: start + count
+int[] s  = arr[1..3];  // start..end — END IS INCLUSIVE → indices 1, 2, 3
+int[] s2 = arr[1:3];   // start:length → 3 elements starting at index 1
+int[] s3 = arr[..];    // whole slice
+int[] s4 = arr[..4];   // from 0 through 4 (inclusive)
+int[] s5 = arr[1..];   // from 1 to end
+int last = arr[^1];    // ^n reverse-index: ^1 = len-1 (last element)
+int[] tail = arr[^2..]; // last 2 elements
 usz len = s.len;       // slice length
 
 // Fixed array → pointer
@@ -210,9 +223,9 @@ fn void main() {
     // Pattern 4: force unwrap (panic if empty) !!
     String must = read_file("required.cfg")!!;
 
-    // Pattern 5: if(try) happy-path check
-    if (try s = read_file("maybe.txt")) {
-        io::printfn("Got: %s", s);
+    // Pattern 5: if(try) happy-path check — chain with &&, || not allowed
+    if (try s = read_file("maybe.txt") && try cfg2 = read_file("b.txt")) {
+        io::printfn("Got: %s %s", s, cfg2);
     }
 }
 ```
@@ -250,10 +263,15 @@ mem::free(arr);
     // all allocations freed automatically on scope exit
 };
 
+// always_assert(cond) — fires even in unsafe/release mode (unlike plain assert).
+
 // defer for cleanup (runs on any exit — return, break, error)
 fn void? process(String path) {
     File! f = file::open(path, "r")!;
-    defer f.close();
+    defer f.close();                          // always
+    defer try io::printn("ok");               // only on normal exit
+    defer catch io::printn("failed");         // only on fault exit
+    defer (catch err) io::printfn("err=%s", err);  // bind the fault
     // ... f is closed even if we return early or fault
 }
 ```
@@ -282,6 +300,16 @@ fn void file_fn()   @local {}     // visible only in this file
 
 // Default visibility for entire module
 module myapp::internal @private;  // all decls private by default
+
+// Re-declaring the module mid-file switches the visibility context for what follows
+module myapp;
+fn void api_fn() {}            // public
+module myapp @private;
+fn void helper() {}            // private — same module, new section
+
+// Group attributes into a custom one
+attrdef @Hot = @inline, @export;
+fn int fast_path(int x) @Hot { return x * 2; }
 
 // Type references: no prefix needed if unambiguous
 // Function calls: always need at least sub-module prefix
@@ -327,12 +355,16 @@ char[] data = $embed("assets/shader.glsl");
 | `$typeof(expr)` | Type of expression |
 | `$defined(expr)` | Check if identifier exists |
 | `$assert(cond)` | Compile-time assertion |
-| `$sizeof(T)` | Size of type (compile-time) |
+| `Type.sizeof` | Size of type (compile-time) |
 | `$alignof(T)` | Alignment |
 | `$offsetof(T.field)` | Field offset |
 | `$eval("name")` | String → identifier |
 | `$evaltype("T")` | String → type |
 | `$feature(F)` | Check enabled feature flag |
+| `$stringify(#expr)` | Capture a macro arg's source text as a string |
+| `$assignable(expr, T)` | True if `expr` is assignable to type `T` (use in `@require`) |
+
+> `$$`-prefixed identifiers (e.g. `$$acos`, `$$exp10`) are compiler-internal builtins. Use the stdlib wrappers (`math::acos`, etc.) instead — direct use outside the stdlib triggers a warning.
 
 ---
 
@@ -393,6 +425,7 @@ int val = s.pop();
 ```c3
 interface Drawable {
     fn void draw(self);
+    fn void hover(self) @optional;   // implementations may omit this
 }
 
 struct Circle (Drawable) {    // Circle implements Drawable
@@ -436,6 +469,11 @@ fn void List.set(self, usz idx, int val) @operator([]=) { self.data[idx] = val; 
 ```
 
 Supported: `+ - * / % & | ^ ~ << >> == != < <= > >= [] []=`
+
+Variants:
+- `@operator(+=)` — in-place form takes `&self` (pointer receiver) for mutation.
+- `@operator_s` — symmetric (compiler may swap operand order).
+- `@operator_r` — reverse-operand form (called when overload is on the RHS type).
 
 ---
 
@@ -507,6 +545,11 @@ printf("%s\n", &buf);
 
 // Export C-callable function
 fn int my_func(int x) @export @cname("my_c_func") { return x * 2; }
+
+// Weak symbols: @weak allows multiple definitions in the same file (non-weak wins);
+// @weaklink affects only linkage. Combine with @if for conditional definitions.
+fn void hook() @weak { }
+fn void plat_init() @weaklink @if(env::LINUX) { }
 ```
 
 ---
@@ -576,6 +619,8 @@ fn int main(String[] args) {
 | `Functions must be prefixed` | Missing module prefix | Add `module::fn_name()` |
 | `'fn' is a keyword` | `fn` used as param name | Rename parameter |
 | Implicit fallthrough | Coming from C habits | C3 switch auto-breaks; use `nextcase` |
+| `a & b == c` parses unexpectedly | C3 bitwise ops bind **tighter** than `+ - == <`, opposite of C | Always parenthesize bitwise: `(a & b) == c`. All bitwise ops share one precedence level — `(a \| b) ^ c` not `a \| b ^ c`. |
+| `int x = (int)f` required for float | C3 forbids implicit narrowing/float→int | Use explicit cast for any narrowing or float→int conversion. |
 | Stale optional unhandled | Forgot `!` or `??` | Handle or propagate optional result |
 | Module import not found | Wrong path separator | Use `::` not `/` or `.` |
 
