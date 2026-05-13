@@ -1,0 +1,40 @@
+{
+  "skill_name": "c3-lang",
+  "evals": [
+    {
+      "id": 1,
+      "name": "write-json-counter",
+      "prompt": "I need a small C3 0.8.0 program that reads a JSON file from a path passed as argv[1], iterates over its top-level array, counts how many entries have a `status` field equal to the string `done`, and prints the total. Handle the file-not-found case and JSON parse errors with a useful message; exit with code 1 on failure. Use the temp allocator for the parse so we don't leak. Show me the full file including the module declaration and imports.",
+      "expected_output": "A complete .c3 file: module decl, imports (std::io, std::encoding::json, std::os or similar), fn int main(String[] args), uses @pool / tparse / temp allocator, handles file::load_temp or equivalent with ! / catch, iterates the json Object, compares get_string(\"status\") to \"done\", returns 1 on error, returns 0 on success.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "migrate-0_7-to-0_8",
+      "prompt": "Help me upgrade this C3 file from 0.7.11 to 0.8.0. List every change you'd make and why, then show the rewritten file.\n\n```c3\nmodule cfg;\nimport std::io;\n\nfn usz count_items(int[] xs) {\n    return xs.len;\n}\n\nmacro item_size() => $sizeof(int);\n\nfn String? load(String path) {\n    String raw = file::read_all(path)!;\n    return raw.strip();\n}\n\nfn void main() {\n    io::printfn(\"int is %d bytes\", int.sizeof);\n}\n```",
+      "expected_output": "Identifies and fixes: usz → sz, $sizeof(int) → @sizeof(int) or int::size, int.sizeof → int::size, file::read_all → file::load_temp or equivalent, raw.strip() → raw.trim() (note: strip was renamed strip_prefix/strip_suffix; .trim() is the whole-string trim). Each change explained briefly.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "debug-switch-fallthrough",
+      "prompt": "Why does this print only `Not done`, never `Done`, even when I pass DONE? I'm coming from C and expected it to fall through.\n\n```c3\nmodule app;\nimport std::io;\n\nenum Status : uint { IDLE, BUSY, DONE }\n\nfn void report(Status s) {\n    switch (s) {\n        case IDLE:\n        case BUSY:\n            io::printn(\"Not done\");\n        case DONE:\n            io::printn(\"Done\");\n    }\n}\n\nfn void main() {\n    report(DONE);\n}\n```",
+      "expected_output": "Explains that C3 switches auto-break and do NOT fall through implicitly. Empty cases (IDLE in this code) fall through to the next non-empty case; once a case body executes, control exits the switch. Notes that DONE should print \"Done\" since it lands on the DONE case directly. If the user wanted explicit fallthrough they would use `nextcase`. Should clarify that the code as written actually DOES print \"Done\" when called with DONE — the user's premise is wrong. (A strong answer catches this.)",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "stdlib-hashmap-usage",
+      "prompt": "Show me how to define and use a hashmap of `String → int` in C3 0.8.0, including: initialization with the heap allocator, inserting a couple of entries, looking up a key and handling the missing case, iterating over all (key, value) pairs, and freeing it. Use idiomatic 0.8.0 names.",
+      "expected_output": "Uses HashMap{String, int}, alias for the instantiation, m.init(mem, ...), m.set(k, v), m.get(k) returning int? handled with catch or ??, iteration via @each or .iter() / .key_iter() / .value_iter(), m.free() at end. No 0.7.x names (no usz, no .sizeof).",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "review-buggy-code",
+      "prompt": "Review this C3 0.8.0 code and list every bug or issue you can spot. Don't rewrite it yet — just enumerate the problems.\n\n```c3\nmodule app;\nimport std::io;\nimport libc;\n\nfn String? read_name(String path) {\n    return file::load_temp(path);\n}\n\nfn int main() {\n    String name = read_name(\"name.txt\");\n    char[64] buf;\n    libc::strcpy(buf, name.ptr);\n\n    usz total = name.len + int.sizeof;\n    io::printfn(\"name=%s len=%d\", name, total);\n    return 0;\n}\n```",
+      "expected_output": "Catches: (1) main signature should be `fn int main(String[] args)` if args are needed, otherwise `fn void main()` — `fn int main()` is valid only if the build is configured for it; (2) `String name = read_name(...)` doesn't handle the optional — missing `!`, `??`, or catch; (3) `libc::strcpy(buf, name.ptr)` — buf is char[64] not char*, must pass `&buf`; (4) `usz` removed in 0.8.0 → `sz`; (5) `int.sizeof` removed → `int::size`; (6) potentially `strcpy` is unsafe — no length check; name may not be NUL-terminated since it's a slice.",
+      "files": []
+    }
+  ]
+}

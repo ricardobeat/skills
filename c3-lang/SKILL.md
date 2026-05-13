@@ -1,17 +1,23 @@
 ---
 name: c3-lang
-description: Use when writing, debugging, or reviewing C3 language code; generating C3 programs, modules, or build configurations; or answering questions about C3 syntax, types, error handling, or compiler usage
+description: Use whenever C3 (the systems language by Christoffer Lernö) appears — writing, reading, debugging, porting, or reviewing `.c3` source; setting up `project.json` / `c3c` builds; explaining C3 syntax, modules, optionals, faults, defer, allocators, macros, or stdlib APIs. Trigger even when the user only mentions `c3c`, "C3 lang", a `.c3` filename, or pastes code with `module`, `fn`, `faultdef`, or `?`-suffixed types. Covers C3 **0.8.0** and migration from 0.7.x.
 ---
 
 # C3 Programming Language
 
 ## Overview
 
-C3 is a systems programming language — "an evolution, not a revolution" over C. It keeps C's mental model and ABI compatibility while adding modules, optionals, slices, defer, generics, and compile-time features. Compiler: `c3c` (LLVM backend). Current version: **0.7.11**.
+C3 is a systems programming language — "an evolution, not a revolution" over C. It keeps C's mental model and ABI compatibility while adding modules, optionals, slices, defer, generics, and compile-time features. Compiler: `c3c` (LLVM backend). Current version: **0.8.0** (2026-05-12).
 
 **Core principles:** Procedural, minimalist, data is inert, zero-is-initialization (ZII — zero value is always valid), no GC, no borrow checker, seamless C interop.
 
-Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https://github.com/c3lang/c3c) · [Discord](https://discord.gg/qN76R87)
+Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https://github.com/c3lang/c3c) · [Discord](https://discord.gg/qN76R87).
+
+**Companion files (load on demand):**
+- `references/stdlib.md` — full standard library API surface (io, collections, math, threads, encoding, …)
+- `references/advanced.md` — macros, generics, interfaces, operator overloading, contracts
+- `references/migration_0_7_to_0_8.md` — load when reading or updating pre-0.8 code
+- `references/c_interop.md` — load when wrapping or calling C, or exporting C-callable symbols
 
 ---
 
@@ -32,7 +38,7 @@ Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https:/
 ichar  short  int  long  int128    // signed: 8, 16, 32, 64, 128 bits
 char   ushort uint ulong uint128   // unsigned
 iptr   uptr                        // pointer-sized signed/unsigned
-isz    usz                         // size type (like ptrdiff_t / size_t)
+sz                                 // size type (like size_t — 0.8.0 replaces usz/isz)
 
 // Floats
 float16  bfloat16  float  double  float128
@@ -52,8 +58,9 @@ const int MAX = 100;          // constant
 int[] arr = { 1, 2, 3 };      // slice literal
 int[4] fixed = { 1, 2, 3, 4 }; // fixed-size array (size left of name!)
 
-typedef MyInt = int;          // distinct type (no implicit conversion)
-alias MyPtr = int*;           // transparent alias (like C typedef)
+typedef MyInt = int;          // distinct type (no implicit conversion; structlike by default in 0.8.0)
+typedef MyId @constinit = int; // also accept literals: get_by_id(1)
+alias  MyPtr = int*;          // transparent alias (like C typedef)
 ```
 
 ### Functions and Methods
@@ -75,6 +82,9 @@ add(a: 1, b: 2);
 
 // Variadic
 fn void log(String fmt, args...) { io::printfn(fmt, ...args); }
+
+// Short body (`=> expr`)
+fn int square(int x) => x * x;
 ```
 
 ### Structs and Enums
@@ -83,16 +93,20 @@ struct Point { int x; int y; }  // no trailing semicolon
 
 enum Status : uint { IDLE, BUSY, DONE }  // backed by uint (must have ≥1 value)
 
-// constdef inference works through binary ops — no need to qualify each operand:
-Status combo = IDLE | BUSY;
+// Inside an expression of known enum type, the `Status::` prefix is inferred —
+// you don't have to qualify each operand:
+Status s = ok ? DONE : IDLE;     // both branches inferred as Status
+if (s == BUSY) { ... }           // BUSY inferred as Status
 
-// Enum with associated values (0.7.10+)
+// Enum with associated values
 enum Shape {
     CIRCLE = { float radius },
     RECT   = { float w, h }
 }
+// Reflection: Shape.values, Shape.names, Shape.len, Shape.membersof.
+// `++`/`--` step with wrap-around. `+`/`-` removed in 0.8.0 — use .ordinal.
 
-// Bitstruct (replaces C bitfields)
+// Bitstruct (replaces C bitfields — use this for bit flags, NOT an enum)
 bitstruct Flags : short {
     bool read_only : 0;
     bool hidden    : 1;
@@ -172,7 +186,7 @@ int[] s4 = arr[..4];   // from 0 through 4 (inclusive)
 int[] s5 = arr[1..];   // from 1 to end
 int last = arr[^1];    // ^n reverse-index: ^1 = len-1 (last element)
 int[] tail = arr[^2..]; // last 2 elements
-usz len = s.len;       // slice length
+sz len = s.len;        // slice length
 
 // Fixed array → pointer
 int[4] fixed;
@@ -198,7 +212,7 @@ faultdef FILE_NOT_FOUND, PERMISSION_DENIED;
 // Function returning optional
 fn String? read_file(String path) {
     if (!file::exists(path)) return FILE_NOT_FOUND~;  // ~ converts fault → empty optional
-    return file::read_all(path)!;  // ! re-throws any fault from read_all
+    return file::load_temp(path)!;  // ! re-throws any fault from load_temp
 }
 
 fn void main() {
@@ -217,7 +231,7 @@ fn void main() {
     // Pattern 2: rethrow with ! (propagates fault to caller)
     String content = read_file("cfg.txt")!;
 
-    // Pattern 3: default value with ??
+    // Pattern 3: default value with ??  (binds tighter than + - in 0.8.0)
     String cfg = read_file("optional.cfg") ?? "default";
 
     // Pattern 4: force unwrap (panic if empty) !!
@@ -256,7 +270,7 @@ mem::free(arr);
 
 // Tier 3: Temporary allocator (arena scoped to @pool block)
 @pool() {
-    int* temp = tmalloc(int.sizeof * 100);
+    int* temp = tmalloc(int::size * 100);     // 0.8.0: int::size, not int.sizeof
     String s = string::tformat("hello %s", name);
     DString ds;
     ds.tinit();
@@ -267,7 +281,7 @@ mem::free(arr);
 
 // defer for cleanup (runs on any exit — return, break, error)
 fn void? process(String path) {
-    File! f = file::open(path, "r")!;
+    File f = file::open(path, "r")!;
     defer f.close();                          // always
     defer try io::printn("ok");               // only on normal exit
     defer catch io::printn("failed");         // only on fault exit
@@ -283,7 +297,13 @@ fn void? process(String path) {
 - `mem::free(p)` — deallocate
 - `destroy(x)` — deallocate + close resources (files, etc.)
 
-**ZII principle:** Design structs so the zero value is valid. Use `= {}` or just declare — it's zeroed.
+**ZII principle:** Design structs so the zero value is valid. Use `= {}` or just declare — it's zeroed. Add `@mustinit` to a type to forbid zero-init declarations (useful when a sensible default doesn't exist):
+
+```c3
+struct Config @mustinit { String path; int retries; }
+Config c;                          // ERROR: must initialize
+Config c = { "out.txt", 3 };       // ok
+```
 
 ---
 
@@ -336,10 +356,10 @@ $endif
 // @if on declarations (top-level conditional compilation)
 fn void win_only() @if(env::WIN32) { }
 
-// Compile-time reflection
+// Compile-time reflection (0.8.0: $reflect provides .name, .qname, .offset, .alignment, .size)
 macro print_fields($Type) {
     $foreach $field : $Type.membersof:
-        io::printfn("%s @ offset %d", $field.nameof, $field.offsetof);
+        io::printfn("%s @ offset %d", $reflect($field).name, $reflect($field).offset);
     $endforeach
 }
 
@@ -350,149 +370,24 @@ macro print_fields($Type) {
 char[] data = $embed("assets/shader.glsl");
 ```
 
-| Builtin | Purpose |
+| Builtin / property | Purpose |
 |---------|---------|
-| `$typeof(expr)` | Type of expression |
-| `$defined(expr)` | Check if identifier exists |
+| `$Typeof(expr)` | Type of expression (capitalized in 0.8.0) |
+| `$Typefrom(typeid)` | Type from a typeid (capitalized in 0.8.0) |
+| `$defined(expr)` | Check if identifier/expression is well-formed |
 | `$assert(cond)` | Compile-time assertion |
-| `Type.sizeof` | Size of type (compile-time) |
-| `$alignof(T)` | Alignment |
-| `$offsetof(T.field)` | Field offset |
+| `Type::size` / `Type::alignment` / `Type::kind` | Type properties (0.8.0 — replaces `Type.sizeof`, `.alignof`, `.kindof`) |
+| `@sizeof(expr)` / `@alignof(expr)` / `@kindof(expr)` | Macro forms for expressions (0.8.0 — replaces `$sizeof` etc.) |
+| `$reflect(field).{name, qname, offset, alignment, size}` | Member/type reflection (0.8.0) |
 | `$eval("name")` | String → identifier |
-| `$evaltype("T")` | String → type |
+| `$expand("expr")` | String → code (0.8.0) |
 | `$feature(F)` | Check enabled feature flag |
 | `$stringify(#expr)` | Capture a macro arg's source text as a string |
-| `$assignable(expr, T)` | True if `expr` is assignable to type `T` (use in `@require`) |
+| `$defined($Type x = expr)` | Assignability check (replaces removed `$assignable`) |
 
-> `$$`-prefixed identifiers (e.g. `$$acos`, `$$exp10`) are compiler-internal builtins. Use the stdlib wrappers (`math::acos`, etc.) instead — direct use outside the stdlib triggers a warning.
+> `$$`-prefixed identifiers (e.g. `$$acos`, `$$exp10`) are compiler-internal builtins. Use the stdlib wrappers (`math::acos`, etc.) instead.
 
----
-
-## Macros
-
-```c3
-// Basic macro (compile-time params use $ prefix)
-macro max($Type)(a, b) {
-    return a > b ? a : b;
-}
-max(int)(3, 5);  // → 5
-
-// Unevaluated expression (#param) — argument is not evaluated before passing
-macro measure(#expr) {
-    usz start = clock();
-    #expr;
-    return clock() - start;
-}
-measure(some_expensive_fn());
-
-// At-macros (@name) manage scopes
-macro @swap(&a, &b) {
-    var tmp = a;
-    a = b;
-    b = tmp;
-}
-@swap(x, y);
-```
-
-Macros with only `$`-prefixed params execute entirely at compile time.
-
----
-
-## Generics
-
-```c3
-// Ad-hoc generic type (0.7.9+, preferred over module-based generics)
-struct Stack <Type> {
-    usz capacity;
-    usz size;
-    Type* elems;
-}
-
-fn void Stack.push(Stack* self, Type element) { /* ... */ }
-fn Type Stack.pop(Stack* self) { /* ... */ }
-
-// Instantiation
-alias IntStack = Stack{int};
-IntStack s;
-s.push(42);
-int val = s.pop();
-```
-
----
-
-## Interfaces and Dynamic Dispatch
-
-```c3
-interface Drawable {
-    fn void draw(self);
-    fn void hover(self) @optional;   // implementations may omit this
-}
-
-struct Circle (Drawable) {    // Circle implements Drawable
-    float radius;
-}
-
-fn void Circle.draw(Circle* self) @dynamic {
-    io::printfn("Circle r=%f", self.radius);
-}
-
-// Dynamic dispatch via any type (typeid + void*)
-fn void render(any obj) {
-    Drawable d = (Drawable)obj;
-    if (&d.draw) {    // check method exists at runtime
-        d.draw();
-    }
-}
-
-Circle c = { .radius = 5.0 };
-render(&c);
-```
-
----
-
-## Operator Overloading
-
-```c3
-struct Vec2 { float x, y; }
-
-fn Vec2 Vec2.add(self, Vec2 other) @operator(+) {
-    return { self.x + other.x, self.y + other.y };
-}
-
-fn bool Vec2.equals(self, Vec2 other) @operator(==) {
-    return self.x == other.x && self.y == other.y;
-}
-
-// Subscript
-fn int List.get(self, usz idx) @operator([]) { return self.data[idx]; }
-fn void List.set(self, usz idx, int val) @operator([]=) { self.data[idx] = val; }
-```
-
-Supported: `+ - * / % & | ^ ~ << >> == != < <= > >= [] []=`
-
-Variants:
-- `@operator(+=)` — in-place form takes `&self` (pointer receiver) for mutation.
-- `@operator_s` — symmetric (compiler may swap operand order).
-- `@operator_r` — reverse-operand form (called when overload is on the RHS type).
-
----
-
-## Contracts (Design by Contract)
-
-```c3
-<*
-  @param n : "must be positive and under 1000"
-  @require n > 0, n < 1000
-  @ensure return > 0
-*>
-fn int process(int n) { return n * 10; }
-
-fn int compute(int x) @pure { return x * x; }  // no side effects
-```
-
-In **safe mode** (`"safe": true` in project.json): contracts → runtime assertions.  
-In **fast mode**: contracts → optimizer hints (assumed true, no runtime cost).  
-Compile-time-evaluable contracts → always checked at compile time.
+For macros, generics, interfaces, operator overloading, and contracts, see `references/advanced.md`.
 
 ---
 
@@ -507,6 +402,7 @@ c3c benchmark               # run @benchmark functions
 c3c compile file.c3         # compile single file
 c3c compile-run file.c3     # compile & run single file
 c3c vendor-fetch            # download dependencies into lib/
+c3c docgen                  # generate documentation (0.8.0 new)
 ```
 
 **`project.json`:**
@@ -522,35 +418,16 @@ c3c vendor-fetch            # download dependencies into lib/
 }
 ```
 
-**Single-file (no stdlib):**
+### Verifying a snippet
+
+When `c3c` is available, the cheapest way to check a self-contained snippet is `compile-run`:
+
 ```bash
-c3c compile file.c3 --use-stdlib=no
-c3c compile-run file.c3 --use-stdlib=no
+c3c compile-run snippet.c3                  # builds + runs in one step
+c3c compile-run snippet.c3 --use-stdlib=no  # for stdlib-free examples
 ```
 
----
-
-## C Interop
-
-```c3
-// Declare C functions
-extern fn int printf(char* format, ...);
-extern fn void* malloc(usz size);
-extern fn void  free(void* ptr);
-extern fn int   strcmp(char* a, char* b);
-
-// Pass fixed array to C function (& gets pointer to first element)
-char[64] buf;
-printf("%s\n", &buf);
-
-// Export C-callable function
-fn int my_func(int x) @export @cname("my_c_func") { return x * 2; }
-
-// Weak symbols: @weak allows multiple definitions in the same file (non-weak wins);
-// @weaklink affects only linkage. Combine with @if for conditional definitions.
-fn void hook() @weak { }
-fn void plat_init() @weaklink @if(env::LINUX) { }
-```
+Useful for sanity-checking small examples before handing them to the user. If `c3c` is not installed, say so explicitly rather than guessing.
 
 ---
 
@@ -579,10 +456,8 @@ module wordcount;
 import std::io;
 import std::os;
 
-faultdef OPEN_FAILED;
-
 fn int? count_lines(String path) {
-    File! f = file::open(path, "r")!;
+    File f = file::open(path, "r")!;
     defer f.close();
 
     int lines = 0;
@@ -615,7 +490,9 @@ fn int main(String[] args) {
 |-------|-------|-----|
 | `No module named 'std::io'` | stdlib not found | Use `--use-stdlib=no` + `extern fn` |
 | `Cannot cast 'char[64]' to 'char*'` | Fixed array ≠ pointer | Use `&array_name` |
-| `@sizeof not found` | Wrong sizeof syntax | Use `Type.sizeof` (not `@sizeof`) |
+| `Type.sizeof not found` | 0.8.0 renamed property accessors | Use `Type::size` (also `::alignment`, `::kind`) |
+| `$sizeof undefined` | Removed in 0.8.0 | Use `@sizeof(expr)` macro, or `Type::size` |
+| `$typeof undefined` | Renamed in 0.8.0 | Use `$Typeof` (capital T) |
 | `Functions must be prefixed` | Missing module prefix | Add `module::fn_name()` |
 | `'fn' is a keyword` | `fn` used as param name | Rename parameter |
 | Implicit fallthrough | Coming from C habits | C3 switch auto-breaks; use `nextcase` |
@@ -623,6 +500,8 @@ fn int main(String[] args) {
 | `int x = (int)f` required for float | C3 forbids implicit narrowing/float→int | Use explicit cast for any narrowing or float→int conversion. |
 | Stale optional unhandled | Forgot `!` or `??` | Handle or propagate optional result |
 | Module import not found | Wrong path separator | Use `::` not `/` or `.` |
+| `usz undefined` | Renamed `sz` in 0.8.0 | Use `sz` (single signed-size type) |
+| Using an enum as a bitmask | Enums aren't bit flags | Use `bitstruct` instead |
 
 ## Key Differences from C
 
@@ -635,9 +514,10 @@ fn int main(String[] args) {
 | `errno` / return codes | Optional `?` types |
 | Implicit switch fallthrough | Explicit `nextcase` required |
 | `int32_t` (stdint) | `int` is always 32 bits |
-| `size_t` | `usz` |
-| `ptrdiff_t` | `isz` |
-| No generics | Generic modules `Stack{int}` |
+| `size_t` / `ptrdiff_t` | `sz` |
+| No generics | Ad-hoc generics: `struct Stack <Type>` / `Stack{int}` |
 | No interfaces | `interface` + `any` |
 | No defer | `defer` built-in |
 | No contracts | `@require` / `@ensure` |
+
+For full coverage of the standard library, see `references/stdlib.md`. For pre-0.8 code, see `references/migration_0_7_to_0_8.md`.
