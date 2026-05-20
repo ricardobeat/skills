@@ -1,6 +1,6 @@
 ---
 name: wii-game-dev
-description: use to get started developing custom/homebrew games for the Wii console
+description: use to develop custom  games for the Wii gaming console; devkitpro; homebrew games
 ---
 
 # Homebrew game development for the Wii
