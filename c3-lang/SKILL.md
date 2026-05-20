@@ -1,6 +1,6 @@
 ---
 name: c3-lang
-description: Use whenever C3 (the systems language by Christoffer Lernö) appears — writing, reading, debugging, porting, or reviewing `.c3` source; setting up `project.json` / `c3c` builds; explaining C3 syntax, modules, optionals, faults, defer, allocators, macros, or stdlib APIs. Trigger even when the user only mentions `c3c`, "C3 lang", a `.c3` filename, or pastes code with `module`, `fn`, `faultdef`, or `?`-suffixed types. Covers C3 **0.8.0** and migration from 0.7.x.
+description: Use C3 (programming language) is mentioned — writing, reading, debugging, porting, or reviewing `.c3` sources; setting up `project.json` / `c3c` builds; explaining C3 syntax, modules, optionals, faults, defer, allocators, macros, or stdlib APIs
 ---
 
 # C3 Programming Language
