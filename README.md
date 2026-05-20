@@ -1,4 +1,13 @@
-Personal collection of agent skills.
+
+<img src="https://img.shields.io/badge/Crush-E332A0?style=flat" /> <img src="https://img.shields.io/badge/Claude%20Code-D97757?style=flat" /> <img src="https://img.shields.io/badge/Pi%20Coding%20Agent-000000?style=flat" />  <img src="https://img.shields.io/badge/Aider-1E1E1E?style=flat" /> <img src="https://img.shields.io/badge/Cline-F48024?style=flat" /> <img src="https://img.shields.io/badge/Roo%20Code-4B32C3?style=flat" /> <img src="https://img.shields.io/badge/Whatever-AB32B3?style=flat" />
+
+My collection of <img src="https://img.shields.io/badge/AI-8A2BE2" /> agent skills.
+
+- Install with `npx skills add ricardobeat/skills`
+
+<img width="635" height="340" alt="image" src="https://github.com/user-attachments/assets/f429bd55-a458-40b3-b34c-490c1dabd397" /><br />
+
+- or install a single skill with `npx skills add ricardobeat/skills/c3-lang`
 
 ## C3 lang
 
