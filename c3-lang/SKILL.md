@@ -1,6 +1,6 @@
 ---
 name: c3-lang
-description: Use C3 (programming language) is mentioned — writing, reading, debugging, porting, or reviewing `.c3` sources; setting up `project.json` / `c3c` builds; explaining C3 syntax, modules, optionals, faults, defer, allocators, macros, or stdlib APIs
+description: use whenever C3 (programming language) is mentioned — writing, reading, debugging, porting, or reviewing `.c3` sources; setting up `project.json` / `c3c` builds; explaining C3 syntax, modules, optionals, faults, defer, allocators, macros, or stdlib APIs
 ---
 
 # C3 Programming Language
