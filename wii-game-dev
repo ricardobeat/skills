@@ -1,0 +1,43 @@
+---
+name: wii-game-dev
+description: use to get started developing custom/homebrew games for the Wii console
+---
+
+# Homebrew game development for the Wii
+
+## Overview
+
+How to get started and compile a game for the Wii. 
+
+## Installing tools on Mac
+
+Based on https://devkitpro.org/wiki/Getting_Started.
+
+1. Download latest .pkg installer from https://github.com/devkitPro/pacman/releases/latest
+2. Install pkg
+3. setup packages with `dkp-pacman` in the terminal:
+
+```
+sudo dkp-pacman -S wii-dev
+sudo chown -R $(whoami):staff /opt/devkitpro
+```
+
+4. Install GRRLIB graphics library
+
+- Clone the source: `git clone https://github.com/GRRLIB/GRRLIB`
+- Install dependencies: `sudo dkp-pacman -S --needed ppc-libpng ppc-freetype ppc-libjpeg-turbo libfat-ogc`
+```
+
+## Development
+
+Start with `source/main.c`. See the `examples/` directory inside GRRLIB. Copy `examples/template` as a starting point for
+new code andthe Makefile setup.
+
+## Running
+
+The [Dolphin](https://dolphin-emu.org) emulator can be installed via Homebrew: `brew install --cask dolphin` and used to
+load the compiled `.dol` game files. Use it to test locally before copying to an SD card to run on the Wii hardware.
+
+## Libraries
+
+- alternative GFX library: https://github.com/dborth/libwiigui
