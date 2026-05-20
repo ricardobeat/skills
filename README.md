@@ -9,13 +9,15 @@ My collection of <img src="https://img.shields.io/badge/AI-8A2BE2" /> agent skil
 
 - or install a single skill with `npx skills add ricardobeat/skills/c3-lang`
 
-## C3 lang
+## Skills
 
-Write [C3](https://c3-lang.org) code, a modern C alternative. Up-to-date for v0.8+.
+### C3 lang
 
-## Wii
+How to program in [C3 lang](https://c3-lang.org), a modern C alternative. Updated for v0.8+. Amazingly effective with Claude Code, almost as good as Go.
 
-Allows agents to create homebrew games for the Wii. Even smaller models (Haiku, Mimo 2.5) can create playable games in 1-2 minutes:
+### Wii
+
+Allows agents to create homebrew games for the Wii. It's specific enough that it works even with smaller models like Haiku or Mimo 2.5, they can create playable games in 1-2 minutes:
 
 <img width="320" height="264" alt="game" src="https://github.com/user-attachments/assets/6119e2a2-df2c-457c-be77-ead7c14a295b" />
 <img width="320" height="264" alt="haiku" src="https://github.com/user-attachments/assets/66ec065e-a063-4f05-8926-0875e1f9c5a8" />
