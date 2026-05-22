@@ -1,5 +1,5 @@
 ---
-name: arduino-cli-project
+name: arduino-cli
 description: microcontroller projects using arduino-cli and justfile. Covers ESP32/M5Stack/LilyGo boards, common commands (build/upload/monitor/libs), FQBN lookup, port detection, library management, and LittleFS. Use whenever the user is working in a project with a justfile + arduino-cli setup, asks about compiling/uploading/monitoring Arduino sketches, or needs board/library configuration.
 ---
 
