@@ -35,7 +35,9 @@ make -C GRRLIB clean all install
 
 ## Development
 
-Minimal code example for `source/main.c`:
+Start by copying the Makefile from `assets/Makefile` into your project directory.
+
+Minimal code for `source/main.c`:
 
 ```c
 #include <grrlib.h>
@@ -59,11 +61,30 @@ int main(int argc, char **argv) {
 }
 ```
 
+- See `$GRRLIB/examples/*` for more complete examples
+
+## Notes
+
+- Use `DEVKITPPC` for the Wii
+- always build to verify with `make`
+
+You might need these env vars to be able to run `make` from within your sandbox:
+
+```sh
+export DEVKITPRO=/opt/devkitpro
+export DEVKITPPC=${DEVKITPRO}/devkitPPC
+export PKG_CONFIG_PATH=${DEVKITPRO}/portlibs/wii/lib/pkgconfig
+export PKG_CONFIG_LIBDIR=${DEVKITPRO}/portlibs/wii/lib/pkgconfig
+export PKG_CONFIG=powerpc-eabi-pkg-config
+export PATH=$DEVKITPPC/bin:$PATH
+```
+
 ## Running
 
 The [Dolphin](https://dolphin-emu.org) emulator can be installed via Homebrew: `brew install --cask dolphin` and used to
 load the compiled `.dol` game files. Use it to test locally before copying to an SD card to run on the Wii hardware.
 
-## Libraries
+## References
 
-- alternative GFX library: https://github.com/dborth/libwiigui
+- [GRRLIB API reference](references/grrlib.md) — full function signatures for GRRLIB 4.6.1
+- more examples for native code at `/opt/devkitpro/examples/wii/` (load only if strictly necessary)
