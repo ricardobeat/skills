@@ -15,6 +15,14 @@ My collection of <img src="https://img.shields.io/badge/AI-8A2BE2" /> agent skil
 
 How to program in [C3 lang](https://c3-lang.org), a modern C alternative. Updated for v0.8+. Amazingly effective with Claude Code, almost as good as Go.
 
+<img width="640" alt="c3 in claude code" src="https://github.com/user-attachments/assets/97b83c06-69c7-4861-ac98-7e103cd2510a" />
+
+### ESP32 / arduino-cli
+
+A simple setup to develop microcontroller projects using ESP32 and arduino-cli. No Arduino IDE, no ESP-IDF required, just write code in your favorite editor and compile/upload from the command line.
+
+<img width="640" alt="arduino-cli output" src="https://github.com/user-attachments/assets/7011f408-ed9f-4dc3-a7a6-ec65dd809cfd" />
+
 ### Wii
 
 Allows agents to create homebrew games for the Wii. It's specific enough that it works even with smaller models like Haiku or Mimo 2.5, they can create playable games in 1-2 minutes:
