@@ -7,11 +7,13 @@ My collection of <img src="https://img.shields.io/badge/AI-8A2BE2" /> agent skil
 
 <img width="635" height="340" alt="image" src="https://github.com/user-attachments/assets/f429bd55-a458-40b3-b34c-490c1dabd397" /><br />
 
-- or install a single skill with `npx skills add ricardobeat/skills/c3-lang`
-
 ## Skills
 
 ### C3 lang
+
+```sh
+npx skills add ricardobeat/skills/c3-lang
+```
 
 How to program in [C3 lang](https://c3-lang.org), a modern C alternative. Amazingly effective with Claude Code, almost as good as Go.
 
@@ -21,6 +23,10 @@ How to program in [C3 lang](https://c3-lang.org), a modern C alternative. Amazin
 
 ### ESP32 / arduino-cli
 
+```sh
+npx skills add ricardobeat/skills/arduino-cli
+```
+
 A simple setup to develop microcontroller projects using ESP32 and arduino-cli.
 
 - No Arduino IDE, no ESP-IDF required
@@ -29,6 +35,10 @@ A simple setup to develop microcontroller projects using ESP32 and arduino-cli.
 <img width="640" alt="arduino-cli output" src="https://github.com/user-attachments/assets/7011f408-ed9f-4dc3-a7a6-ec65dd809cfd" />
 
 ### Wii
+
+```sh
+npx skills add ricardobeat/skills/wii-game-dev
+```
 
 Write homebrew games for the Wii.
 
