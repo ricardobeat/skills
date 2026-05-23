@@ -418,6 +418,10 @@ c3c docgen                  # generate documentation (0.8.0 new)
 }
 ```
 
+### Formatting
+
+`c3fmt` may be available to format `.c3` files; copy `assets/.c3fmt` into the project root before running it.
+
 ### Verifying a snippet
 
 When `c3c` is available, the cheapest way to check a self-contained snippet is `compile-run`:
