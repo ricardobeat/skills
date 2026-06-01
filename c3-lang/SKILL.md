@@ -104,8 +104,8 @@ if (try s = read_file("e.txt") && try t = read_file("f.txt")) { ... }
 | `!` | rethrow to caller |
 | `??` | or-else |
 | `!!` | force unwrap (panic) |
-| `@catch(x)` | get the fault value |
-| `@ok(x)` | true if value present |
+| `if (catch err = x)` | inspect fault value |
+| `if (try val = x)` | unwrap on success |
 
 ---
 

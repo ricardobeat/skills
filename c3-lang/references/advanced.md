@@ -93,7 +93,10 @@ alias Mat4f = Matrix{float, 4, 4};
 
 **Constraints** via `@require`:
 ```c3
-fn Type sum_all <Type>(Type[] arr) @require($assignable(Type, int)) {
+<*
+ @require $assignable(Type, int)
+*>
+fn Type sum_all <Type>(Type[] arr) {
     Type total = 0;
     foreach (v : arr) total += v;
     return total;
@@ -234,9 +237,13 @@ fn int process(int n) { return n * 10; }
 fn int compute(int x) @pure { return x * x; }  // no side effects, no global reads/writes
 ```
 
-**Pointer parameter annotations:**
+**Pointer parameter annotations** (inside `<*...*>` contract block):
 ```c3
-fn void copy(int* dst, int* src, sz len) [&out dst, &in src] { ... }
+<*
+ @param [&out] dst
+ @param [&in] src
+*>
+fn void copy(int* dst, int* src, sz len) { ... }
 // [in]    — pointer is only read
 // [out]   — pointer is only written
 // [inout] — both
