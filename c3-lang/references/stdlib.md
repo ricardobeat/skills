@@ -23,17 +23,16 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | **`std::bits`** | Integer/vector bit-twiddling macros: `reverse`, `bswap`, `popcount`, `ctz`, `clz`, `rotl`, `rotr`, `fshl`, `fshr` |
 | **`std::collections`** | Container modules (see below) |
 | ↳ `collections::anylist` | Heterogeneous list (typedef of `InterfaceList{any}`) — typed pop/get/first/last via `anycast` |
-| ↳ `collections::bitset` | `BitSet{N}` (fixed) and `GrowableBitSet{T}` |
+| ↳ `collections::bitset` | `BitSet{N}` — fixed-size bitset |
+| ↳ `collections::growablebitset` | `GrowableBitSet{T}` — growable bitset |
 | ↳ `collections::deque` | Double-ended growable queue |
 | ↳ `collections::enummap` | `EnumMap{Enum, V}` — fixed array indexed by enum ordinal |
 | ↳ `collections::enumset` | `EnumSet{Enum}` — bitset over enum ordinals |
 | ↳ `collections::fixedlist` | `FixedList{T, N}` — stack-allocated, fixed capacity |
-| ↳ `collections::hashmap` | `HashMap{K, V}` — open-addressed |
-| ↳ `collections::hashset` | `HashSet{T}` |
+| ↳ `collections::map` | `HashMap{K, V}`, `LinkedHashMap{K, V}` — hash maps |
+| ↳ `collections::set` | `HashSet{T}`, `LinkedHashSet{T}` — hash sets |
 | ↳ `collections::interfacelist` | `InterfaceList{Iface}` — list of interface-typed values (base of `AnyList`) |
-| ↳ `collections::linked_blockingqueue` | Thread-safe linked blocking queue |
-| ↳ `collections::linked_hashmap` | Insertion-ordered `LinkedHashMap{K, V}` |
-| ↳ `collections::linked_hashset` | Insertion-ordered `LinkedHashSet{T}` |
+| ↳ `collections::blockingqueue` | Thread-safe linked blocking queue |
 | ↳ `collections::linkedlist` | Doubly linked list |
 | ↳ `collections::list` | `List{T}` — dynamic array |
 | ↳ `collections::maybe` | `Maybe{T}` — explicit optional wrapper |
@@ -43,7 +42,8 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | ↳ `collections::result` | `Result{Ok, Err}` — error-with-payload; prefer built-in optionals in most cases |
 | ↳ `collections::ringbuffer` | `RingBuffer{T, N}` — fixed-capacity circular buffer |
 | ↳ `collections::sortedmap` | `SortedMap{K, V}` — skip-list ordered map |
-| ↳ `collections::tuple` | `Pair{A,B}`, `Triple{A,B,C}`, etc. |
+| ↳ `collections::pair` | `Pair{A, B}` |
+| ↳ `collections::triple` | `Triple{A, B, C}` |
 | **`std::compression`** | deflate / gzip / zip / qoi |
 | ↳ `compression::deflate` | RFC 1951 raw deflate, one-shot + streaming |
 | ↳ `compression::gzip` | RFC 1952 gzip wrapper around deflate |
@@ -97,7 +97,7 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | ↳ `encoding::pem` | PEM block parse/encode |
 | ↳ `encoding::xml` | XML parse + serialize |
 | **`std::experimental`** | Unstable APIs — API/behavior may change between releases |
-| ↳ `experimental::FrameScheduler` | Frame-budgeted task scheduler (real-time / game-loop helper) |
+| ↳ `experimental::scheduler` | Frame-budgeted task scheduler (real-time / game-loop helper) |
 | **`std::hash`** | Hashing primitives (see below) |
 | ↳ `hash::sha1`, `hash::sha256`, `hash::sha512` | SHA family (struct + `sha*::hash()` shortcut) |
 | ↳ `hash::md5` | MD5 |
@@ -117,14 +117,13 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | ↳ `hash::gost` | GOST R 34.11-94 |
 | ↳ `hash::hmac` | Generic `hmac` (works with any digest above) |
 | **`std::io`** | I/O, files, paths, streams (see below) |
-| ↳ `io::io` | `io::print/printn/printf`, `io::readline`, `InStream` / `OutStream` interfaces |
+| ↳ `io::` | `io::print/printn/printf`, `io::readline`, `InStream` / `OutStream` interfaces, stream helper types |
 | ↳ `io::file` | `File` type, `file::open/load/save/exists/…` |
-| ↳ `io::file_mmap` | Memory-mapped `File` |
+| ↳ `io::file::mmap` | Memory-mapped `File` |
 | ↳ `io::path` | `Path` (`PathPosix` / `PathWin`), `path::cwd/home/temp/ls/…` |
-| ↳ `io::stream` | Stream base types & subfolder (compression-friendly streams) |
 | **`std::libc`** | Typed wrappers around the platform C runtime (`libc::printf`, `libc::malloc`, …) |
 | **`std::math`** | Math functions, vectors, matrices (see below) |
-| ↳ `math::math` | Trig/exp/log, `abs/sign/clamp/min/max`, `PI/E`, float-type limits |
+| ↳ `math::` | Trig/exp/log, `abs/sign/clamp/min/max`, `PI/E`, float-type limits |
 | ↳ `math::bigint` | Arbitrary-precision integers |
 | ↳ `math::complex` | `Complex{R/I}` |
 | ↳ `math::matrix` | `Matrix2/3/4`, `Matrix2f/3f/4f`, etc. |
@@ -133,15 +132,14 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | ↳ `math::random` | `DefaultRandom`, `Sfc64Random`, `Pcg32Random`, `Mt19937Random`, `ChaCha20Random`, `math::srand/rand/rnd` |
 | ↳ `math::distributions` | Statistical distributions (`normal`, `uniform`, `bernoulli`, …) |
 | ↳ `math::easing` | Easing functions (`ease_in_sine`, `ease_out_cubic`, …) |
-| ↳ `math::shapes` | Ray/AABB/Sphere intersection helpers |
+| ↳ `math::rectangle` | `Rectangle{T}` — Ray/AABB/Sphere intersection helpers |
 | ↳ `math::uuid` | UUID v1/v3/v4/v5 generation |
 | **`std::net`** | Networking (see below) |
-| ↳ `net::inetaddr` | `InetAddress` (IPv4/IPv6) |
-| ↳ `net::socket` | Socket base types, socket options |
+| ↳ `net::inetaddr` | `InetAddress` (IPv4/IPv6), part of `std::net` |
+| ↳ `net::` | Socket base types, socket options, poll, connect helpers |
 | ↳ `net::tcp` | `TcpSocket`, `TcpServerSocket`, `tcp::connect/listen/accept` |
 | ↳ `net::udp` | `UdpSocket`, `udp::connect` |
-| ↳ `net::url` | `url::parse`, `Url`, `UrlQueryValues` |
-| ↳ `net::url_encoding` | `url_encode` / `url_decode`, percent-encoding helpers |
+| ↳ `net::url` | `url::parse`, `Url`, `UrlQueryValues`, `url_encode` / `url_decode` |
 | **`std::os`** | Process control, env, backtrace, CPU detection (see below) |
 | ↳ `os::process` | `Process`, `os::process::spawn/run`, `p.join/terminate/stdout/stderr/…` |
 | ↳ `os::env` | `os::env::get_var/set_var`, `get_home_dir`, `get_config_dir`, `executable_path` |
@@ -150,12 +148,10 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | ↳ `os::xdg` | XDG Base Directory paths on Linux |
 | **`std::sort`** | `quicksort`, `mergesort`, `insertionsort`, `countingsort`, `binarysearch`, `is_sorted`, `sorted` |
 | **`std::threads`** | Threading primitives (see below) |
-| ↳ `threads::thread` | `Thread`, `thread::sleep/yield`, mutex + condvar + once |
-| ↳ `threads::pool` | `ThreadPool` |
-| ↳ `threads::fixed_pool` | `FixedThreadPool` (fixed-size worker pool) |
-| ↳ `threads::buffered_channel` | Bounded MPMC channel |
-| ↳ `threads::unbuffered_channel` | Rendezvous channel |
-| ↳ `threads::oneshot_channel` | Single-value one-shot channel |
+| ↳ `thread::` | `Thread`, `thread::sleep/yield`, mutex + condvar + once |
+| ↳ `thread::pool` | `ThreadPool` |
+| ↳ `thread::threadpool` | `FixedThreadPool` (fixed-size worker pool) |
+| ↳ `thread::channel` | `BufferedChannel{T}`, `UnbufferedChannel{T}`, `OneShotChannel{T}` |
 | **`std::time`** | `Time`, `Duration`, `NanoDuration`, `DateTime` / `TzDateTime`, `Clock` |
 
 ---
