@@ -1,6 +1,6 @@
 ---
 name: c3-lang
-description: C3 language help — writing, debugging, or reviewing `.c3` code; c3c builds; C3 syntax, stdlib, and tooling.
+description: C3 language, writing, debugging, or reviewing .c3 files; c3c builds; C3 syntax, stdlib, and tooling
 ---
 
 # C3 Programming Language
