@@ -15,6 +15,7 @@ Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https:/
 - `references/stdlib.md` — full stdlib API (io, collections, math, threads, encoding, …)
 - `references/advanced.md` — macros, generics, interfaces, operator overloading, contracts
 - `references/c_interop.md` — calling C, exporting C-callable symbols
+- `references/debugging-with-lldb.md` — how to debug C3 programs with LLDB: breakpoints, stepping, variables
 
 ---
 
