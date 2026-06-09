@@ -198,6 +198,10 @@ fn void bench_add() @benchmark { for (int i = 0; i < 1000; i++) add(i, i+1); }
 
 ---
 
+## c3lsp Diagnostics Delay
+
+c3lsp has a default diagnostics delay of **2000ms**. If diagnostics appear stale or slow to update after edits, ask the user to reduce it via the `-diagnostics-delay` flag (e.g. `-diagnostics-delay=500`) in their LSP client configuration.
+
 ## Common Pitfalls
 
 | Pitfall | Fix |
