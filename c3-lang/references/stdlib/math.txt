@@ -1,0 +1,786 @@
+C3 Standard Library — math
+============================================================
+
+## std::math
+  enum RoundingMode
+    TOWARD_ZERO
+    TO_NEAREST
+    TOWARD_INFINITY
+    TOWARD_NEG_INFINITY
+  fault OVERFLOW
+  fault MATRIX_INVERSE_DOESNT_EXIST
+  fault NO_INTERSECTION
+  def Complexf = void
+  def Complex = void
+  def Matrix2f = void
+  def Matrix2 = void
+  def Matrix3f = void
+  def Matrix3 = void
+  def Matrix4f = void
+  def Matrix4 = void
+  def Mat2 = void
+  def Mat3 = void
+  def Mat4 = void
+  def Rect = void
+  macro @abs(void $x) -> void
+  // Ceil for compile time evaluation.
+  macro @ceil(void $input) -> void
+  macro @intlog2(void $x) -> void
+  // Compile time version.
+  macro @is_power_of_2(void $x) -> bool
+  // Compile time version.
+  macro @next_power_of_2(void $x) -> void
+  fn _acos(double x) -> double
+  fn _acosf(float x) -> float
+  fn _acosh(double x) -> double
+  fn _acoshf(float x) -> float
+  fn _asin(double x) -> double
+  fn _asinf(float x) -> float
+  fn _asinh(double x) -> double
+  fn _asinhf(float x) -> float
+  fn _atan(double x) -> double
+  fn _atan2(double, double) -> double
+  fn _atan2f(float, float) -> float
+  fn _atanf(float x) -> float
+  fn _atanh(double x) -> double
+  fn _atanhf(float x) -> float
+  fn _erf(double x) -> double
+  fn _erff(float x) -> float
+  fn _frexp(double x, int* e) -> double
+  fn _frexpf(float x, int* e) -> float
+  fn _lgamma(double x) -> double
+  fn _lgammaf(float x) -> float
+  fn _scalbn(double x, int n) -> double
+  fn _sincos(double, double*, double*) -> void
+  fn _sincosf(float, float*, float*) -> void
+  fn _tan(double x) -> double
+  fn _tanf(float x) -> float
+  fn _tgamma(double x) -> double
+  fn _tgammaf(float x) -> float
+  macro abs(void x) -> void
+  macro acos(void x) -> void
+  macro acosh(void x) -> void
+  macro asin(void x) -> void
+  macro asinh(void x) -> void
+  macro atan(void x) -> void
+  macro atan2(void x, void y) -> void
+  macro atanh(void x) -> void
+  macro cos(void x) -> void
+  macro cosh(void x) -> void
+  macro cot(void x) -> void
+  macro coth(void x) -> void
+  // Cosecant
+  macro csc(void x) -> void
+  macro csch(void x) -> void
+  macro deg_to_rad(void degrees) -> void
+  macro erf(void x) -> void
+  macro exp(void x) -> void
+  macro exp10(void x) -> void
+  macro exp2(void x) -> void
+  macro frexp(void x, int* e) -> void
+  // Calculate the greatest common divisor for the provided arguments.
+  macro gcd() -> void
+  macro hypot(void x, void y) -> void
+  macro iota(void $Type) -> void
+  macro is_approx(void x, void y, void eps) -> bool
+  macro is_approx_rel(void x, void y, void eps) -> bool
+  macro is_finite(void x) -> bool
+  macro is_inf(void x) -> bool
+  macro is_nan(void x) -> bool
+  macro is_power_of_2(void x) -> bool
+  // Calculate the least common multiple for the provided arguments.
+  macro lcm() -> void
+  macro lgamma(void x) -> void
+  macro ln(void x) -> void
+  macro log(void x, void base) -> void
+  macro log10(void x) -> void
+  macro log2(void x) -> void
+  macro max(void x, void y) -> void
+  macro min(void x, void y) -> void
+  // Returns the next power of two that is greater than or equal to x.
+  macro next_power_of_2(void x) -> void
+  macro rad_to_deg(void radians) -> void
+  macro round_to_decimals(void x, int decimal_places) -> void
+  macro scalbn(double x, int n) -> double
+  macro sec(void x) -> void
+  macro sech(void x) -> void
+  // Use a mask to select values from either "then" or "else" vectors.
+  macro select(bool[<*>] mask, void then_value, void else_value) -> void
+  macro sign(void x) -> void
+  macro signbit(void x) -> int
+  macro sin(void x) -> void
+  // Return a vector with sin / cos of the given angle.
+  macro sincos(void x) -> void
+  macro sincos_ref(void x, void sinp, void cosp) -> void
+  macro sinh(void x) -> void
+  macro sqr(void x) -> void
+  macro sqrt(void x) -> void
+  macro tan(void x) -> void
+  macro tanh(void x) -> void
+  macro tgamma(void x) -> void
+
+## std::math::bigint
+Untested new big int implementation, missing unit tests. Etc
+  struct BigInt
+    .data: uint[256]
+    .len: int
+    fn BigInt.abs() -> BigInt
+    fn BigInt.add(BigInt self, BigInt other) -> BigInt
+    fn BigInt.add_this(BigInt other) -> void
+    fn BigInt.bit_and(BigInt self, BigInt bi2) -> BigInt
+    fn BigInt.bit_and_this(BigInt bi2) -> void
+    fn BigInt.bit_negate(BigInt self) -> BigInt
+    fn BigInt.bit_negate_this() -> void
+    fn BigInt.bit_or(BigInt self, BigInt bi2) -> BigInt
+    fn BigInt.bit_or_this(BigInt bi2) -> void
+    fn BigInt.bit_xor(BigInt self, BigInt bi2) -> BigInt
+    fn BigInt.bit_xor_this(BigInt bi2) -> void
+    fn BigInt.bitcount() -> int
+    macro BigInt.div(BigInt self, BigInt other) -> BigInt
+    fn BigInt.div_this(BigInt other) -> void
+    macro BigInt.equals(BigInt other) -> bool
+    fn BigInt.gcd(BigInt other) -> BigInt
+    macro BigInt.greater_or_equal(BigInt other) -> bool
+    macro BigInt.greater_than(BigInt other) -> bool
+    fn BigInt.init(int128 value) -> BigInt*
+    fn BigInt.init_string_radix(String value, int radix) -> BigInt*?
+    fn BigInt.init_with_array(uint[] values) -> BigInt*
+    fn BigInt.init_with_u128(uint128 value) -> BigInt*
+    fn BigInt.is_negative() -> bool
+    fn BigInt.is_odd() -> bool
+    fn BigInt.is_one() -> bool
+    macro BigInt.is_zero() -> bool
+    fn BigInt.lcm(BigInt other) -> BigInt
+    macro BigInt.less_or_equal(BigInt other) -> bool
+    macro BigInt.less_than(BigInt other) -> bool
+    fn BigInt.mod(BigInt self, BigInt bi2) -> BigInt
+    fn BigInt.mod_pow(BigInt exp, BigInt mod) -> BigInt
+    fn BigInt.mod_this(BigInt bi2) -> void
+    fn BigInt.mult(BigInt self, BigInt bi2) -> BigInt
+    fn BigInt.mult_this(BigInt bi2) -> void
+    fn BigInt.negate() -> void
+    fn BigInt.randomize_bits(Random random, int bits) -> void
+    fn BigInt.shl(BigInt self, int shift) -> BigInt
+    fn BigInt.shl_this(int shift) -> void
+    fn BigInt.shr(BigInt self, int shift) -> BigInt
+    fn BigInt.shr_this(int shift) -> void
+    fn BigInt.sqrt() -> BigInt
+    fn BigInt.sub(BigInt self, BigInt other) -> BigInt
+    fn BigInt.sub_this(BigInt other) -> BigInt*
+    fn BigInt.to_format(Formatter* format) -> sz?
+    fn BigInt.to_string(Allocator allocator) -> String
+    fn BigInt.to_string_with_radix(int radix, Allocator allocator) -> String
+    fn BigInt.unary_minus() -> BigInt
+  // Fast calculation of modular reduction using Barrett's reduction.
+  fn barrett_reduction(BigInt x, BigInt n, BigInt constant) -> BigInt
+  macro find_length(uint* data, int length) -> int
+  fn from_int(int128 val) -> BigInt
+  const MAX_LEN: void = 256
+  const ONE: BigInt = { .len = 1, .data[0] = 1 }
+  const ZERO: BigInt = { .len = 1 }
+
+## std::math::complex(<Real>)
+The generic complex number module, for float or double based complex number definitions.
+  union ComplexNumber(<Real>)
+    .?: void
+    .v: Real[<2>]
+    macro ComplexNumber.add(<Real>)(void self, ComplexNumber b) -> ComplexNumber
+    macro ComplexNumber.add_each(<Real>)(void self, Real b) -> ComplexNumber
+    macro ComplexNumber.add_real(<Real>)(void self, Real r) -> ComplexNumber
+    macro ComplexNumber.add_this(<Real>)(ComplexNumber b) -> ComplexNumber
+    macro ComplexNumber.conjugate(<Real>)(void self) -> ComplexNumber
+    macro ComplexNumber.div(<Real>)(void self, ComplexNumber b) -> ComplexNumber
+    macro ComplexNumber.div_real(<Real>)(void self, Real r) -> ComplexNumber
+    macro ComplexNumber.div_real_inverse(<Real>)(ComplexNumber c, Real r) -> ComplexNumber
+    macro ComplexNumber.equals(<Real>)(void self, ComplexNumber b) -> bool
+    macro ComplexNumber.equals_real(<Real>)(void self, Real r) -> bool
+    macro ComplexNumber.inverse(<Real>)(void self) -> ComplexNumber
+    macro ComplexNumber.mul(<Real>)(void self, ComplexNumber b) -> ComplexNumber
+    macro ComplexNumber.negate(<Real>)(void self) -> ComplexNumber
+    macro ComplexNumber.scale(<Real>)(void self, Real r) -> ComplexNumber
+    macro ComplexNumber.sub(<Real>)(void self, ComplexNumber b) -> ComplexNumber
+    macro ComplexNumber.sub_each(<Real>)(void self, Real b) -> ComplexNumber
+    macro ComplexNumber.sub_real(<Real>)(void self, Real r) -> ComplexNumber
+    macro ComplexNumber.sub_real_inverse(<Real>)(void self, Real r) -> ComplexNumber
+    macro ComplexNumber.sub_this(<Real>)(ComplexNumber b) -> ComplexNumber
+    fn ComplexNumber.to_format(<Real>)(Formatter* f) -> sz?
+  const IDENTITY: ComplexNumber = { 1, 0 }
+  const IMAGINARY: ComplexNumber = { 0, 1 }
+
+## std::math::distributions
+This module provides a comprehensive set of continuous and discrete
+ probability distributions with support for PDF, CDF, inverse CDF,
+ random sampling, mean, and variance calculations.
+  interface Distribution
+  interface ContinuousDistribution
+  interface DiscreteDistribution
+  // Uniform distribution over [a, b]
+  struct UniformDist
+    .a: double
+    .b: double
+    fn UniformDist.cdf(double x) -> double
+    fn UniformDist.mean() -> double
+    fn UniformDist.pdf(double x) -> double
+    fn UniformDist.quantile(double p) -> double
+    fn UniformDist.random(Random rand) -> double
+    fn UniformDist.variance() -> double
+  // Normal (Gaussian) distribution
+  struct NormalDist
+    .mu: double
+    .sigma: double
+    fn NormalDist.cdf(double x) -> double
+    fn NormalDist.mean() -> double
+    fn NormalDist.pdf(double x) -> double
+    fn NormalDist.quantile(double p) -> double
+    fn NormalDist.random(Random rand) -> double
+    fn NormalDist.variance() -> double
+  // Exponential distribution
+  struct ExponentialDist
+    .lambda: double
+    fn ExponentialDist.cdf(double x) -> double
+    fn ExponentialDist.mean() -> double
+    fn ExponentialDist.pdf(double x) -> double
+    fn ExponentialDist.quantile(double p) -> double
+    fn ExponentialDist.random(Random rand) -> double
+    fn ExponentialDist.variance() -> double
+  // Student's t-distribution
+  struct TDist
+    .df: double
+    fn TDist.cdf(double x) -> double
+    fn TDist.mean() -> double
+    fn TDist.pdf(double x) -> double
+    fn TDist.quantile(double p) -> double
+    fn TDist.random(Random rand) -> double
+    fn TDist.variance() -> double
+  // F-distribution
+  struct FDist
+    .d1: double
+    .d2: double
+    fn FDist.cdf(double x) -> double
+    fn FDist.mean() -> double
+    fn FDist.pdf(double x) -> double
+    fn FDist.quantile(double p) -> double
+    fn FDist.random(Random rand) -> double
+    fn FDist.variance() -> double
+  // Chi-squared distribution
+  struct ChiSquaredDist
+    .k: double
+    fn ChiSquaredDist.cdf(double x) -> double
+    fn ChiSquaredDist.mean() -> double
+    fn ChiSquaredDist.pdf(double x) -> double
+    fn ChiSquaredDist.quantile(double p) -> double
+    fn ChiSquaredDist.random(Random rand) -> double
+    fn ChiSquaredDist.variance() -> double
+  // Binomial distribution
+  struct BinomialDist
+    .n: int
+    .p: double
+    fn BinomialDist.cdf(int k) -> double
+    fn BinomialDist.mean() -> double
+    fn BinomialDist.pmf(int k) -> double
+    fn BinomialDist.quantile(double p) -> int
+    fn BinomialDist.random(Random rand) -> int
+    fn BinomialDist.variance() -> double
+  // Poisson distribution
+  struct PoissonDist
+    .lambda: double
+    fn PoissonDist.cdf(int k) -> double
+    fn PoissonDist.mean() -> double
+    fn PoissonDist.pmf(int k) -> double
+    fn PoissonDist.quantile(double p) -> int
+    fn PoissonDist.random(Random rand) -> int
+    fn PoissonDist.variance() -> double
+  fn binomial(int n, double p) -> BinomialDist
+  fn chi_squared(double k) -> ChiSquaredDist
+  fn exponential(double lambda = 1.0) -> ExponentialDist
+  fn f_distribution(double d1, double d2) -> FDist
+  fn normal(double mu = 0.0, double sigma = 1.0) -> NormalDist
+  fn poisson(double lambda) -> PoissonDist
+  fn t_distribution(double df) -> TDist
+  fn uniform(double a, double b) -> UniformDist
+
+## std::math::easing
+  fn back_in(float t, float b, float c, float d, float s = 1.70158f) -> float
+  fn back_inout(float t, float b, float c, float d, float s = 1.70158f) -> float
+  fn back_out(float t, float b, float c, float d, float s = 1.70158f) -> float
+  fn bounce_in(float t, float b, float c, float d) -> float
+  fn bounce_inout(float t, float b, float c, float d) -> float
+  fn bounce_out(float t, float b, float c, float d) -> float
+  fn circ_in(float t, float b, float c, float d) -> float
+  fn circ_inout(float t, float b, float c, float d) -> float
+  fn circ_out(float t, float b, float c, float d) -> float
+  fn cubic_in(float t, float b, float c, float d) -> float
+  fn cubic_inout(float t, float b, float c, float d) -> float
+  fn cubic_out(float t, float b, float c, float d) -> float
+  fn elastic_in(float t, float b, float c, float d) -> float
+  fn elastic_inout(float t, float b, float c, float d) -> float
+  fn elastic_out(float t, float b, float c, float d) -> float
+  fn expo_in(float t, float b, float c, float d) -> float
+  fn expo_inout(float t, float b, float c, float d) -> float
+  fn expo_out(float t, float b, float c, float d) -> float
+  fn linear_in(float t, float b, float c, float d) -> float
+  fn linear_inout(float t, float b, float c, float d) -> float
+  fn linear_none(float t, float b, float c, float d) -> float
+  fn linear_out(float t, float b, float c, float d) -> float
+  fn quad_in(float t, float b, float c, float d) -> float
+  fn quad_inout(float t, float b, float c, float d) -> float
+  fn quad_out(float t, float b, float c, float d) -> float
+  fn sine_in(float t, float b, float c, float d) -> float
+  fn sine_inout(float t, float b, float c, float d) -> float
+  fn sine_out(float t, float b, float c, float d) -> float
+
+## std::math::matrix(<Real>)
+The generic matrix module, for float or double based matrix definitions.
+  struct Matrix2x2(<Real>)
+    .?: void
+    fn Matrix2x2.add(<Real>)(Matrix2x2 mat2) -> Matrix2x2
+    fn Matrix2x2.add_inplace(<Real>)(Matrix2x2 mat2) -> void
+    fn Matrix2x2.adjoint(<Real>)(void self) -> Matrix2x2
+    fn Matrix2x2.apply(<Real>)(void self, Real[<2>] vec) -> Real[<2>]
+    fn Matrix2x2.component_mul(<Real>)(Real v) -> Matrix2x2
+    fn Matrix2x2.component_mul_inplace(<Real>)(Real v) -> void
+    fn Matrix2x2.determinant(<Real>)(void self) -> Real
+    fn Matrix2x2.eq(<Real>)(Matrix2x2 mat2) -> bool
+    fn Matrix2x2.inverse(<Real>)() -> Matrix2x2?
+    fn Matrix2x2.mul(<Real>)(void self, Matrix2x2 b) -> Matrix2x2
+    fn Matrix2x2.negate(<Real>)() -> Matrix2x2
+    fn Matrix2x2.sub(<Real>)(Matrix2x2 mat2) -> Matrix2x2
+    fn Matrix2x2.sub_inplace(<Real>)(Matrix2x2 mat2) -> void
+    fn Matrix2x2.to_format(<Real>)(Formatter* f) -> sz?
+    fn Matrix2x2.trace(<Real>)() -> Real
+    fn Matrix2x2.transpose(<Real>)() -> Matrix2x2
+  struct Matrix3x3(<Real>)
+    .?: void
+    fn Matrix3x3.add(<Real>)(Matrix3x3 mat2) -> Matrix3x3
+    fn Matrix3x3.add_inplace(<Real>)(Matrix3x3 mat2) -> void
+    fn Matrix3x3.adjoint(<Real>)() -> Matrix3x3
+    fn Matrix3x3.apply(<Real>)(Real[<3>] vec) -> Real[<3>]
+    fn Matrix3x3.component_mul(<Real>)(Real v) -> Matrix3x3
+    fn Matrix3x3.component_mul_inplace(<Real>)(Real v) -> void
+    fn Matrix3x3.determinant(<Real>)() -> Real
+    fn Matrix3x3.eq(<Real>)(Matrix3x3 mat2) -> bool
+    fn Matrix3x3.inverse(<Real>)() -> Matrix3x3?
+    fn Matrix3x3.mul(<Real>)(Matrix3x3 b) -> Matrix3x3
+    fn Matrix3x3.negate(<Real>)() -> Matrix3x3
+    fn Matrix3x3.rotate(<Real>)(Real r) -> Matrix3x3
+    fn Matrix3x3.scale(<Real>)(Real[<2>] v) -> Matrix3x3
+    fn Matrix3x3.sub(<Real>)(Matrix3x3 mat2) -> Matrix3x3
+    fn Matrix3x3.sub_inplace(<Real>)(Matrix3x3 mat2) -> void
+    fn Matrix3x3.to_format(<Real>)(Formatter* f) -> sz?
+    fn Matrix3x3.trace(<Real>)() -> Real
+    fn Matrix3x3.translate(<Real>)(Real[<2>] v) -> Matrix3x3
+    fn Matrix3x3.transpose(<Real>)() -> Matrix3x3
+  struct Matrix4x4(<Real>)
+    .?: void
+    fn Matrix4x4.add(<Real>)(Matrix4x4 mat2) -> Matrix4x4
+    fn Matrix4x4.add_inplace(<Real>)(Matrix4x4 mat2) -> void
+    fn Matrix4x4.adjoint(<Real>)() -> Matrix4x4
+    fn Matrix4x4.apply(<Real>)(Real[<4>] vec) -> Real[<4>]
+    fn Matrix4x4.component_mul(<Real>)(Real v) -> Matrix4x4
+    fn Matrix4x4.component_mul_inplace(<Real>)(Real v) -> void
+    fn Matrix4x4.determinant(<Real>)() -> Real
+    fn Matrix4x4.eq(<Real>)(Matrix4x4 mat2) -> bool
+    fn Matrix4x4.inverse(<Real>)() -> Matrix4x4?
+    fn Matrix4x4.mul(<Real>)(Matrix4x4* self, Matrix4x4 b) -> Matrix4x4
+    fn Matrix4x4.negate(<Real>)() -> Matrix4x4
+    // Rotate the matrix (assuming RH system)
+    fn Matrix4x4.rotate(<Real>)(Real angle, Real[<3>] axis) -> Matrix4x4
+    fn Matrix4x4.rotate_x(<Real>)(Real r) -> Matrix4x4
+    fn Matrix4x4.rotate_y(<Real>)(Real r) -> Matrix4x4
+    fn Matrix4x4.rotate_z(<Real>)(Real r) -> Matrix4x4
+    fn Matrix4x4.scale(<Real>)(Real[<3>] v) -> Matrix4x4
+    fn Matrix4x4.sub(<Real>)(Matrix4x4 mat2) -> Matrix4x4
+    fn Matrix4x4.sub_inplace(<Real>)(Matrix4x4 mat2) -> void
+    fn Matrix4x4.to_format(<Real>)(Formatter* f) -> sz?
+    fn Matrix4x4.trace(<Real>)() -> Real
+    fn Matrix4x4.translate(<Real>)(Real[<3>] v) -> Matrix4x4
+    fn Matrix4x4.transpose(<Real>)() -> Matrix4x4
+  fn frustum(<Real>)(Real left, Real right, Real bottom, Real top, Real z_near, Real z_far) -> Matrix4x4
+  fn look_at(<Real>)(Real[<3>] eye, Real[<3>] target, Real[<3>] up) -> Matrix4x4
+  fn ortho(<Real>)(Real left, Real right, Real bottom, Real top, Real z_near, Real z_far) -> Matrix4x4
+  fn perspective(<Real>)(Real fovy, Real aspect, Real z_near, Real z_far) -> Matrix4x4
+  const IDENTITY2: Matrix2x2 = { .m = { 1, 0, 0, 1 } }
+  const IDENTITY3: Matrix3x3 = { .m = { [0] = 1, [4] = 1, [8] = 1 } }
+  const IDENTITY4: Matrix4x4 = { .m = { [0] = 1, [5] = 1, [10] = 1, [15] = 1 } }
+
+## std::math::quaternion(<Real>)
+The generic quaternion module, for float or double based quaternion definitions.
+  def Quaternionf = void
+  def Quaternion = void
+  def Quat = void
+  union QuaternionNumber(<Real>)
+    .?: void
+    .v: Real[<4>]
+    macro QuaternionNumber.add(<Real>)(void self, QuaternionNumber b) -> QuaternionNumber
+    macro QuaternionNumber.add_each(<Real>)(void self, Real b) -> QuaternionNumber
+    fn QuaternionNumber.conjugate(<Real>)(void self) -> QuaternionNumber
+    macro QuaternionNumber.equals(<Real>)(void self, QuaternionNumber other) -> bool
+    fn QuaternionNumber.invert(<Real>)(void self) -> QuaternionNumber
+    fn QuaternionNumber.is_normalized(<Real>)(void self) -> bool
+    macro QuaternionNumber.length(<Real>)(void self) -> Real
+    macro QuaternionNumber.length_sq(<Real>)(void self) -> Real
+    macro QuaternionNumber.lerp(<Real>)(void self, QuaternionNumber q2, Real amount) -> QuaternionNumber
+    fn QuaternionNumber.mul(<Real>)(void self, QuaternionNumber b) -> QuaternionNumber
+    macro QuaternionNumber.negate(<Real>)(void self) -> QuaternionNumber
+    fn QuaternionNumber.nlerp(<Real>)(void self, QuaternionNumber q2, Real amount) -> QuaternionNumber
+    macro QuaternionNumber.normalize(<Real>)(void self) -> QuaternionNumber
+    macro QuaternionNumber.not_equals(<Real>)(void self, QuaternionNumber other) -> bool
+    fn QuaternionNumber.rotate_vec3(<Real>)(void self, Real[<3>] vector) -> Real[<3>]
+    macro QuaternionNumber.scale(<Real>)(void self, Real s) -> QuaternionNumber
+    fn QuaternionNumber.slerp(<Real>)(void self, QuaternionNumber q2, Real amount) -> QuaternionNumber
+    macro QuaternionNumber.sub(<Real>)(void self, QuaternionNumber b) -> QuaternionNumber
+    macro QuaternionNumber.sub_each(<Real>)(void self, Real b) -> QuaternionNumber
+    macro QuaternionNumber.to_angle(<Real>)(void self) -> void
+    fn QuaternionNumber.to_axis_angle(<Real>)(void self) -> Real[<4>]
+    // Get the Euler angles equivalent to quaternion (roll, pitch, yaw)
+    fn QuaternionNumber.to_euler(<Real>)(void self) -> Real[<3>]
+    fn QuaternionNumber.to_format(<Real>)(Formatter* f) -> sz?
+    macro QuaternionNumber.to_matrix(<Real>)() -> Matrix4x4{Real}
+    fn QuaternionNumber.transform(<Real>)(void self, Matrix4x4{Real} transform) -> QuaternionNumber
+  fn from_axis_angle(<Real>)(Real[<3>] axis, Real angle) -> QuaternionNumber
+  fn from_euler(<Real>)(Real pitch, Real yaw, Real roll) -> QuaternionNumber
+  // Create a quaternion transform from `from` to `to`, assuming they are not parallel and that they are
+  fn from_normalized_rotation(<Real>)(Real[<3>] from, Real[<3>] to) -> QuaternionNumber
+  // Create a quaternion transform from `from` to `to`, assuming they are not parallel.
+  fn from_rotation(<Real>)(Real[<3>] from, Real[<3>] to) -> QuaternionNumber
+  const IDENTITY: QuaternionNumber = { 0, 0, 0, 1 }
+
+## std::math::random
+Randoms:
+ General usage -
+ 1. Create a Random (see std/math/random for various alternatives), or pick DefaultRandom
+ 2. Define it : `DefaultRandom my_random;`
+ 3. Seed it: `random::seed(&my_random, some_seed);` or : `rand::seed_entropy(&my_random);`
+ 4. Use it with the functions in random: `float random_float = random::next_float(&my_random);`
+
+ For just a simple integer between 0 and n (not including n), you can use `rand(n)`.
+  def DefaultRandom = void
+  interface Random
+  distinct type SplitMix64
+    fn SplitMix64.next_byte() -> char
+    fn SplitMix64.next_bytes(char[] bytes) -> void
+    fn SplitMix64.next_int() -> uint
+    fn SplitMix64.next_int128() -> uint128
+    fn SplitMix64.next_long() -> ulong
+    fn SplitMix64.next_short() -> ushort
+    // Directly set the underlying `ulong` so as to manually initialize or seed the PRNG.
+    fn SplitMix64.set(ulong state) -> void
+    fn SplitMix64.set_seed(char[] seed) -> void
+  distinct type Pcg128Random
+    fn Pcg128Random.next_byte() -> char
+    fn Pcg128Random.next_bytes(char[] bytes) -> void
+    fn Pcg128Random.next_int() -> uint
+    fn Pcg128Random.next_int128() -> uint128
+    fn Pcg128Random.next_long() -> ulong
+    fn Pcg128Random.next_short() -> ushort
+    fn Pcg128Random.set_seed(char[] input) -> void
+  distinct type Pcg64Random
+    fn Pcg64Random.next_byte() -> char
+    fn Pcg64Random.next_bytes(char[] bytes) -> void
+    fn Pcg64Random.next_int() -> uint
+    fn Pcg64Random.next_int128() -> uint128
+    fn Pcg64Random.next_long() -> ulong
+    fn Pcg64Random.next_short() -> ushort
+    fn Pcg64Random.set_seed(char[] input) -> void
+  distinct type Pcg32Random
+    fn Pcg32Random.next_byte() -> char
+    fn Pcg32Random.next_bytes(char[] bytes) -> void
+    fn Pcg32Random.next_int() -> uint
+    fn Pcg32Random.next_int128() -> uint128
+    fn Pcg32Random.next_long() -> ulong
+    fn Pcg32Random.next_short() -> ushort
+    fn Pcg32Random.set_seed(char[] input) -> void
+  distinct type Pcg16Random
+    fn Pcg16Random.next_byte() -> char
+    fn Pcg16Random.next_bytes(char[] bytes) -> void
+    fn Pcg16Random.next_int() -> uint
+    fn Pcg16Random.next_int128() -> uint128
+    fn Pcg16Random.next_long() -> ulong
+    fn Pcg16Random.next_short() -> ushort
+    fn Pcg16Random.set_seed(char[] input) -> void
+  distinct type Mcg128Random
+    fn Mcg128Random.next_byte() -> char
+    fn Mcg128Random.next_bytes(char[] bytes) -> void
+    fn Mcg128Random.next_int() -> uint
+    fn Mcg128Random.next_int128() -> uint128
+    fn Mcg128Random.next_long() -> ulong
+    fn Mcg128Random.next_short() -> ushort
+    fn Mcg128Random.set_seed(char[] seed) -> void
+  distinct type Mcg64Random
+    fn Mcg64Random.next_byte() -> char
+    fn Mcg64Random.next_bytes(char[] bytes) -> void
+    fn Mcg64Random.next_int() -> uint
+    fn Mcg64Random.next_int128() -> uint128
+    fn Mcg64Random.next_long() -> ulong
+    fn Mcg64Random.next_short() -> ushort
+    fn Mcg64Random.set_seed(char[] seed) -> void
+  distinct type Mcg32Random
+    fn Mcg32Random.next_byte() -> char
+    fn Mcg32Random.next_bytes(char[] bytes) -> void
+    fn Mcg32Random.next_int() -> uint
+    fn Mcg32Random.next_int128() -> uint128
+    fn Mcg32Random.next_long() -> ulong
+    fn Mcg32Random.next_short() -> ushort
+    fn Mcg32Random.set_seed(char[] seed) -> void
+  distinct type Mcg16Random
+    fn Mcg16Random.next_byte() -> char
+    fn Mcg16Random.next_bytes(char[] bytes) -> void
+    fn Mcg16Random.next_int() -> uint
+    fn Mcg16Random.next_int128() -> uint128
+    fn Mcg16Random.next_long() -> ulong
+    fn Mcg16Random.next_short() -> ushort
+    fn Mcg16Random.set_seed(char[] seed) -> void
+  distinct type Sfc128Random
+    fn Sfc128Random.next_byte() -> char
+    fn Sfc128Random.next_bytes(char[] bytes) -> void
+    fn Sfc128Random.next_int() -> uint
+    fn Sfc128Random.next_int128() -> uint128
+    fn Sfc128Random.next_long() -> ulong
+    fn Sfc128Random.next_short() -> ushort
+    fn Sfc128Random.set_seed(char[] input) -> void
+  distinct type Sfc64Random
+    fn Sfc64Random.next_byte() -> char
+    fn Sfc64Random.next_bytes(char[] bytes) -> void
+    fn Sfc64Random.next_int() -> uint
+    fn Sfc64Random.next_int128() -> uint128
+    fn Sfc64Random.next_long() -> ulong
+    fn Sfc64Random.next_short() -> ushort
+    fn Sfc64Random.set_seed(char[] input) -> void
+  distinct type Sfc32Random
+    fn Sfc32Random.next_byte() -> char
+    fn Sfc32Random.next_bytes(char[] bytes) -> void
+    fn Sfc32Random.next_int(Sfc32Random* sfc) -> uint
+    fn Sfc32Random.next_int128() -> uint128
+    fn Sfc32Random.next_long() -> ulong
+    fn Sfc32Random.next_short() -> ushort
+    fn Sfc32Random.set_seed(char[] input) -> void
+  distinct type Sfc16Random
+    fn Sfc16Random.next_byte() -> char
+    fn Sfc16Random.next_bytes(char[] bytes) -> void
+    fn Sfc16Random.next_int() -> uint
+    fn Sfc16Random.next_int128() -> uint128
+    fn Sfc16Random.next_long() -> ulong
+    fn Sfc16Random.next_short(Sfc16Random* seed) -> ushort
+    fn Sfc16Random.set_seed(char[] input) -> void
+  distinct type Sfc8Random
+    fn Sfc8Random.next_byte() -> char
+    fn Sfc8Random.next_bytes(char[] bytes) -> void
+    fn Sfc8Random.next_int() -> uint
+    fn Sfc8Random.next_int128() -> uint128
+    fn Sfc8Random.next_long() -> ulong
+    fn Sfc8Random.next_short() -> ushort
+    fn Sfc8Random.set_seed(char[] input) -> void
+  struct Msws128Random
+    .state0: uint128
+    .state1: uint128
+    .weyl0: uint128
+    .weyl1: uint128
+    fn Msws128Random.next_byte() -> char
+    fn Msws128Random.next_bytes(char[] bytes) -> void
+    fn Msws128Random.next_int() -> uint
+    fn Msws128Random.next_int128() -> uint128
+    fn Msws128Random.next_long() -> ulong
+    fn Msws128Random.next_short() -> ushort
+    fn Msws128Random.set_seed(char[] input) -> void
+  struct Msws64Random
+    .state0: ulong
+    .state1: ulong
+    .weyl0: ulong
+    .weyl1: ulong
+    fn Msws64Random.next_byte() -> char
+    fn Msws64Random.next_bytes(char[] bytes) -> void
+    fn Msws64Random.next_int() -> uint
+    fn Msws64Random.next_int128() -> uint128
+    fn Msws64Random.next_long() -> ulong
+    fn Msws64Random.next_short() -> ushort
+    fn Msws64Random.set_seed(char[] input) -> void
+  struct Msws32Random
+    .state0: uint
+    .state1: uint
+    .weyl0: uint
+    .weyl1: uint
+    fn Msws32Random.next_byte() -> char
+    fn Msws32Random.next_bytes(char[] bytes) -> void
+    fn Msws32Random.next_int() -> uint
+    fn Msws32Random.next_int128() -> uint128
+    fn Msws32Random.next_long() -> ulong
+    fn Msws32Random.next_short() -> ushort
+    fn Msws32Random.set_seed(char[] input) -> void
+  struct Msws16Random
+    .state0: ushort
+    .state1: ushort
+    .weyl0: ushort
+    .weyl1: ushort
+    fn Msws16Random.next_byte() -> char
+    fn Msws16Random.next_bytes(char[] bytes) -> void
+    fn Msws16Random.next_int() -> uint
+    fn Msws16Random.next_int128() -> uint128
+    fn Msws16Random.next_long() -> ulong
+    fn Msws16Random.next_short() -> ushort
+    fn Msws16Random.set_seed(char[] input) -> void
+  struct Msws8Random
+    .state0: char
+    .state1: char
+    .weyl0: char
+    .weyl1: char
+    fn Msws8Random.next_byte() -> char
+    fn Msws8Random.next_bytes(char[] bytes) -> void
+    fn Msws8Random.next_int() -> uint
+    fn Msws8Random.next_int128() -> uint128
+    fn Msws8Random.next_long() -> ulong
+    fn Msws8Random.next_short() -> ushort
+    fn Msws8Random.set_seed(char[] input) -> void
+  def Xoshiro128p = void
+  def Xoshiro128pp = void
+  def Xoshiro128ss = void
+  def Xoshiro256p = void
+  def Xoshiro256pp = void
+  def Xoshiro256ss = void
+  def Xoshiro512p = void
+  def Xoshiro512pp = void
+  def Xoshiro512ss = void
+  def Xoroshiro64s = void
+  def Xoroshiro64ss = void
+  def Xoroshiro128p = void
+  def Xoroshiro128pp = void
+  def Xoroshiro128ss = void
+  def Xoroshiro1024s = void
+  def Xoroshiro1024ss = void
+  def Xoroshiro1024pp = void
+  distinct type Lcg128Random
+    fn Lcg128Random.next_byte() -> char
+    fn Lcg128Random.next_bytes(char[] bytes) -> void
+    fn Lcg128Random.next_int() -> uint
+    fn Lcg128Random.next_int128() -> uint128
+    fn Lcg128Random.next_long() -> ulong
+    fn Lcg128Random.next_short() -> ushort
+    fn Lcg128Random.set_seed(char[] input) -> void
+  distinct type Lcg64Random
+    fn Lcg64Random.next_byte() -> char
+    fn Lcg64Random.next_bytes(char[] bytes) -> void
+    fn Lcg64Random.next_int() -> uint
+    fn Lcg64Random.next_int128() -> uint128
+    fn Lcg64Random.next_long() -> ulong
+    fn Lcg64Random.next_short() -> ushort
+    fn Lcg64Random.set_seed(char[] seed) -> void
+  distinct type Lcg32Random
+    fn Lcg32Random.next_byte() -> char
+    fn Lcg32Random.next_bytes(char[] bytes) -> void
+    fn Lcg32Random.next_int() -> uint
+    fn Lcg32Random.next_int128() -> uint128
+    fn Lcg32Random.next_long() -> ulong
+    fn Lcg32Random.next_short() -> ushort
+    fn Lcg32Random.set_seed(char[] seed) -> void
+  distinct type Lcg16Random
+    fn Lcg16Random.next_byte() -> char
+    fn Lcg16Random.next_bytes(char[] bytes) -> void
+    fn Lcg16Random.next_int() -> uint
+    fn Lcg16Random.next_int128() -> uint128
+    fn Lcg16Random.next_long() -> ulong
+    fn Lcg16Random.next_short() -> ushort
+    fn Lcg16Random.set_seed(char[] seed) -> void
+  distinct type SimpleRandom
+    fn SimpleRandom.next_byte() -> char
+    fn SimpleRandom.next_bytes(char[] bytes) -> void
+    fn SimpleRandom.next_int() -> uint
+    fn SimpleRandom.next_int128() -> uint128
+    fn SimpleRandom.next_long() -> ulong
+    fn SimpleRandom.next_short() -> ushort
+    fn SimpleRandom.set_seed(char[] seed) -> void
+  macro @char_to_short(void #function) -> ushort
+  macro @int_to_long(void #function) -> ulong
+  macro @long_to_int128(void #function) -> uint128
+  macro @random_value_to_bytes(void #function, char[] bytes) -> void
+  macro @short_to_int(void #function) -> uint
+  macro @xorshift_seed_from_input(void #xorshift_instance, sz $bits, void seed) -> void
+  fn entropy() -> char[32]
+  macro is_random(void random) -> bool
+  macro make_seed(void $Type, char[] input) -> void
+  // Magic numbers sourced from our friends at openjdk - where a lot of this Xorshift stuff lives.
+  fn mix_stafford13(ulong z) -> ulong
+  // Get the next value between 0 and range (not including range).
+  macro next(void random, int range) -> int
+  // Get 'true' or 'false'
+  macro next_bool(void random) -> bool
+  // Get a double between 0 and 1.0, not including 1.0.
+  macro next_double(void random) -> double
+  // Get a float between 0 and 1.0, not including 1.0.
+  macro next_float(void random) -> float
+  // Get a random in the range [min, max], both included.
+  macro next_in_range(void random, int min, int max) -> int
+  // Get a default random value between 0 and range (not including range)
+  fn rand(int range) -> int
+  // Get a random in the range, both included.
+  fn rand_in_range(int min, int max) -> int
+  fn rnd() -> double
+  macro seed(void random, void seed) -> void
+  // Seed the random with some best effort entropy.
+  macro seed_entropy(void random) -> void
+  fn seeder(char[] input, char[] out_buffer) -> void
+  // Seed the default random function.
+  fn srand(ulong seed) -> void
+  const GOLDEN_RATIO_64: ulong = 11400714819323198485
+  const SILVER_RATIO_64: ulong = 7640891576956012809
+
+## std::math::random::xoroshiro(<BIT_SIZE, OPERATION>)
+
+## std::math::random::xoshiro(<BIT_SIZE, OPERATION>)
+
+## std::math::rectangle(<Num>)
+  union Rectangle(<Num>)
+    .?: void
+    .v: Num[<4>]
+    .?: void
+    // Returns the area of the rectangle.
+    fn Rectangle.area(<Num>)(void self) -> Num
+    // Returns the center point of the rectangle.
+    fn Rectangle.center(<Num>)(void self) -> Num[<2>]
+    // Clamps a point to lie inside a rectangle.
+    fn Rectangle.clamp_point(<Num>)(void self, Num[<2>] point) -> Num[<2>]
+    // Check if a point is contained in the rectangle.
+    fn Rectangle.contains_point(<Num>)(void self, Num[<2>] point) -> bool
+    // Checks if the rectangle fully contains another rectangle.
+    fn Rectangle.contains_rect(<Num>)(void self, Rectangle other) -> bool
+    // Expand the rectangle by the amount in all directions.
+    fn Rectangle.expand(<Num>)(void self, Num amount) -> Rectangle
+    // Shrinks the rectangle by amount from all sides.
+    fn Rectangle.inset(<Num>)(void self, Num amount) -> Rectangle
+    // Shrinks the rectangle by amount from all sides, clamping to zero size if necessary.
+    fn Rectangle.inset_clamped(<Num>)(void self, Num amount) -> Rectangle
+    // Shrinks the rectangle to have integral boundaries.
+    fn Rectangle.integral_inner(<Num>)(void self) -> Rectangle
+    // Expands the rectangle to have integral boundaries.
+    fn Rectangle.integral_outer(<Num>)(void self) -> Rectangle
+    // Return the rectangle intersecting both rectangles.
+    fn Rectangle.intersection(<Num>)(void self, Rectangle other) -> Rectangle?
+    // Test if rectangles overlap.
+    fn Rectangle.intersects(<Num>)(void self, Rectangle other) -> bool
+    // Check if the rectangle is empty.
+    fn Rectangle.is_empty(<Num>)(void self) -> bool
+    // Returns the maximum corner (origin + size)
+    fn Rectangle.max(<Num>)(void self) -> Num[<2>]
+    // Merge two rectangles into a rectangle large enough to contain both rectangles.
+    fn Rectangle.merge(<Num>)(void self, Rectangle other) -> Rectangle
+    // Expands the rectangle minimally to include a point.
+    fn Rectangle.merge_point(<Num>)(void self, Num[<2>] point) -> Rectangle
+    // Returns the minimum corner (same as origin)
+    fn Rectangle.min(<Num>)(void self) -> Num[<2>]
+
+## std::math::uuid
+  distinct type Uuid
+    fn Uuid.to_format(Formatter* formatter) -> sz?
+    fn Uuid.to_string(Allocator allocator) -> String
+  // Generate a version 4 UUID from the default random.
+  fn generate() -> Uuid
+  // Generate a version 4 UUID from the given random.
+  fn generate_from_random(Random random) -> Uuid
+
+## std::math::vector
+  def Vec2 = void
+  def Vec3 = void
+  def Vec4 = void
+  fn cubic_hermite(double[<3>] v1, double[<3>] tangent1, double[<3>] v2, double[<3>] tangent2, double amount) -> double[<3>]
+  fn cubic_hermitef(float[<3>] v1, float[<3>] tangent1, float[<3>] v2, float[<3>] tangent2, float amount) -> float[<3>]
+  macro mask_from_int(void $Type, void mask) -> bool[<*>]
+  fn orthonormalize(double[<3>]* v1, double[<3>]* v2) -> void
+  fn orthonormalizef(float[<3>]* v1, float[<3>]* v2) -> void

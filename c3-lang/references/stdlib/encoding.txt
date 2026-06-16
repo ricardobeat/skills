@@ -1,0 +1,331 @@
+C3 Standard Library — encoding
+============================================================
+
+## std::encoding
+  fault INVALID_CHARACTER
+  fault INVALID_PADDING
+
+## std::encoding::base32
+  struct Base32Alphabet
+    .encoding: char[32]
+    .reverse: char[256]
+  distinct type Alphabet
+  // Decode the content of src into a newly allocated char array.
+  fn decode(Allocator allocator, char[] src, char padding = DEFAULT_PAD, Base32Alphabet* alphabet = &STANDARD) -> char[]?
+  // Decode the content of src into dst, which must be properly sized.
+  fn decode_into(char[] dst, char[] src, char padding = DEFAULT_PAD, Base32Alphabet* alphabet = &STANDARD) -> char[]?
+  // Calculate the length in bytes of the decoded data.
+  fn decode_len(sz n, char padding) -> sz
+  // Encode the content of src into a newly allocated string
+  fn encode(Allocator allocator, char[] src, char padding = DEFAULT_PAD, Base32Alphabet* alphabet = &STANDARD) -> String?
+  // Encode the content of src into dst, which must be properly sized.
+  fn encode_into(char[] dst, char[] src, char padding = DEFAULT_PAD, Base32Alphabet* alphabet = &STANDARD) -> String
+  // Calculate the length in bytes of the encoded data.
+  fn encode_len(sz n, char padding) -> sz
+  fn tdecode(char[] code, char padding = DEFAULT_PAD, Base32Alphabet* alphabet = &STANDARD) -> char[]?
+  fn tencode(char[] code, char padding = DEFAULT_PAD, Base32Alphabet* alphabet = &STANDARD) -> String?
+  const DEFAULT_PAD: char = 61
+  const HEX_ALPHABET: Alphabet = 0123456789ABCDEFGHIJKLMNOPQRSTUV
+  const NO_PAD: char = 0
+  const NO_PADDING: int = -1
+  const STD_ALPHABET: Alphabet = ABCDEFGHIJKLMNOPQRSTUVWXYZ234567
+  const STD_PADDING: int = 61
+
+## std::encoding::base64
+  struct Base64Alphabet
+    .encoding: char[64]
+    .reverse: char[256]
+  fn decode(Allocator allocator, char[] src, char padding = DEFAULT_PAD, Base64Alphabet* alphabet = &STANDARD) -> char[]?
+  // Decode the content of src into dst, which must be properly sized.
+  fn decode_into(char[] dst, char[] src, char padding = DEFAULT_PAD, Base64Alphabet* alphabet = &STANDARD) -> char[]?
+  // Calculate the size of the decoded data.
+  fn decode_len(sz n, char padding) -> sz?
+  fn encode(Allocator allocator, char[] src, char padding = DEFAULT_PAD, Base64Alphabet* alphabet = &STANDARD) -> String
+  // Encode the content of src into dst, which must be properly sized.
+  fn encode_into(char[] dst, char[] src, char padding = DEFAULT_PAD, Base64Alphabet* alphabet = &STANDARD) -> String
+  // Calculate the size of the encoded data.
+  fn encode_len(sz n, char padding) -> sz
+  fn tdecode(char[] code, char padding = DEFAULT_PAD, Base64Alphabet* alphabet = &STANDARD) -> char[]?
+  fn tencode(char[] code, char padding = DEFAULT_PAD, Base64Alphabet* alphabet = &STANDARD) -> String
+  const DEFAULT_PAD: char = 61
+  const NO_PAD: char = 0
+
+## std::encoding::codepage
+Private module containing the codepage tables.
+  // CodePageTable contains the bidirectional mapping tables for a single‑byte code
+  struct CodePageTable
+    .to_codepoint: char[1024]
+    .from_codepoint: char[1024]
+  enum CodePage
+    CP1250
+    CP1251
+    CP1252
+    CP1253
+    CP1254
+    CP1255
+    CP1256
+    CP1257
+    CP1258
+    CP437
+    CP737
+    CP775
+    ... (29 more)
+  // Returns a CodePage for the given charset name.
+  fn by_name(String charset_name) -> CodePage?
+  fn decode(Allocator allocator, char[] src, CodePage code_page) -> String?
+  // Decode a code-page byte buffer into a UTF‑8 string.
+  fn decode_into(char[] dst, char[] src, CodePage code_page) -> String?
+  // Compute the number of UTF‑8 bytes produced when decoding src with the given
+  fn decode_len(char[] src, CodePage code_page) -> sz
+  fn encode(Allocator allocator, char[] src, CodePage code_page, char replacement = REPLACEMENT_CHAR) -> char[]?
+  // Encode a UTF‑8 string into a single‑byte code page.
+  fn encode_into(char[] dst, char[] src, CodePage code_page, char replacement = REPLACEMENT_CHAR) -> char[]?
+  // Compute the number of output bytes produced when
+  fn encode_len(char[] src) -> sz
+  const REPLACEMENT_CHAR: char = 26
+
+## std::encoding::csv
+  struct CsvReader
+    .stream: InStream
+    .separator: String
+    macro CsvReader.@each_row(CsvReader self, int rows = int::max, void @body) -> void?
+    fn CsvReader.init(InStream stream, String separator = ",") -> void
+    fn CsvReader.read_row(CsvReader self, Allocator allocator) -> CsvRow?
+    fn CsvReader.skip_row(CsvReader self) -> void?
+    fn CsvReader.tread_row(CsvReader self) -> CsvRow?
+  struct CsvRow
+    .list: String[]
+    .row: String
+    .allocator: Allocator
+    fn CsvRow.free() -> void
+    fn CsvRow.get_col(sz col) -> String
+    fn CsvRow.len() -> sz
+    fn CsvRow.to_format(Formatter* f) -> sz?
+
+## std::encoding::hex
+  fn decode(Allocator allocator, char[] code) -> char[]?
+  // Decodes src into bytes. Returns the actual number of bytes written to dst.
+  fn decode_bytes_into(char[] dst, char[] src) -> sz?
+  fn decode_into(char[] dst, char[] src) -> char[]?
+  // Calculate the size of the decoded data.
+  macro decode_len(sz n) -> sz
+  fn encode(Allocator allocator, char[] code) -> String
+  // Encode the content of src into dst, which must be properly sized.
+  fn encode_bytes_into(char[] dst, char[] src) -> sz
+  fn encode_into(char[] dst, char[] src) -> String
+  // Calculate the size of the encoded data.
+  fn encode_len(sz n) -> sz
+  fn tdecode(char[] code) -> char[]?
+  fn tencode(char[] code) -> String
+
+## std::encoding::ini
+  enum DuplicateKeyBehavior
+    OVERWRITE
+    ERROR
+  fault INVALID_SECTION
+  fault INVALID_KEY
+  fault DUPLICATE_KEY
+  // Serialize an INI Object back to INI text.
+  fn encode(Allocator allocator, Object* obj, char delimiter = '=', bool pad_delimiter = true) -> String
+  // Parse an INI-formatted stream into an Object.
+  fn load(Allocator allocator, InStream stream, char delimiter = '=', bool trim_values = true, bool allow_global_keys = true, bool allow_hash_comments = true, bool allow_inline_comments = false, DuplicateKeyBehavior on_duplicate_keys = OVERWRITE, int* error_line = null) -> Object*?
+  // Parse an INI-formatted stream into an Object.
+  fn load_temp(InStream stream, char delimiter = '=', bool trim_values = true, bool allow_global_keys = true, bool allow_hash_comments = true, bool allow_inline_comments = false, DuplicateKeyBehavior on_duplicate_keys = OVERWRITE, int* error_line = null) -> Object*?
+  // Parse an INI-formatted stream into an Object.
+  fn parse(Allocator allocator, String string, char delimiter = '=', bool trim_values = true, bool allow_global_keys = true, bool allow_hash_comments = true, bool allow_inline_comments = false, DuplicateKeyBehavior on_duplicate_keys = OVERWRITE, int* error_line = null) -> Object*?
+  // Serialize an INI Object back to INI text.
+  fn save(OutStream stream, Object* obj, char delimiter = '=', bool pad_delimiter = true) -> long?
+  // Serialize an INI Object back to INI text.
+  fn tencode(Object* obj, char delimiter = '=', bool pad_delimiter = true) -> String
+  // Parse an INI-formatted stream into an Object.
+  fn tparse(String string, char delimiter = '=', bool trim_values = true, bool allow_global_keys = true, bool allow_hash_comments = true, bool allow_inline_comments = false, DuplicateKeyBehavior on_duplicate_keys = OVERWRITE, int* error_line = null) -> Object*?
+  const GLOBAL: String
+
+## std::encoding::json
+JSON marshaling for structs containing primitive types, enums, and nested structs.
+ Supports: String, arrays, slices, ints, floats, doubles, bools, constdefs, typedefs, enums (always marshaled as enum names), nested structs
+  enum Indent
+    NONE
+    TAB
+    SPACE_1
+    SPACE_2
+    SPACE_3
+    SPACE_4
+    SPACE_5
+  enum JsonFlavor
+    JSON
+    JSONC
+  fault UNEXPECTED_CHARACTER
+  fault INVALID_ESCAPE_SEQUENCE
+  fault INVALID_NUMBER
+  fault MAX_DEPTH_REACHED
+  fn lex_string(JsonContext* context) -> JsonTokenType?
+  fn load(Allocator allocator, InStream s, JsonFlavor flavor = JSONC) -> Object*?
+  // Marshal a struct with primitive fields and nested structs to JSON.
+  macro marshal(Allocator allocator, void value, Indent indent = NONE) -> String
+  // Marshal a struct with primitive fields and nested structs to JSON.
+  macro marshal_to(OutStream stream, void value, Indent indent = NONE) -> void?
+  macro may_serialize(void $Type) -> bool
+  fn parse(Allocator allocator, String s, JsonFlavor flavor = JSONC) -> Object*?
+  fn temp_load(InStream s, JsonFlavor flavor = JSONC) -> Object*?
+  fn tparse(String s, JsonFlavor flavor = JSONC) -> Object*?
+
+## std::encoding::pem
+  def PemHeader = void
+  // Represents a PEM object in memory, with a reference to the body data, tag value, and optional headers.
+  struct Pem
+    .allocator: Allocator
+    .tag: String
+    .headers: OrderedMap{String, String}
+    .data: char[]
+    fn Pem.add_header(String key, String value) -> void
+    // Duplicate a `Pem` container and allocate copies of its members using the given allocator.
+    fn Pem.copy(Allocator allocator) -> Pem
+    // Safely destroys a `Pem` and deallocate all of its members. This should always be explicitly called when not using `tmem`.
+    fn Pem.free() -> void
+  fault BODY_REQUIRED
+  fault HEADERS_REQUIRED
+  fault HEADER_KEY_REQUIRED
+  fault HEADER_VALUE_REQUIRED
+  fault INVALID_BODY
+  fault INVALID_FORMAT
+  fault INVALID_HEADER
+  fault INVALID_HEADER_KEY
+  fault INVALID_PRE_EB
+  fault INVALID_POST_EB
+  fault INVALID_TAG
+  fault MISMATCHED_TAG
+  fault MISSING_BODY
+  fault MISSING_HEADER_KEY
+  fault MISSING_HEADER_VALUE
+  fault MISSING_POST_EB
+  fault MISSING_TAG
+  fault TAG_REQUIRED
+  // Create a new PEM object from a few inputs. Each input (i.e., tag, data, and headers) is copied to a new memory location.
+  fn create(Allocator allocator, char[] data, String tag, PemHeader[][] args...) -> Pem
+  // Attempt to decode an input string into one or more `Pem` objects. If the input contains any non-PEM or otherwise
+  fn decode(Allocator allocator, String input) -> Pem[]?
+  // Encodes a set of input data into a `String` containing the PEM-encoded data.
+  fn encode(Allocator allocator, char[] data, String tag, PemHeader[][] headers..., bool use_crlf = false) -> String?
+  // Encode many inputs to a single output string that represents chained/sequential PEM objects in the order they were provided.
+  fn encode_many(Allocator allocator, char[][] bodies, String[] tags, PemHeader[][] pem_headers..., bool use_crlf = false) -> String?
+  // Encodes a single `Pem` object into a new PEM-formatted string.
+  fn encode_pem(Pem pem, Allocator allocator, bool use_crlf = false) -> String?
+  const DEFAULT_TAG: String = PRIVACY-ENHANCED MESSAGE
+  const DEFAULT_WIDTH: void = 64
+
+## std::encoding::xml
+XML 1.0 parser and writer based on yxml <https://dev.yorhel.nl/yxml>
+
+A native port of the yxml C library. It provides a low-level streaming
+parser (XmlReader) and a high-level DOM API (XmlDocument).
+
+Parser Characteristics:
+- Non-validating: Checks syntax/nesting but ignores DTD/Schema rules.
+- Byte-oriented: State-machine based, buffer-less design.
+- No core malloc: The internal engine requires no heap allocation.
+- ASCII-compatible: Works with UTF-8, ISO-8859-1, etc.
+
+What it DOES NOT do (Limitations):
+- No DTD/Schema validation.
+- No custom entity references (only standard &amp;, &lt;, etc.).
+- No namespace assistance (prefixes are kept in the name).
+- No XPath or XSLT.
+- No verification of Unicode ranges (assumes valid input).
+- No attribute uniqueness checks.
+- No household chores.
+
+API & Implementation:
+- XmlReader: Low-level streaming parser that works with any InStream.
+- XmlSerializer: XML serializer that integrates with any OutStream.
+- XmlDocument: High-level DOM API for loading, searching, and modifying XML.
+- Internal: The `internal::Parser` contains the core ported state-machine.
+
+Examples: https://github.com/c3lang/c3c/tree/master/resources/examples/xml/
+  def XmlNodeList = void
+  struct XmlEvent
+    .kind: XmlEventKind
+    .name: String
+    .value: String
+  struct XmlNode
+    .kind: XmlEventKind
+    .name: String
+    .value: String
+    .attributes: HashMap{String, String}
+    .children: XmlNodeList
+    .doc: XmlDocument*
+    fn XmlNode.attr(String key) -> String?
+    fn XmlNode.find(String name) -> XmlNode*?
+    fn XmlNode.find_all(String name, XmlNodeList* results) -> void
+    fn XmlNode.find_by_filter(NodeFilter filter, XmlNodeList* results) -> void
+    fn XmlNode.free(Allocator allocator) -> void
+    fn XmlNode.set_attr(String key, String value) -> void
+    fn XmlNode.set_name(String name) -> void
+    fn XmlNode.set_text(String text) -> void
+    fn XmlNode.set_value(String value) -> void
+    fn XmlNode.text() -> String?
+  struct XmlDocument
+    .root: XmlNode*
+    .allocator: Allocator
+    fn XmlDocument.free(XmlDocument* self) -> void
+  def NodeFilter = fn bool(XmlNode* node)
+  def ReadFn = void
+  def ReadByteFn = void
+  struct XmlReader
+    .stream: InStream
+    .read_fn: ReadFn
+    .allocator: Allocator
+    .parser: Parser
+    .buffer: DString
+    .tag_stack: DString
+    .io_buf_pos: sz
+    .io_buf_len: sz
+    .peeked_res: Ret
+    .io_buf: char[512]
+    fn XmlReader.close() -> void?
+    fn XmlReader.destroy() -> void
+    fn XmlReader.init(InStream stream, char[] stack, Allocator allocator = tmem) -> void?
+    fn XmlReader.low_level_next() -> Ret?
+    fn XmlReader.next_event() -> XmlEvent?
+  def WriteFn = void
+  def WriteByteFn = void
+  struct XmlSerializer
+    .stream: OutStream
+    .write_fn: WriteFn
+    .write_byte_fn: WriteByteFn
+    .in_tag: bool
+    fn XmlSerializer.add_attribute(String name, String value) -> void?
+    fn XmlSerializer.add_content(char[] bytes) -> void?
+    fn XmlSerializer.add_content_escaped(String s) -> void?
+    fn XmlSerializer.add_empty_element(String name) -> void?
+    fn XmlSerializer.end_doc() -> void?
+    fn XmlSerializer.end_element(String name, bool self_closing = false) -> void?
+    fn XmlSerializer.init(OutStream stream) -> void
+    fn XmlSerializer.serialize(XmlDocument* doc) -> void?
+    fn XmlSerializer.serialize_node(XmlNode* node) -> void?
+    fn XmlSerializer.start_doc(String version = "1.0", String encoding = "UTF-8") -> void?
+    fn XmlSerializer.start_element(String name) -> void?
+  enum XmlEventKind
+    START_ELEMENT
+    END_ELEMENT
+    ATTRIBUTE
+    TEXT
+    PI
+    COMMENT
+  fault XML_SYNTAX
+  fault XML_STACK_OVERFLOW
+  fault XML_TAG_MISMATCH
+  fault XML_INVALID_REF
+  // Loads and parses an XML document from a stream into a DOM tree.
+  fn load(Allocator allocator, InStream stream, sz stack_size = DEFAULT_STACK_SIZE) -> XmlDocument*?
+  fn new_comment_node(XmlDocument* doc, String value) -> XmlNode*
+  fn new_pi_node(XmlDocument* doc, String name, String value) -> XmlNode*
+  fn new_start_node(XmlDocument* doc, String name) -> XmlNode*
+  fn new_text_node(XmlDocument* doc, String text) -> XmlNode*
+  // Parses an XML document from a string.
+  fn parse(Allocator allocator, String s, sz stack_size = DEFAULT_STACK_SIZE) -> XmlDocument*?
+  // Loads and parses an XML document from a stream into a DOM tree using the temp allocator.
+  fn tload(InStream stream, sz stack_size = DEFAULT_STACK_SIZE) -> XmlDocument*?
+  // Parses an XML document from a string using the temp allocator.
+  fn tparse(String s, sz stack_size = DEFAULT_STACK_SIZE) -> XmlDocument*?
+  const DEFAULT_STACK_SIZE: sz = 4096

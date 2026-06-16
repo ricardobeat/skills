@@ -1,0 +1,406 @@
+C3 Standard Library — crypto
+============================================================
+
+## std::crypto
+  fn safe_compare(void* data1, void* data2, sz len) -> bool
+
+## std::crypto::aes
+This is an implementation of the AES algorithm with the ECB, CTR and CBC
+modes. The key size can be chosen among AES128, AES192, AES256.
+
+Ported from github.com/kokke/tiny-aes-c by Koni Marti.
+Constant-time bitsliced SBOX implementation based on BearSSL (bearssl.org)
+and the Boyar-Peralta circuit logic.
+
+The implementation is verified against the test vectors from the National
+Institute of Standards and Technology Special Publication 800-38A 2001 ED.
+
+Data length must be evenly divisible by 16 bytes (len % 16 == 0) unless CTR is
+used. You should pad the end of the string with zeros or use PKCS7 if this is not the case.
+For AES192/256 the key size is proportionally larger.
+
+The following example demonstrates the AES encryption of a plaintext string
+with an AES 128-bit key:
+
+```
+module app;
+import std::crypto::aes, std::io;
+fn void main()
+{
+	char[] key 	= x"2b7e151628aed2a6abf7158809cf4f3c";
+	char[] text	= x"6bc1bee22e409f96e93d7e117393172a";
+	char[16] iv = x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff";
+	Aes aes;
+	aes.init(AES128, key, iv);
+	defer aes.destroy();
+	char[] cipher = aes.encrypt(mem, text);
+	defer free(cipher);
+	assert(cipher == x"874d6191b620e3261bef6864990db6ce");
+}
+```
+  struct AesKey
+    .key_size: sz
+    .key_len: int
+    .key_exp_size: int
+    .nk: sz
+    .nr: sz
+  struct Aes
+    .type: AesKey
+    .mode: BlockMode
+    .iv: char[16]
+    .round_key: char[256]
+    .state: AesState
+    // Decrypt the data, allocating memory for the decrypted data.
+    fn Aes.decrypt(Allocator allocator, char[] in) -> char[]
+    fn Aes.decrypt_buffer(char[] in, char[] out) -> void
+    // Erases data stored in the context.
+    fn Aes.destroy() -> void
+    // Encrypt the data, allocating memory for the encrypted data.
+    fn Aes.encrypt(Allocator allocator, char[] in) -> char[]
+    fn Aes.encrypt_buffer(char[] in, char[] out) -> void
+    // Initializes the AES crypto. The initialization vector should be securely random for each encryption
+    fn Aes.init(AesType type, char[] key, char[16] iv, BlockMode mode = CTR) -> Aes*
+    // Decrypt the data, allocating temp memory for the decrypted data.
+    fn Aes.tdecrypt(char[] in) -> char[]
+    // Encrypt the data, allocating temp memory for the encrypted data.
+    fn Aes.tencrypt(char[] in) -> char[]
+  def AesState = void
+  // Block modes:
+  enum BlockMode
+    ECB
+    CBC
+    CTR
+    CTR_LE
+  // AES type: 128, 192 or 256 bits
+  enum AesType
+    AES128
+    AES192
+    AES256
+  macro is_valid_encryption_len(BlockMode mode, sz len) -> bool
+  const BLOCKLEN: void = 16
+  const COLNUM: void = 4
+
+## std::crypto::aes128
+  fn decrypt(Allocator allocator, char[16]* key, char[16] iv, char[] data) -> char[]
+  fn encrypt(Allocator allocator, char[16]* key, char[16] iv, char[] data) -> char[]
+  fn tdecrypt(char[16]* key, char[16] iv, char[] data) -> char[]
+  fn tencrypt(char[16]* key, char[16] iv, char[] data) -> char[]
+
+## std::crypto::aes192
+  fn decrypt(Allocator allocator, char[24]* key, char[16] iv, char[] data) -> char[]
+  fn encrypt(Allocator allocator, char[24]* key, char[16] iv, char[] data) -> char[]
+  fn tdecrypt(char[24]* key, char[16] iv, char[] data) -> char[]
+  fn tencrypt(char[24]* key, char[16] iv, char[] data) -> char[]
+
+## std::crypto::aes256
+  fn decrypt(Allocator allocator, char[32]* key, char[16] iv, char[] data) -> char[]
+  fn encrypt(Allocator allocator, char[32]* key, char[16] iv, char[] data) -> char[]
+  fn tdecrypt(char[32]* key, char[16] iv, char[] data) -> char[]
+  fn tencrypt(char[32]* key, char[16] iv, char[] data) -> char[]
+
+## std::crypto::argon2
+  // The Argon2 output, or "tag", is a string T bytes long.
+  struct Argon2Options
+    .algorithm: Argon2Algorithm
+    .salt: char[]
+    .key: char[]
+    .assoc: char[]
+    .lanes: uint
+    .mem_size: uint
+    .iterations: uint
+    // Allows comparison between two sets of Argon2 options.
+    fn Argon2Options.eq(Argon2Options other) -> bool
+    // Implement `Printable` interface for the options data structure.
+    fn Argon2Options.to_format(Formatter* f) -> sz?
+  // Represents a set of decoded information from an incoming Argon2 hash string.
+  struct Argon2Decoded
+    .opts: Argon2Options
+    .hash: char[]
+    .key_id: char[]
+    .version: char
+    .allocator: Allocator
+    // Allows comparisons between two decoded Argon2 hash strings.
+    fn Argon2Decoded.eq(Argon2Decoded other) -> bool
+    // Release any memory acquired by duplicating Argon2 options into this decoded structure, then zeroize.
+    fn Argon2Decoded.free() -> void
+    // Implement `Printable` for deserialized Argon2 information.
+    fn Argon2Decoded.to_format(Formatter* f) -> sz?
+  // Values for this enumeration are sourced from the spec as variable `y` in the input configuration.
+  constdef Argon2Algorithm
+  fault BAD_PARAMETER_KEY
+  fault BAD_PARAMETER_VALUE
+  fault DUPLICATE_PARAMETERS
+  fault INVALID_ALGORITHM
+  fault INVALID_BASE64
+  fault INVALID_FORMAT
+  fault INVALID_ASSOC
+  fault INVALID_HASH_ENCODING
+  fault INVALID_ITERATIONS
+  fault INVALID_KEY_ID
+  fault INVALID_MEM_SIZE
+  fault INVALID_PARALLELISM
+  fault INVALID_SALT_ENCODING
+  fault INVALID_VERSION
+  fault NOT_ENOUGH_PARAMETERS
+  fault MISSING_ITERATIONS
+  fault MISSING_MEM_SIZE
+  fault MISSING_PARALLELISM
+  // Decode a PHC String Format hash, specifically for Argon2, into usable values.
+  fn decode(Allocator allocator, String hash_str) -> Argon2Decoded?
+  // Encode a hash result and an `Argon2Options` struct into a PHC String Format output.
+  fn encode(Allocator allocator, char[] hash_value, Argon2Options options, char[] key_id = {}) -> String
+  // Perform an Argon2 hashing operation and encode its result as a PHC-SF string in one go.
+  fn hash(Allocator allocator, char[] input, Argon2Options options, char[] key_id = {}, sz out_size = 32) -> String
+  // Generate a resultant Argon2 hash based on the specified options. The size of the `outbuf` result slice
+  fn hash_raw(char[] outbuf, char[] input, Argon2Options options) -> void
+  // A simple alias of `decode` implicitly using the temp allocator.
+  macro tdecode(String hash_str) -> void
+  // A simple alias of `encode` implicitly using the temp allocator.
+  macro tencode(char[] hash_value, Argon2Options options, char key_id = {}) -> void
+  // A simple alias of `hash` implicitly using the temp allocator.
+  macro thash(char[] input, Argon2Options options, char[] key_id = {}, sz out_size = 32) -> void
+  // A simple alias of `verify` implicitly using the temp allocator.
+  macro tverify(String hash_str, char[] password, char[] key = {}, bool $rethrows = true) -> void
+  // Given a hash string and a password, verify that the password is correct.
+  macro verify(Allocator allocator, String hash_str, char[] password, char[] key = {}, bool $rethrows = true) -> void
+  const BLOCK_SIZE: sz = 1024
+  const PARAMETER_NAMES_SET: AsciiCharset = 10633823807823001954989765380701945856
+  const PARAMETER_VALUES_SET: AsciiCharset = 10633823810298881996667257685406646272
+  const USE_THREADING: bool = true
+  const VERSION: char = 19
+
+## std::crypto::chacha20
+  // A context structure used to track an ongoing ChaCha20 transformation.
+  struct ChaCha20
+    .position: sz
+    .bytes_processed: long
+    .key_stream: uint[16]
+    .key: char[32]
+    .nonce: char[12]
+    .state: uint[16]
+    // Destroy the current context structure by zeroing all fields.
+    fn ChaCha20.destroy() -> void
+    // Initialize a ChaCha20 transformation context.
+    fn ChaCha20.init(char[32] key, char[12] nonce, uint counter = 0) -> void
+    // Transform some input data using the current context structure.
+    fn ChaCha20.transform(char[] data) -> void
+  const BLOCK_SIZE: void = 64
+  const CHACHA20_NONCE_REUSE_LIMIT: void = 274877906944
+  const KEY_SIZE: void = 32
+  const MAGIC: char[] = expand 32-byte k
+  const NONCE_SIZE: void = 12
+
+## std::crypto::cshake
+  // A struct wrapping the SHAKE construct. Maintained as its own full structure for member flexibility.
+  struct CShake(<SECURITY_LEVEL>)
+    .under: Shake{SECURITY_LEVEL}
+    // Initialize the cSHAKE context.
+    fn CShake.init(<SECURITY_LEVEL>)(NistFunctionName function = NONE, String customizer = "", char runtime_rounds = DEFAULT_ROUNDS, char runtime_delimiter = DEFAULT_DELIMITER) -> void
+  // Generate and return an XOF result of the specified `$outlen_bytes`.
+  macro xof(void $security_level, void $outlen_bytes, char[] data, String customizer = "", NistFunctionName $function = NONE, void $rounds = DEFAULT_ROUNDS, void $delimiter = DEFAULT_DELIMITER) -> char[*]
+  // Generate an XOF result of `into.len` bytes and store the result in the `into` slice.
+  macro xof_into(void $security_level, char[] into, char[] data, String customizer = "", NistFunctionName $function = NONE, void $rounds = DEFAULT_ROUNDS, void $delimiter = DEFAULT_DELIMITER) -> void
+  const DEFAULT_DELIMITER: void = 4
+  const DEFAULT_ROUNDS: void = 24
+  const USABLE_LEVELS: void = shake::USABLE_LEVELS
+
+## std::crypto::dh
+  fn generate_secret(BigInt p, BigInt x, BigInt y) -> BigInt
+  fn public_key(BigInt p, BigInt g, BigInt x) -> BigInt
+
+## std::crypto::ed25519
+  def Ed25519PrivateKey = void
+  def Ed25519PublicKey = void
+  def Ed25519Signature = void
+  // Generate a public key from a private key.
+  fn public_keygen(char[] private_key) -> Ed25519PublicKey
+  // Sign a message.
+  fn sign(char[] message, char[] private_key, char[] public_key) -> Ed25519Signature
+  // Verify the signature of a message.
+  fn verify(char[] message, char[] signature, char[] public_key) -> bool
+
+## std::crypto::entropy
+  fault SECURE_RANDOM_UNAVAILABLE
+  // Returns cryptographically secure random bytes. Fails if it is unavailable.
+  fn fill(char[] buffer, bool timeout = false) -> void?
+  // Create a new byte array and fill it with random bytes from a secure, high-entropy source.
+  fn make(Allocator allocator, sz length, bool timeout = false) -> char[]?
+
+## std::crypto::keccak
+  def Keccak = void
+  // Get the constant Keccak `rate` value based on the given `F` and `SECURITY_LEVEL` attributes.
+  macro rate(void $security_level, void $f = DEFAULT_F) -> void
+  // Generate and return an XOF result of the specified `$outlen_bytes`.
+  macro xof(void $security_level, void $outlen_bytes, char[] data, void $rounds = DEFAULT_ROUNDS, void $delimiter = DEFAULT_DELIMITER) -> char[*]
+  // Generate an XOF result of `into.len` bytes and store the result in the `into` slice.
+  macro xof_into(void $security_level, char[] into, char[] data, void $rounds = DEFAULT_ROUNDS, void $delimiter = DEFAULT_DELIMITER) -> void
+  const DEFAULT_DELIMITER: void = 1
+  const DEFAULT_F: void = 1600
+  const DEFAULT_ROUNDS: void = 24
+  const SECURITY_LEVELS: sz[] = { 224, 256, 384, 512 }
+
+## std::crypto::keccak::nist
+
+## std::crypto::kmac
+  // A struct wrapping the vanilla KMAC construct. Maintained as its own full structure for member flexibility.
+  struct KmacXOF(<SECURITY_LEVEL>)
+    .k: Kmac{SECURITY_LEVEL}
+    // A wrapper initialization for the KMAC XOF construct which transparently calls the Kmac initializer.
+    fn KmacXOF.init(<SECURITY_LEVEL>)(char[] key, String customizer = "") -> void
+  // A struct wrapping the cSHAKE construct. Maintained as its own full structure for member flexibility.
+  struct Kmac(<SECURITY_LEVEL>)
+    .c: CShake{SECURITY_LEVEL}
+    .is_xof_mode: bool
+    // Override the Keccak finalization process by just squeezing the "sponge" and crystallizing.
+    fn Kmac.final(<SECURITY_LEVEL>)(char[] out) -> void
+    // Initialize the vanilla KMAC context.
+    fn Kmac.init(<SECURITY_LEVEL>)(char[] key, String customizer = "") -> void
+    // Override the Keccak squeeze process. Does NOT finalize the KMAC context being used.
+    fn Kmac.squeeze(<SECURITY_LEVEL>)(char[] out) -> void
+  // Generate and return a non-XOF KMAC hash of the specified `$outlen_bytes` length.
+  macro hash(void $security_level, void $outlen_bytes, char[] key, char[] data, String customizer = "") -> void
+  // Generate a non-XOF KMAC hash of `into.len` bytes and store the result in the `into` slice..
+  macro hash_into(void $security_level, char[] into, char[] key, char[] data, String customizer = "") -> void
+  // Generate and return an XOF KMAC hash of the specified `$outlen_bytes` length.
+  macro xof(void $security_level, void $outlen_bytes, char[] key, char[] data, String customizer = "") -> char[*]
+  // Generate an XOF KMAC hash of `into.len` bytes and store the result in the `into` slice.
+  macro xof_into(void $security_level, char[] into, char[] key, char[] data, String customizer = "") -> void
+
+## std::crypto::parallel_hash
+  // Define all context items necessary to do a ParallelHash operation, wrapping the cSHAKE construct.
+  struct ParallelHash(<SECURITY_LEVEL>)
+    .c: CShake{SECURITY_LEVEL}
+    .allocator: Allocator
+    .is_xof_mode: bool
+    .is_padded: bool
+    .block_size: sz
+    .threads: sz
+    .intermediate_xof_size: sz
+    .internal: char[]
+    .offset: sz
+    .total_len: uint128
+    // Override the default finalization process by squeezing the underlying sponge primitive into
+    fn ParallelHash.final(<SECURITY_LEVEL>)(char[] out) -> void
+    // Initialize the primary ParallelHash context object.
+    fn ParallelHash.init(<SECURITY_LEVEL>)(Allocator allocator, sz block_size = MAX_BLOCK_SIZE >> 3, sz threads = 0, String customizer = "") -> void
+    // Override the default squeeze process for this particular hash function.
+    fn ParallelHash.squeeze(<SECURITY_LEVEL>)(char[] out) -> void
+    // An alias to initialize a non-XOF-variant hash context with the temp allocator.
+    macro ParallelHash.tinit(<SECURITY_LEVEL>)(sz block_size = MAX_BLOCK_SIZE >> 3, String customizer = "", sz threads = 0) -> void
+    // Update the ParallelHash hash context with the given data.
+    fn ParallelHash.update(<SECURITY_LEVEL>)(char[] data, bool sequential = false) -> void
+  // The XOF variant of ParallelHash uses a `right_encode(0)` at the end of the input stream.
+  struct ParallelHashXOF(<SECURITY_LEVEL>)
+    .ph: ParallelHash{SECURITY_LEVEL}
+    // A wrapper initialization for the ParallelHash XOF construct which transparently calls the ParallelHash initializer.
+    macro ParallelHashXOF.init(<SECURITY_LEVEL>)(Allocator allocator, sz block_size = MAX_BLOCK_SIZE >> 3, sz threads = 0, String customizer = "") -> void
+    // An alias to initialize an XOF-variant hash context with the temp allocator.
+    macro ParallelHashXOF.tinit(<SECURITY_LEVEL>)(sz block_size = MAX_BLOCK_SIZE >> 3, String customizer = "", sz threads = 0) -> void
+  // Generate and return an non-XOF-variant ParallelHash hash of the specified `$outlen_bytes` length.
+  macro hash(void $security_level, void $outlen_bytes, Allocator allocator, char[] data, sz block_size, sz threads = 0, String customizer = "", bool sequential = false) -> void
+  // Generate an non-XOF-variant ParallelHash hash of `into.len` bytes and store the result in the `into` slice.
+  macro hash_into(void $security_level, Allocator allocator, char[] into, char[] data, sz block_size, sz threads = 0, String customizer = "", bool sequential = false) -> void
+  // An alias for ParallelHash's `hash` that implicitly uses the temp allocator for internal memory management.
+  macro thash(void $security_level, void $outlen_bytes, char[] data, sz block_size, sz threads = 0, String customizer = "", bool sequential = false) -> void
+  // An alias for ParallelHash's `hash_into` that implicitly uses the temp allocator for internal memory management.
+  macro thash_into(void $security_level, char[] into, char[] data, sz block_size, sz threads = 0, String customizer = "", bool sequential = false) -> void
+  // An alias for ParallelHash's `xof` that implicitly uses the temp allocator for internal memory management.
+  macro txof(void $security_level, void $outlen_bytes, char[] data, sz block_size, sz threads = 0, String customizer = "", bool sequential = false) -> char[*]
+  // An alias for ParallelHash's `xof_into` that implicitly uses the temp allocator for internal memory management.
+  macro txof_into(void $security_level, char[] into, char[] data, sz block_size, sz threads, String customizer = "", bool sequential = false) -> void
+  // Generate and return an XOF ParallelHash hash of the specified `$outlen_bytes` length.
+  macro xof(void $security_level, void $outlen_bytes, Allocator allocator, char[] data, sz block_size, sz threads = 0, String customizer = "", bool sequential = false) -> char[*]
+  // Generate an XOF ParallelHash hash of `into.len` bytes and store the result in the `into` slice.
+  macro xof_into(void $security_level, Allocator allocator, char[] into, char[] data, sz block_size, sz threads = 0, String customizer = "", bool sequential = false) -> void
+  const MAX_BLOCK_SIZE: void = 134217728
+  const MAX_THREADS: void = 64
+
+## std::crypto::rc4
+  struct Rc4
+    .i: uint
+    .j: uint
+    .state: char[256]
+    // Encrypt or decrypt a sequence of bytes.
+    fn Rc4.crypt(char[] in, char[] out) -> void
+    // Clear the rc4 state.
+    fn Rc4.destroy() -> void
+    // Initialize the RC4 state.
+    fn Rc4.init(char[] key) -> void
+
+## std::crypto::sha3
+  // A struct wrapping the base Keccak construct. Maintained as its own full structure for member flexibility.
+  struct Sha3(<HASH_BITS>)
+    .k: Keccak{HASH_BITS}
+    // Initialize the inner Keccak context with the SHA-3 domain-separation delimiter.
+    fn Sha3.init(<HASH_BITS>)() -> void
+  // Generate and return a SHA-3 hash. The return byte array's length is dependent upon the `$hash_bits` used.
+  macro hash(void $hash_bits, char[] data) -> char[*]
+  // Generate a SHA-3 hash into a buffer. The length of the `into` buffer determines the resultant size of the hash.
+  macro hash_into(void $hash_bits, char[] into, char[] data) -> void
+  // While SHA-3 is not vulnerable to length extension attacks, and `SHA-3(key || message)` works
+  macro hmac(void $hash_bits, sz $tag_size, char[] key, char[] data) -> char[*]
+  // While SHA-3 is not vulnerable to length extension attacks, and `SHA-3(key || message)` works
+  macro hmac_into(void $hash_bits, char[] into, char[] key, char[] data) -> void
+  // SHA-3 is not vulnerable to length extension attacks; therefore, `SHA-3(key || message)` is
+  macro simple_hmac(void $hash_bits, char[] key, char[] data) -> char[*]
+  // SHA-3 is not vulnerable to length extension attacks; therefore, `SHA-3(key || message)` is
+  macro simple_hmac_into(void $hash_bits, char[] into, char[] key, char[] data) -> void
+  const DEFAULT_DELIMITER: void = 6
+  const DIGEST_SIZES: sz[] = keccak::SECURITY_LEVELS
+
+## std::crypto::shake
+  // A structure with a variable amount of rounds and a variable compile-time delimiter value.
+  struct Shake(<SECURITY_LEVEL>)
+    .k: Keccak{SECURITY_LEVEL}
+    .is_padded: bool
+    .offset: sz
+    .buf: char[keccak::rate(SECURITY_LEVEL)]
+    // Initialize the SHAKE context.
+    fn Shake.init(<SECURITY_LEVEL>)(char rounds_override = DEFAULT_ROUNDS, char delimiter = DEFAULT_DELIMITER) -> void
+    // A SHAKE-specific override of the Keccak "squeeze" method.
+    fn Shake.squeeze(<SECURITY_LEVEL>)(char[] into) -> void
+  // Generate and return an XOF result of the specified `$outlen_bytes`.
+  macro xof(void $security_level, void $outlen_bytes, char[] data, char delimiter = DEFAULT_DELIMITER) -> char[*]
+  // Generate an XOF result of `into.len` bytes and store the result in the `into` slice.
+  macro xof_into(void $security_level, char[] into, char[] data, char delimiter = DEFAULT_DELIMITER) -> void
+  const DEFAULT_DELIMITER: void = 31
+  const DEFAULT_ROUNDS: void = 24
+  const USABLE_LEVELS: sz[] = { 128, 256 }
+
+## std::crypto::tuple_hash
+  // A struct wrapping the cSHAKE construct. Maintained as its own full structure for member flexibility.
+  struct TupleHashXOF(<SECURITY_LEVEL>)
+    .t: TupleHash{SECURITY_LEVEL}
+    // Initialize the TupleHashXOF context. This is simply a wrapper around the TupleHash `init` method.
+    fn TupleHashXOF.init(<SECURITY_LEVEL>)(String customizer = "") -> void
+  // A struct wrapping the cSHAKE construct. Maintained as its own full structure for member flexibility.
+  struct TupleHash(<SECURITY_LEVEL>)
+    .c: CShake{SECURITY_LEVEL}
+    .is_xof_mode: bool
+    // An override of the Keccak `final` method for TupleHash.
+    fn TupleHash.final(<SECURITY_LEVEL>)(char[] out) -> void
+    // Initialize the TupleHash context.
+    fn TupleHash.init(<SECURITY_LEVEL>)(String customizer = "") -> void
+    // This is the more distinct feature of TupleHash: inputs are domain-separated So, calling `th.update("abc")`
+    fn TupleHash.update(<SECURITY_LEVEL>)(char[] data, char[][] extras...) -> void
+  // Generate and return a non-XOF TupleHash result of the specified `$outlen_bytes`.
+  macro hash(void $security_level, void $outlen_bytes, char[] data, char[][] extras..., String customizer = "") -> void
+  // Generate a non-XOF TupleHash result of `into.len` bytes and store the result in `into`.
+  macro hash_into(void $security_level, char[] into, char[] data, char[][] extras..., String customizer = "") -> void
+  // Generate and return an XOF TupleHash result of the specified `$outlen_bytes`.
+  macro xof(void $security_level, void $outlen_bytes, char[] data, char[][] extras..., String customizer = "") -> char[*]
+  // Generate a non-XOF TupleHash result of `into.len` bytes and store the result in `into`.
+  macro xof_into(void $security_level, char[] into, char[] data, char[][] extras..., String customizer = "") -> void
+
+## std::crypto::turbo_shake
+  // A struct wrapping the SHAKE construct. Maintained as its own full structure for member flexibility.
+  struct TurboShake(<SECURITY_LEVEL>)
+    .s: Shake{SECURITY_LEVEL}
+    // Initialize the TurboSHAKE context.
+    fn TurboShake.init(<SECURITY_LEVEL>)(char delimiter = DEFAULT_DELIMITER) -> void
+  // Generate and return an XOF result of the specified `$outlen_bytes`.
+  macro xof(void $security_level, void $outlen_bytes, char[] data, char delimiter = DEFAULT_DELIMITER) -> char[*]
+  // Generate an XOF result of `into.len` bytes and store the result in the `into` slice.
+  macro xof_into(void $security_level, char[] into, char[] data, char delimiter = DEFAULT_DELIMITER) -> void
+  const DEFAULT_DELIMITER: void = 31
+  const DEFAULT_ROUNDS: void = 12

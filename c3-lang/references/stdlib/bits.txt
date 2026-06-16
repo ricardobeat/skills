@@ -1,0 +1,6 @@
+C3 Standard Library — bits
+============================================================
+
+## std::bits
+  macro bswap(void i) -> void
+  macro reverse(void i) -> void

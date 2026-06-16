@@ -1,0 +1,102 @@
+C3 Standard Library — termios
+============================================================
+
+## libc::termios
+  bitstruct Tc_iflags
+    .ignbrk: bool
+    .brkint: bool
+    .ignpar: bool
+    .parmrk: bool
+    .inpck: bool
+    .istrip: bool
+    .inlcr: bool
+    .igncr: bool
+    .icrnl: bool
+    .iuclc: bool
+    .ixon: bool
+    .ixany: bool
+    .ixoff: bool
+    .imaxbel: bool
+    .iutf8: bool
+  bitstruct Tc_oflags
+    .opost: bool
+    .olcuc: bool
+    .onlcr: bool
+    .ocrnl: bool
+    .onocr: bool
+    .onlret: bool
+    .ofill: bool
+    .ofdel: bool
+    .nldly: T_nldly
+    .crdly: T_crdly
+    .tabdly: T_tabdly
+    .bsdly: T_bsdly
+    .vtdly: T_vtdly
+    .ffdly: T_ffdly
+  bitstruct Tc_cflags
+    .csize: T_csize
+    .cstopb: bool
+    .cread: bool
+    .parenb: bool
+    .parodd: bool
+    .hupcl: bool
+    .clocal: bool
+    .addrb: bool
+  bitstruct Tc_lflags
+    .isig: bool
+    .icanon: bool
+    .xcase: bool
+    .echo: bool
+    .echoe: bool
+    .echok: bool
+    .echonl: bool
+    .noflsh: bool
+    .tostop: bool
+    .echoctl: bool
+    .echoprt: bool
+    .echoke: bool
+    .flusho: bool
+    .pendin: bool
+    .iexten: bool
+    .extproc: bool
+  def Cc = void
+  struct Termios
+    .c_iflag: Tc_iflags
+    .c_oflag: Tc_oflags
+    .c_cflag: Tc_cflags
+    .c_lflag: Tc_lflags
+    .c_line: Cc
+    .c_cc: Cc[32]
+    .c_ispeed: Speed
+    .c_ospeed: Speed
+    fn Termios.get_attr(Fd fd) -> int
+    fn Termios.get_ispeed() -> Speed
+    fn Termios.get_ospeed() -> Speed
+    fn Termios.set_attr(Fd fd, Tcactions optional_actions) -> int
+    fn Termios.set_ispeed(Speed speed) -> int
+    fn Termios.set_ospeed(Speed speed) -> int
+  constdef T_nldly
+  constdef T_crdly
+  constdef T_tabdly
+  constdef T_bsdly
+  constdef T_ffdly
+  constdef T_vtdly
+  constdef T_csize
+  constdef Speed
+  constdef Control_Char
+  constdef Tcactions
+  fn cfgetispeed(Termios* self) -> Speed
+  fn cfgetospeed(Termios* self) -> Speed
+  fn cfsetispeed(Termios* self, Speed speed) -> CInt
+  fn cfsetospeed(Termios* self, Speed speed) -> CInt
+  fn drain(Fd fd) -> int
+  fn flow(Fd fd, int action) -> int
+  fn flush(Fd fd, int queue_selector) -> int
+  fn send_break(Fd fd, int duration) -> int
+  fn tcdrain(Fd fd) -> CInt
+  fn tcflow(Fd fd, CInt action) -> CInt
+  fn tcflush(Fd fd, CInt queue_selector) -> CInt
+  fn tcgetattr(Fd fd, Termios* self) -> CInt
+  fn tcsendbreak(Fd fd, CInt duration) -> CInt
+  fn tcsetattr(Fd fd, Tcactions optional_actions, Termios* self) -> CInt
+  const NCCS: CInt = 32

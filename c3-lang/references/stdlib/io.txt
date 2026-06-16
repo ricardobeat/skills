@@ -1,0 +1,506 @@
+C3 Standard Library — io
+============================================================
+
+## std::io
+  enum FloatFormatting
+    FLOAT
+    EXPONENTIAL
+    ADAPTIVE
+    HEX
+  fault BAD_FORMAT
+  struct PutcharBuffer
+    .data: char[32768]
+    .len: sz
+    .should_flush: bool
+  enum SeekOrigin
+    FROM_START
+    FROM_CURSOR
+    FROM_END
+  fault ALREADY_EXISTS
+  fault BUSY
+  fault CANNOT_READ_DIR
+  fault DIR_NOT_EMPTY
+  fault PARENT_DIR_MISSING
+  fault EOF
+  fault FILE_CANNOT_DELETE
+  fault FILE_IS_DIR
+  fault FILE_IS_PIPE
+  fault FILE_NOT_DIR
+  fault FILE_NOT_FOUND
+  fault FILE_NOT_VALID
+  fault GENERAL_ERROR
+  fault ILLEGAL_ARGUMENT
+  fault INCOMPLETE_WRITE
+  fault INTERRUPTED
+  fault INVALID_POSITION
+  fault INVALID_PUSHBACK
+  fault NAME_TOO_LONG
+  fault NOT_SEEKABLE
+  fault NO_PERMISSION
+  fault OUT_OF_SPACE
+  fault OVERFLOW
+  fault PATH_COULD_NOT_BE_FOUND
+  fault READ_ONLY
+  fault SYMLINK_FAILED
+  fault TOO_MANY_DESCRIPTORS
+  fault UNEXPECTED_EOF
+  fault UNKNOWN_ERROR
+  fault UNSUPPORTED_OPERATION
+  fault WOULD_BLOCK
+  interface Printable
+  def OutputFn = fn void?(void* buffer, char c)
+  def FloatType = void
+  struct Formatter
+    .data: void*
+    .out_fn: OutputFn
+    .?: void
+    macro Formatter.first_err(fault f) -> fault
+    fn Formatter.init(OutputFn out_fn, void* data = null) -> void
+    fn Formatter.out_chars(char[] s) -> sz?
+    fn Formatter.print(String str) -> sz?
+    fn Formatter.print_char(char c) -> sz?
+    fn Formatter.print_with_function(Printable arg) -> sz?
+    fn Formatter.printf(String format, any[][] args...) -> sz?
+    fn Formatter.vprintf(String format, any[] anys) -> sz?
+  bitstruct PrintFlags
+    .zeropad: bool
+    .left: bool
+    .plus: bool
+    .space: bool
+    .hash: bool
+    .uppercase: bool
+    .precision: bool
+  fault BUFFER_EXCEEDED
+  fault INTERNAL_BUFFER_EXCEEDED
+  fault INVALID_FORMAT
+  fault NOT_ENOUGH_ARGUMENTS
+  fault INVALID_ARGUMENT
+  struct BitReader
+    .reader: InStream
+    .bits: uint
+    .len: int
+    fn BitReader.clear() -> void
+    fn BitReader.init(InStream byte_reader) -> void
+    fn BitReader.read_bits(int nbits) -> char?
+  struct BitWriter
+    .writer: OutStream
+    .bits: uint
+    .len: int
+    fn BitWriter.flush() -> void?
+    fn BitWriter.init(OutStream byte_writer) -> void
+    fn BitWriter.write_bits(uint bits, int nbits) -> void?
+  def SeekFn = fn void?(void*, long offset, SeekOrigin whence = FROM_START)
+  interface InStream
+  interface OutStream
+  def ReadByteFn = void
+  struct File
+    .file: CFile
+  struct MultiReader
+    .readers: InStream[]
+    .index: sz
+    .allocator: Allocator
+    fn MultiReader.free() -> void
+    fn MultiReader.init(Allocator allocator, InStream[][] readers...) -> MultiReader*
+    fn MultiReader.read(char[] bytes) -> sz?
+    fn MultiReader.read_byte() -> char?
+    fn MultiReader.tinit(InStream[][] readers...) -> MultiReader*
+  struct ByteBuffer
+    .allocator: Allocator
+    .max_read: sz
+    .bytes: char[]
+    .read_idx: sz
+    .write_idx: sz
+    .has_last: bool
+    fn ByteBuffer.available() -> long?
+    fn ByteBuffer.cursor() -> long?
+    fn ByteBuffer.free() -> void
+    fn ByteBuffer.grow(sz n) -> void
+    // ByteBuffer provides a streamable read/write buffer.
+    fn ByteBuffer.init(Allocator allocator, sz max_read, sz initial_capacity = 16) -> ByteBuffer*
+    fn ByteBuffer.init_with_buffer(char[] buf) -> ByteBuffer*
+    // Only the last byte of a successful read can be pushed back.
+    fn ByteBuffer.pushback_byte() -> void?
+    fn ByteBuffer.read(char[] bytes) -> sz?
+    fn ByteBuffer.read_byte() -> char?
+    fn ByteBuffer.seek(long offset, SeekOrigin whence = FROM_START) -> void?
+    macro ByteBuffer.shrink() -> void
+    fn ByteBuffer.tinit(sz max_read, sz initial_capacity = 16) -> ByteBuffer*
+    fn ByteBuffer.write(char[] bytes) -> sz?
+    fn ByteBuffer.write_byte(char c) -> void?
+  struct ReadBuffer
+    .wrapped_stream: InStream
+    .bytes: char[]
+    .read_idx: sz
+    .write_idx: sz
+    fn ReadBuffer.close() -> void?
+    // Buffer reads from a stream.
+    fn ReadBuffer.init(InStream wrapped_stream, char[] bytes) -> ReadBuffer*
+    fn ReadBuffer.read(char[] bytes) -> sz?
+    fn ReadBuffer.read_byte() -> char?
+    fn ReadBuffer.str_view() -> String
+  struct WriteBuffer
+    .wrapped_stream: OutStream
+    .bytes: char[]
+    .index: sz
+    fn WriteBuffer.close() -> void?
+    fn WriteBuffer.flush() -> void?
+    // Buffer writes to a stream. Call `flush` when done writing to the buffer.
+    fn WriteBuffer.init(OutStream wrapped_stream, char[] bytes) -> WriteBuffer*
+    fn WriteBuffer.str_view() -> String
+    fn WriteBuffer.write(char[] bytes) -> sz?
+    fn WriteBuffer.write_byte(char c) -> void?
+  struct MultiWriter
+    .writers: OutStream[]
+    .allocator: Allocator
+    fn MultiWriter.free() -> void
+    fn MultiWriter.init(Allocator allocator, OutStream[][] writers...) -> MultiWriter*
+    fn MultiWriter.tinit(OutStream[][] writers...) -> MultiWriter*
+    fn MultiWriter.write(char[] bytes) -> sz?
+    fn MultiWriter.write_byte(char c) -> void?
+  struct ByteWriter
+    .bytes: char[]
+    .index: sz
+    .allocator: Allocator
+    fn ByteWriter.array_view(ByteWriter self) -> char[]
+    fn ByteWriter.destroy() -> void?
+    fn ByteWriter.ensure_capacity(sz len) -> void?
+    fn ByteWriter.init(Allocator allocator, sz reserve = 0) -> ByteWriter*
+    fn ByteWriter.init_with_buffer(char[] data) -> ByteWriter*
+    fn ByteWriter.read_from(InStream reader) -> long?
+    fn ByteWriter.str_view() -> String
+    fn ByteWriter.tinit(sz reserve = 0) -> ByteWriter*
+    fn ByteWriter.write(char[] bytes) -> sz?
+    fn ByteWriter.write_byte(char c) -> void?
+  struct ByteReader
+    .bytes: char[]
+    .index: sz
+    fn ByteReader.available() -> long?
+    fn ByteReader.cursor() -> long?
+    fn ByteReader.init(char[] bytes) -> ByteReader*
+    fn ByteReader.len() -> long
+    fn ByteReader.pushback_byte() -> void?
+    fn ByteReader.read(char[] bytes) -> sz?
+    fn ByteReader.read_byte() -> char?
+    fn ByteReader.seek(long offset, SeekOrigin whence = FROM_START) -> void?
+    fn ByteReader.write_to(OutStream writer) -> long?
+  struct Scanner
+    .wrapped_stream: InStream
+    .buf: char[]
+    .pattern_idx: sz
+    .read_idx: sz
+    fn Scanner.close() -> void?
+    // Return and clear any remaining unscanned data.
+    fn Scanner.flush() -> char[]
+    // Scanner provides a way to read delimited data (with newlines as the default).
+    fn Scanner.init(InStream stream, char[] buffer) -> void
+    fn Scanner.read(char[] bytes) -> sz?
+    fn Scanner.read_byte() -> char?
+    // Scan the stream for the next split character and return data up to the match.
+    fn Scanner.scan(String pattern = "\n") -> char[]?
+  struct TeeReader
+    .r: InStream
+    .w: OutStream
+    fn TeeReader.init(InStream r, OutStream w) -> TeeReader*
+    fn TeeReader.read(char[] bytes) -> sz?
+    fn TeeReader.read_byte() -> char?
+  struct LimitReader
+    .wrapped_stream: InStream
+    .limit: long
+    fn LimitReader.available() -> long?
+    fn LimitReader.close() -> void?
+    fn LimitReader.init(InStream wrapped_stream, long limit) -> LimitReader*
+    fn LimitReader.read(char[] bytes) -> sz?
+    fn LimitReader.read_byte() -> char?
+  macro @is_instream(void #expr) -> bool
+  macro @is_not_instream_if_ptr(void #expr) -> bool
+  macro @is_not_outstream_if_ptr(void #expr) -> bool
+  macro @is_outstream(void #expr) -> bool
+  macro @report_fault(Formatter* f, void $fault) -> sz?
+  macro @wrap_bad(Formatter* f, void #action) -> sz?
+  // Prints using a 'printf'-style formatting string,
+  fn bprintf(char[] buffer, String format, any[][] args...) -> char[]?
+  fn copy_to(InStream in, OutStream dst, char[] buffer = {}) -> long?
+  // Print any value to stderr.
+  macro eprint(void x) -> void
+  // Prints using a 'printf'-style formatting string
+  fn eprintf(String format, any[][] args...) -> sz?
+  // Prints using a 'printf'-style formatting string,
+  fn eprintfn(String format, any[][] args...) -> sz?
+  // Print any value to stderr, appending an '\n’ after.
+  macro eprintn(void x = "") -> void
+  fn fmt_u(uint128 x, char* s) -> char*
+  fn formatter_atoa(Formatter* self, double y) -> sz?
+  fn formatter_etoa(Formatter* self, double y) -> sz?
+  fn formatter_ftoa(Formatter* self, double y) -> sz?
+  fn formatter_gtoa(Formatter* self, double y) -> sz?
+  fn formatter_pad(Formatter* f, char c, sz width, sz len) -> sz?
+  // Print a value to a stream.
+  macro fprint(void out, void x) -> sz?
+  // Prints using a 'printf'-style formatting string.
+  fn fprintf(OutStream out, String format, any[][] args...) -> sz?
+  // Prints using a 'printf'-style formatting string,
+  fn fprintfn(OutStream out, String format, any[][] args...) -> sz?
+  macro fprintn(void out, void x = "") -> sz?
+  macro is_struct_with_default_print(void $Type) -> bool
+  fn print_hex_chars(Formatter* f, char[] out, bool uppercase) -> sz?
+  // Prints using a 'printf'-style formatting string,
+  fn printfn(String format, any[][] args...) -> sz?
+  // Print any value to stdout, appending an '\n’ after.
+  macro printn(void x = "") -> void
+  macro pushback_using_seek(void s) -> void?
+  // Libc `putchar`, prints a single character to stdout.
+  fn putchar(char c) -> void
+  macro putchar_buf_size() -> sz
+  macro read_all(void stream, char[] buffer) -> sz?
+  macro read_any(void stream, any ref) -> sz?
+  macro read_be_int(void stream) -> int?
+  macro read_be_int128(void stream) -> int128?
+  macro read_be_long(void stream) -> long?
+  macro read_be_short(void stream) -> short?
+  macro read_be_uint(void stream) -> uint?
+  macro read_be_uint128(void stream) -> uint128?
+  macro read_be_ulong(void stream) -> ulong?
+  macro read_be_ushort(void stream) -> ushort?
+  macro read_buffer_to_end(void stream, char[] buffer) -> char[]?
+  macro read_byte_using_read(void s) -> char?
+  // This function will read to the end of the stream.
+  macro read_fully(Allocator allocator, void stream) -> char[]?
+  macro read_le_int(void stream) -> int?
+  macro read_le_int128(void stream) -> int128?
+  macro read_le_long(void stream) -> long?
+  macro read_le_short(void stream) -> short?
+  macro read_le_uint(void stream) -> uint?
+  macro read_le_uint128(void stream) -> uint128?
+  macro read_le_ulong(void stream) -> ulong?
+  macro read_le_ushort(void stream) -> ushort?
+  macro read_short_bytearray(void stream, Allocator allocator) -> char[]?
+  macro read_tiny_bytearray(void stream, Allocator allocator) -> char[]?
+  macro read_using_read_byte(void s, char[] buffer) -> sz?
+  macro read_varint(void stream, void x_ptr) -> sz?
+  // Read from a stream (default is stdin) to the next "\n"
+  macro readline(Allocator allocator, void stream = io::stdin(), sz limit = 0) -> String?
+  // Reads a string, see `readline`, the data is passed to an outstream
+  macro readline_to_stream(void out_stream, void in_stream = io::stdin(), sz limit = 0) -> sz?
+  macro skip(void stream, sz bytes) -> void?
+  // Get standard err.
+  fn stderr() -> File*
+  // Get standard in.
+  fn stdin() -> File*
+  // Get standard out.
+  fn stdout() -> File*
+  // Introspect a struct and print it to a formatter
+  macro struct_to_format(void value, Formatter* f, bool $force_dump) -> sz?
+  // Returns a reader that implements InStream and that will write any data read
+  macro tee_reader(InStream r, OutStream w) -> TeeReader
+  // Reads a string, see `readline`, except the it is allocated
+  macro treadline(void stream = io::stdin(), sz limit = 0) -> String?
+  // Wrap bytes for reading using io functions.
+  fn wrap_bytes(char[] bytes) -> ByteReader
+  // Write an entire buffer.
+  macro write_all(void stream, char[] buffer) -> sz?
+  macro write_any(void stream, any ref) -> sz?
+  macro write_be_int(void stream, int s) -> void?
+  macro write_be_int128(void stream, int128 s) -> void?
+  macro write_be_long(void stream, long s) -> void?
+  macro write_be_short(void stream, short s) -> void?
+  macro write_be_uint(void stream, uint s) -> void?
+  macro write_be_uint128(void stream, uint128 s) -> void?
+  macro write_be_ulong(void stream, ulong s) -> void?
+  macro write_be_ushort(void stream, ushort s) -> void?
+  macro write_byte_using_write(void s, char c) -> void?
+  macro write_le_int(void stream, int s) -> void?
+  macro write_le_int128(void stream, int128 s) -> void?
+  macro write_le_long(void stream, long s) -> void?
+  macro write_le_short(void stream, short s) -> void?
+  macro write_le_uint(void stream, uint s) -> void?
+  macro write_le_uint128(void stream, uint128 s) -> void?
+  macro write_le_ulong(void stream, ulong s) -> void?
+  macro write_le_ushort(void stream, ushort s) -> void?
+  macro write_short_bytearray(void stream, char[] data) -> sz?
+  macro write_tiny_bytearray(void stream, char[] data) -> sz?
+  macro write_using_write_byte(void s, char[] bytes) -> sz?
+  macro write_varint(void stream, void x) -> sz?
+  const PRINTF_NTOA_BUFFER_SIZE: int = 256
+  const WRITER_BITS: int = 24
+  const XDIGITS_H: char[16] = 0123456789ABCDEF
+  const XDIGITS_L: char[16] = 0123456789abcdef
+
+## std::io::file
+  fn delete(String filename) -> void?
+  fn exists(String file) -> bool
+  fn from_handle(CFile file) -> File
+  fn get_size(String path) -> long?
+  fn is_dir(String path) -> bool
+  fn is_file(String path) -> bool
+  fn last_modified(String filename) -> Time?
+  // Loads a file into memory
+  fn load(Allocator allocator, String filename) -> char[]?
+  // Load up to buffer.len characters. Returns io::OVERFLOW if the file is longer
+  fn load_buffer(String filename, char[] buffer) -> char[]?
+  fn load_path(Allocator allocator, Path path) -> char[]?
+  fn load_path_temp(Path path) -> char[]?
+  fn load_temp(String filename) -> char[]?
+  // Maps a region of an already-opened file into memory
+  fn mmap_file(File file, sz offset = 0, sz len = 0, VirtualMemoryAccess access = READ, bool shared = false) -> FileMmap?
+  // Maps a region of the given file into memory
+  fn mmap_open(String filename, String mode, sz offset = 0, sz len = 0, VirtualMemoryAccess access = READ, bool shared = false) -> FileMmap?
+  fn open(String filename, String mode) -> File?
+  fn open_path(Path path, String mode) -> File?
+  // Save the data to a file. Not atomic.
+  fn save(String filename, char[] data) -> void?
+  fn set_modified_time(String path, Time_t time) -> void?
+
+## std::io::file::mmap
+  struct FileMmap
+    .file: File
+    .vm: VirtualMemory
+    .offset: sz
+    .len: sz
+    // Provides a slice of bytes to the expected mapped range discarding the extra bytes due to misaligment of offset and/or size.
+    fn FileMmap.bytes() -> char[]
+    // Destroys the underlying VirtualMemory object ie. calls munmap()"
+    fn FileMmap.destroy() -> void?
+
+## std::io::os
+  struct Utimbuf
+    .actime: Time_t
+    .modtime: Time_t
+  enum NativeSystemDir
+    DESKTOP
+    DOCUMENTS
+    VIDEOS
+    MUSIC
+    DOWNLOADS
+    PICTURES
+    TEMPLATES
+    PUBLIC_SHARE
+    SAVED_GAMES
+    SCREENSHOTS
+  macro getcwd(Allocator allocator) -> String?
+  macro native_chdir(Path path) -> void?
+  fn native_fflush(CFile file) -> void?
+  fn native_file_or_dir_exists(String path) -> bool
+  fn native_file_size(String path) -> long?
+  fn native_fopen(String filename, String mode) -> void*?
+  fn native_fputc(CInt c, CFile stream) -> void?
+  fn native_fread(CFile file, char[] buffer) -> sz?
+  fn native_freopen(void* file, String filename, String mode) -> void*?
+  fn native_fseek(void* file, long offset, SeekOrigin seek_mode) -> void?
+  fn native_ftell(CFile file) -> long?
+  fn native_fwrite(CFile file, char[] buffer) -> sz?
+  fn native_get_modified_time(String path) -> Time_t?
+  fn native_home_directory(Allocator allocator) -> Path?
+  fn native_is_dir(String path) -> bool
+  fn native_is_file(String path) -> bool
+  fn native_ls(Path dir, bool no_dirs, bool no_symlinks, String mask, Allocator allocator) -> PathList?
+  macro native_mkdir(Path path, MkdirPermissions permissions) -> bool?
+  fn native_remove(String filename) -> void?
+  macro native_rmdir(Path path) -> bool?
+  fn native_rmtree(Path dir) -> void?
+  fn native_set_modified_time(String filename, Time_t time) -> void?
+  fn native_stat(Stat* stat, String path) -> void?
+  fn native_temp_directory(Allocator allocator) -> Path?
+  fn native_user_directory(Allocator allocator, NativeSystemDir dir) -> Path?
+  fn utime(char* filename, void* times) -> int
+  const MAX_CWD: void = 65536
+
+## std::io::path
+  def Path = void
+  distinct type PathCommon
+    fn PathCommon.free(PathCommon self, Allocator allocator) -> void
+    fn PathCommon.has_suffix(PathCommon self, String str) -> bool
+  distinct type PathWin
+    // Append one or more strings to the current path.
+    fn PathWin.append(PathWin self, Allocator allocator, String[][] parts..., String extension = "") -> PathWin?
+    fn PathWin.basename(PathWin self) -> String
+    fn PathWin.copy(PathWin self, Allocator allocator) -> PathWin
+    fn PathWin.dirname(PathWin self) -> String
+    fn PathWin.extension(PathWin self) -> String?
+    // Test if the path has the given extension, so given the path C:\foo\bar.c3
+    fn PathWin.has_extension(PathWin self, String extension) -> bool
+    fn PathWin.is_absolute(PathWin self) -> bool?
+    // Get the path of the parent. This does not allocate, but returns a slice
+    fn PathWin.parent(PathWin self) -> PathWin?
+    fn PathWin.root_directory(PathWin self) -> String
+    fn PathWin.tappend(PathWin self, String[][] parts..., String extension = "") -> PathWin?
+    fn PathWin.tcopy(PathWin self) -> PathWin
+    fn PathWin.volume_name(PathWin self) -> String
+  distinct type PathPosix
+    fn PathPosix.absolute(PathPosix self, Allocator allocator) -> Path?
+    // Append one or more strings to the current path.
+    fn PathPosix.append(PathPosix self, Allocator allocator, String[][] parts..., String extension = "") -> PathPosix?
+    fn PathPosix.basename(PathPosix self) -> String
+    fn PathPosix.copy(PathPosix self, Allocator allocator) -> PathPosix
+    fn PathPosix.dirname(PathPosix self) -> String
+    fn PathPosix.extension(PathPosix self) -> String?
+    // Test if the path has the given extension, so given the path /foo/bar.c3
+    fn PathPosix.has_extension(PathPosix self, String extension) -> bool
+    fn PathPosix.is_absolute(PathPosix self) -> bool?
+    // Get the path of the parent. This does not allocate, but returns a slice
+    fn PathPosix.parent(PathPosix self) -> PathPosix?
+    fn PathPosix.root_directory(PathPosix self) -> String
+    fn PathPosix.tappend(PathPosix self, String[][] parts..., String extension = "") -> PathPosix?
+    fn PathPosix.tcopy(PathPosix self) -> PathPosix
+    fn PathPosix.volume_name(PathPosix self) -> String
+    // Walk the path recursively. PathWalker is run on every file and
+    fn PathPosix.walk(PathPosix self, PathWalker w, void* data) -> bool?
+  def PathList = void
+  def PathWalker = fn bool?(Path, bool is_dir, void*)
+  def TraverseCallback = fn bool?(Path, bool is_dir, any data)
+  constdef PathSeparator
+  enum PathEnv
+    WIN32
+    POSIX
+  enum MkdirPermissions
+    NORMAL
+    USER_ONLY
+    USER_AND_ADMIN
+  fault INVALID_PATH
+  fault NO_PARENT
+  macro @is_pathlike(void #path) -> bool
+  macro chdir(void path) -> void?
+  fn cwd(Allocator allocator) -> Path?
+  fn delete(PathCommon path) -> void?
+  fn desktop_directory(Allocator allocator) -> Path?
+  fn documents_directory(Allocator allocator) -> Path?
+  fn downloads_directory(Allocator allocator) -> Path?
+  fn exists(Path path) -> bool
+  fn file_size(Path path) -> long?
+  fn for_posix(Allocator allocator, String path) -> PathPosix?
+  fn for_windows(Allocator allocator, String path) -> PathWin?
+  fn from_wstring(Allocator allocator, WString path) -> Path?
+  fn home_directory(Allocator allocator) -> Path?
+  fn is_dir(Path path) -> bool
+  fn is_file(Path path) -> bool
+  macro is_posix_separator(char c) -> bool
+  macro is_reserved_path_char(char c, PathEnv path_env = DEFAULT_ENV) -> bool
+  macro is_reserved_win32_path_char(char c) -> bool
+  macro is_separator(char c, PathEnv path_env = DEFAULT_ENV) -> bool
+  macro is_win32_separator(char c) -> bool
+  // List directory contents.
+  fn ls(Allocator allocator, Path dir, bool no_dirs = false, bool no_symlinks = false, String mask = "", bool recursive = false, bool relative = true, Path rebase = (Path)"") -> PathList?
+  // Create a directory on a given path, optionally recursive.
+  macro mkdir(void path, bool recursive = false, MkdirPermissions permissions = NORMAL) -> bool?
+  fn music_directory(Allocator allocator) -> Path?
+  // Creates a new path.
+  fn new(Allocator allocator, String path) -> Path?
+  fn normalize(String path_str, PathEnv path_env = DEFAULT_ENV) -> String?
+  fn pictures_directory(Allocator allocator) -> Path?
+  fn public_share_directory(Allocator allocator) -> Path?
+  // Tries to delete directory, which must be empty.
+  macro rmdir(void path) -> bool?
+  // Like [rmdir] but deletes a directory even if it contains items.
+  fn rmtree(Path path) -> void?
+  fn saved_games_directory(Allocator allocator) -> Path?
+  fn screenshots_directory(Allocator allocator) -> Path?
+  fn tcwd() -> Path?
+  fn temp_directory(Allocator allocator) -> Path?
+  fn templates_directory(Allocator allocator) -> Path?
+  // Creates a new path using the temp allocator.
+  fn tnew(String path) -> Path?
+  // Walk the path recursively. TraverseCallback is run for every file and
+  fn traverse(Path path, TraverseCallback callback, any data) -> bool?
+  fn videos_directory(Allocator allocator) -> Path?
+  const DEFAULT_ENV: PathEnv = POSIX
+  const PREFERRED_SEPARATOR: PathSeparator = 47
+  const RESERVED_PATH_CHAR_POSIX: bool[256] = { [0] = true, ['/'] = true, }

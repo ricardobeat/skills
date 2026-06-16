@@ -1,0 +1,1134 @@
+C3 Standard Library — core
+============================================================
+
+## std::core::array
+  // A slice2d allows slicing an array like int[10][10] into an arbitrary "int[][]"-like counterpart
+  struct Slice2d(<Type>)
+    .ptr: Type*
+    .inner_len: sz
+    .ystart: sz
+    .ylen: sz
+    .xstart: sz
+    .xlen: sz
+    // Step through each element of the slice.
+    macro Slice2d.@each(<Type>)(void @body) -> void
+    // Step through each element of the slice *by reference*
+    macro Slice2d.@each_ref(<Type>)(void @body) -> void
+    fn Slice2d.count(<Type>)() -> sz
+    // Get the value at a particular x/y position in the slice.
+    macro Slice2d.get_coord(<Type>)(void self, sz[<2>] coord) -> Type
+    // Get a pointer to the value at a particular x/y position in the slice.
+    macro Slice2d.get_coord_ref(<Type>)(void self, sz[<2>] coord) -> Type*
+    // Return a row as a slice.
+    macro Slice2d.get_row(<Type>)(void self, sz idy) -> Type[]
+    // Get the value at a particular x/y position in the slice.
+    macro Slice2d.get_xy(<Type>)(void self, void x, void y) -> Type
+    // Get the value at a particular x/y position in the slice by reference.
+    macro Slice2d.get_xy_ref(<Type>)(void self, void x, void y) -> Type*
+    fn Slice2d.len(<Type>)() -> sz
+    // Set the ´value at a particular x/y position in the slice.
+    macro Slice2d.set_coord(<Type>)(void self, sz[<2>] coord, Type value) -> void
+    // Set the value at a particular x/y position in the slice.
+    macro Slice2d.set_xy(<Type>)(void self, void x, void y, Type value) -> void
+    // Reslice a slice2d returning a new slice.
+    fn Slice2d.slice(<Type>)(sz x = 0, sz xlen = 0, sz y = 0, sz ylen = 0) -> Slice2d
+  // Returns `true` if _all_ elements of the input array return `true` when
+  macro @all(void array, void #predicate) -> bool
+  // Returns `true` if _any_ element of the input array returns `true` when
+  macro @any(void array, void #predicate) -> bool
+  // Applies a predicate function to each element of an input array and returns a new array
+  macro @filter(Allocator allocator, void array, void #predicate) -> void
+  // Applies a given predicate function to each element of an array and returns a new
+  macro @indices_of(Allocator allocator, void array, void #predicate) -> sz[]
+  // Apply a product operator (*) to an identity value across a span of array elements
+  macro @product(void array, void identity_value = 1) -> void
+  // Apply a reduction/folding operation to an iterable type. This walks along the input array
+  macro @reduce(void array, void identity, void #operation) -> void
+  // Apply a summation operator (+) to an identity value across a span of array elements
+  macro @sum(void array, void identity_value = 0) -> void
+  // Array `@filter` using the temp allocator.
+  macro @tfilter(void array, void #predicate) -> void
+  // Array `@indices_of` using the temp allocator.
+  macro @tindices_of(void array, void #predicate) -> sz[]
+  // Array 'zip' using the temp allocator.
+  macro @tzip(void left, void right, void #operation, void fill_with) -> void
+  // Zip together two separate arrays/slices into a single array of Pairs or return values. Values will
+  macro @zip(Allocator allocator, void left, void right, void #operation, void fill_with) -> void
+  // Apply an operation to each element of two slices or arrays and store the results of
+  macro @zip_into(void left, void right, void #operation) -> void
+  // Concatenate two arrays or slices, returning a slice containing the concatenation of them.
+  macro concat(Allocator allocator, void arr1, void arr2) -> void
+  // Returns true if the array contains at least one element, else false
+  macro contains(void array, void element) -> bool
+  // Extract a copy of all even-index elements from an input array.
+  macro even(Allocator allocator, void array) -> void
+  // Return the first index of element found in the array, searching from the start.
+  macro index_of(void array, void element) -> sz?
+  // Extract a copy of all odd-index elements from an input array.
+  macro odd(Allocator allocator, void array) -> void
+  // Return the first index of element found in the array, searching in reverse from the end.
+  macro rindex_of(void array, void element) -> sz?
+  // Slice a 2d array and create a Slice2d from it.
+  macro slice2d(void array_ptr, void x = 0, void xlen = 0, void y = 0, void ylen = 0) -> void
+  // Concatenate two arrays or slices, returning a slice containing the concatenation of them,
+  macro tconcat(void arr1, void arr2) -> void
+  // Unlace or partition an input list into its component parts such that `[a, b, c, d, e]` becomes
+  macro unlace(Allocator allocator, void array, void left, void right) -> void
+
+## std::core::ascii
+This module contains utils for handling ASCII characters. They only operate on
+ characters corresponding to 0-127.
+  distinct type AsciiCharset
+    macro AsciiCharset.@contains(AsciiCharset $set, char $c) -> bool
+    macro AsciiCharset.contains(AsciiCharset set, char c) -> bool
+  macro @combine_sets(AsciiCharset $first, AsciiCharset[][] $sets...) -> AsciiCharset
+  macro @create_set(String $string) -> AsciiCharset
+  macro @is_alnum(void c) -> bool
+  macro @is_alpha(void c) -> bool
+  macro @is_bdigit(void c) -> bool
+  macro @is_blank(void c) -> bool
+  macro @is_cntrl(void c) -> bool
+  macro @is_digit(void c) -> bool
+  macro @is_graph(void c) -> bool
+  macro @is_lower(void c) -> bool
+  macro @is_odigit(void c) -> bool
+  macro @is_print(void c) -> bool
+  macro @is_punct(void c) -> bool
+  macro @is_space(void c) -> bool
+  macro @is_upper(void c) -> bool
+  macro @is_xdigit(void c) -> bool
+  macro @to_lower(void c) -> char
+  macro @to_upper(void c) -> char
+  fn combine_sets(AsciiCharset first, AsciiCharset[][] sets...) -> AsciiCharset
+  fn create_set(String string) -> AsciiCharset
+  const ALPHANUMERIC_SET: AsciiCharset = 10633823810298881996667002598709002240
+  const ALPHA_LOWER_SET: AsciiCharset = 10633823807823001954701781295154855936
+  const ALPHA_SET: AsciiCharset = 10633823810298881996379053697534001152
+  const ALPHA_UPPER_SET: AsciiCharset = 2475880041677272402379145216
+  const NUMBER_SET: AsciiCharset = 287948901175001088
+  const WHITESPACE_SET: AsciiCharset = 4294983168
+
+## std::core::bitorder
+  bitstruct ShortBE
+    .val: short
+  bitstruct UShortBE
+    .val: ushort
+  bitstruct IntBE
+    .val: int
+  bitstruct UIntBE
+    .val: uint
+  bitstruct LongBE
+    .val: long
+  bitstruct ULongBE
+    .val: ulong
+  bitstruct Int128BE
+    .val: int128
+  bitstruct UInt128BE
+    .val: uint128
+  bitstruct ShortLE
+    .val: short
+  bitstruct UShortLE
+    .val: ushort
+  bitstruct IntLE
+    .val: int
+  bitstruct UIntLE
+    .val: uint
+  bitstruct LongLE
+    .val: long
+  bitstruct ULongLE
+    .val: ulong
+  bitstruct Int128LE
+    .val: int128
+  bitstruct UInt128LE
+    .val: uint128
+  macro @is_array_or_slice_of_char(void #bytes) -> bool
+  macro @is_arrayptr_or_slice_of_char(void #bytes) -> bool
+  macro is_bitorder(void $Type) -> bool
+  macro load_be(void bytes) -> void
+  macro load_le(void bytes) -> void
+  macro read(void bytes, void $Type) -> void
+  macro store_be(void* dst, void value) -> void
+  macro store_le(void* dst, void value) -> void
+  macro write(void x, void bytes, void $Type) -> void
+
+## std::core::cpudetect
+  struct CpuId
+    .eax: uint
+    .ebx: uint
+    .ecx: uint
+    .edx: uint
+  enum X86Feature
+    ADX
+    AES
+    AMX_AVX512
+    AMX_FP8
+    AMX_MOVRS
+    AMX_TF32
+    AMX_TRANSPOSE
+    AMX_BF16
+    AMX_COMPLEX
+    AMX_FP16
+    AMX_INT8
+    AMX_TILE
+    ... (102 more)
+  fn add_feature_if_bit(X86Feature feature, uint register, int bit) -> void
+  // Check whether a given CPU feature is set.
+  macro has_cpu_flag(X86Feature f) -> bool
+  fn x86_cpuid(uint eax, uint ecx = 0) -> CpuId
+  fn x86_initialize_cpu_features() -> void
+
+## std::core::dstring
+  // The DString offers a dynamic string builder.
+  distinct type DString
+    macro DString.append(void value) -> void
+    fn DString.append_bytes(char[] bytes) -> void
+    fn DString.append_char(char c) -> void
+    fn DString.append_char32(Char32 c) -> sz
+    fn DString.append_char_repeat(char c, sz times) -> void
+    fn DString.append_dstring(DString str) -> void
+    // Same as DString.append, but may be faster due to inlining.
+    macro DString.append_inline(void value) -> void
+    macro DString.append_repeat(void c, sz times) -> void
+    fn DString.append_string(String str) -> void
+    fn DString.append_string_repeat(String c, sz times) -> void
+    fn DString.append_utf32(Char32[] chars) -> sz
+    fn DString.appendf(String format, any[][] args...) -> sz?
+    fn DString.appendfn(String format, any[][] args...) -> sz?
+    fn DString.capacity(DString self) -> sz
+    fn DString.char_at(DString self, sz index) -> char
+    fn DString.char_ref(sz index) -> char*
+    fn DString.chop(DString self, sz new_size) -> void
+    fn DString.clear(DString self) -> void
+    fn DString.concat(DString self, Allocator allocator, DString b) -> DString
+    fn DString.copy(DString self, Allocator allocator) -> DString
+    fn DString.copy_str(DString self, Allocator allocator) -> String
+    fn DString.copy_utf32(Allocator allocator) -> Char32[]
+    fn DString.copy_zstr(DString self, Allocator allocator) -> ZString
+    macro DString.data(DString self) -> StringData*
+    fn DString.delete(sz start, sz len = 1) -> void
+    fn DString.delete_range(sz start, sz end) -> void
+    fn DString.equals(DString self, DString other_string) -> bool
+    fn DString.free() -> void
+    // Initialize the DString with a particular allocator.
+    fn DString.init(Allocator allocator, sz capacity = MIN_CAPACITY) -> DString
+    macro DString.insert_at(sz index, void value) -> void
+    fn DString.insert_char32_at(sz index, Char32 c) -> sz
+    fn DString.insert_char_at(sz index, char c) -> void
+    fn DString.insert_chars_at(sz index, String s) -> void
+    fn DString.insert_string_at(sz index, DString str) -> void
+    fn DString.insert_utf32_at(sz index, Char32[] chars) -> sz
+    fn DString.len() -> sz
+    fn DString.less(DString self, DString other_string) -> bool
+    fn DString.read_from_stream(InStream reader) -> sz?
+    fn DString.replace(String needle, String replacement) -> void
+    fn DString.replace_char(DString self, char ch, char replacement) -> void
+    fn DString.reserve(sz addition) -> void
+    fn DString.reverse(DString self) -> void
+    fn DString.set(DString self, sz index, char c) -> void
+    fn DString.str_view(DString self) -> String
+    fn DString.tconcat(DString self, DString b) -> DString
+    fn DString.tcopy() -> DString
+    fn DString.tcopy_str(DString self) -> String
+    // Initialize the DString with the temp allocator. Note that if the dstring is never
+    fn DString.tinit(sz capacity = MIN_CAPACITY) -> DString
+    fn DString.write(char[] buffer) -> sz?
+    fn DString.write_byte(char c) -> void?
+    fn DString.zstr_view() -> ZString
+  distinct type DStringOpaque
+  macro _reserve_inline(DString* self, sz addition) -> void
+  fn append_fn(void* data, char c) -> void?
+  fn join(Allocator allocator, String[] s, String joiner) -> DString
+  fn new(Allocator allocator, String c = "") -> DString
+  fn new_with_capacity(Allocator allocator, sz capacity) -> DString
+  fn temp(String s = "") -> DString
+  fn temp_with_capacity(sz capacity) -> DString
+
+## std::core::env
+  enum CompilerOptLevel
+    O0
+    O1
+    O2
+    O3
+  enum MemoryEnvironment
+    NORMAL
+    SMALL
+    TINY
+    NONE
+  enum OsType
+    UNKNOWN
+    NONE
+    ANANAS
+    CLOUD_ABI
+    DRAGON_FLY
+    FREEBSD
+    FUCHSIA
+    IOS
+    KFREEBSD
+    LINUX
+    PS3
+    MACOS
+    ... (25 more)
+  enum ArchType
+    UNKNOWN
+    ARM
+    ARMB
+    AARCH64
+    AARCH64_BE
+    AARCH64_32
+    ARC
+    AVR
+    BPFEL
+    BPFEB
+    HEXAGON
+    MIPS
+    ... (40 more)
+  macro os_is_darwin() -> bool
+  macro os_is_posix() -> bool
+
+## std::core::log
+  distinct type LogCategory
+  distinct type LogTag
+  interface Logger
+  struct NullLogger
+    .dummy: void*
+    fn NullLogger.log(LogPriority priority, LogCategory category, LogTag tag, String file, String function, int line, String fmt, any[] args) -> void
+  struct MultiLogger
+    .loggers: Logger[]
+    fn MultiLogger.log(LogPriority priority, LogCategory category, LogTag tag, String file, String function, int line, String fmt, any[] args) -> void
+  enum LogPriority
+    VERBOSE
+    DEBUG
+    INFO
+    WARN
+    ERROR
+    CRITICAL
+  macro @category_scope(LogCategory new_category, void @body) -> void
+  macro @tag_scope(String tag_prefix = "", void @body) -> void
+  macro call_log(LogPriority prio, LogCategory category, String fmt, any[][] args...) -> void
+  fn call_log_internal(LogPriority prio, LogCategory category, String file, String func, int line, String fmt, any[] args) -> void
+  fn create_tag(String tag_prefix) -> LogTag
+  macro critical(String fmt, LogCategory category = default_category) -> void
+  macro debug(String fmt, LogCategory category = default_category) -> void
+  macro error(String fmt, LogCategory category = default_category) -> void
+  fn get_category_name(LogCategory category) -> String?
+  fn get_priority_for_category(LogCategory category) -> LogPriority
+  macro info(String fmt, LogCategory category = default_category) -> void
+  macro init() -> void
+  macro push_tag(String tag_prefix = "") -> void
+  fn set_category_name(LogCategory category, String name) -> void
+  fn set_logger(Logger logger) -> void
+  fn set_priority_all(LogPriority new_priority) -> void
+  fn set_priority_for_category(LogCategory category, LogPriority new_priority) -> void
+  macro verbose(String fmt, LogCategory category = default_category) -> void
+  macro warn(String fmt, LogCategory category = default_category) -> void
+  const CATEGORY_APPLICATION: LogCategory = 0
+  const CATEGORY_ASSERT: LogCategory = 12
+  const CATEGORY_AUDIO: LogCategory = 3
+  const CATEGORY_CRASH: LogCategory = 13
+  const CATEGORY_CUSTOM_START: LogCategory = 100
+  const CATEGORY_ERROR: LogCategory = 11
+  const CATEGORY_INPUT: LogCategory = 6
+  const CATEGORY_KERNEL: LogCategory = 2
+  const CATEGORY_NETWORK: LogCategory = 7
+  const CATEGORY_RENDER: LogCategory = 5
+  const CATEGORY_SECURITY: LogCategory = 9
+  const CATEGORY_SOCKET: LogCategory = 8
+  const CATEGORY_STATS: LogCategory = 14
+  const CATEGORY_SYSTEM: LogCategory = 1
+  const CATEGORY_TEST: LogCategory = 10
+  const CATEGORY_VIDEO: LogCategory = 4
+  const FULL_LOG: void = true
+
+## std::core::main_stub
+  macro @_main_runner(void #m, int argc, char** argv) -> int
+  macro @main_args(void #m, int argc, char** argv) -> int
+  macro @main_no_args(void #m, int, char**) -> int
+
+## std::core::mem
+  // All possible atomic orderings
+  enum AtomicOrdering
+    NOT_ATOMIC
+    UNORDERED
+    RELAXED
+    ACQUIRE
+    RELEASE
+    ACQUIRE_RELEASE
+    SEQ_CONSISTENT
+  fault OUT_OF_MEMORY
+  fault INVALID_ALLOC_SIZE
+  // Assert on memory leak in the scope of the macro body.
+  macro @assert_leak(void $report = true, void @body) -> void
+  macro @atomic_load(void #x, AtomicOrdering $ordering = SEQ_CONSISTENT, void $volatile = false) -> void
+  macro @atomic_store(void #x, void value, AtomicOrdering $ordering = SEQ_CONSISTENT, void $volatile = false, void $alignment = 0) -> void
+  macro @clone(void value) -> void
+  macro @clone_aligned(void value) -> void
+  macro @clone_slice(void value) -> void
+  // Load values from a pointer vector.
+  macro @gather_aligned(void ptrvec, bool[<*>] mask, void passthru, sz $alignment) -> void
+  // Load a vector from memory according to a mask.
+  macro @masked_load_aligned(void ptr, bool[<*>] mask, void passthru, sz $alignment) -> void
+  macro @masked_store_aligned(void ptr, void value, bool[<*>] mask, sz $alignment) -> void
+  // Create a new temporary allocator.
+  macro @pool(sz reserve = 0, void @body) -> void
+  macro @pool_init(Allocator allocator, sz pool_size, sz reserve_size = allocators::temp_allocator_reserve_size, sz min_size = allocators::temp_allocator_min_size, sz realloc_size = allocators::temp_allocator_realloc_size, void @body) -> void
+  // Run the tracking allocator in the scope, then
+  macro @report_heap_allocs_in_scope(void $enabled = true, void @body) -> void
+  macro @scatter_aligned(void ptrvec, void value, bool[<*>] mask, sz $alignment) -> void
+  // Run with a specific allocator inside of the macro body.
+  macro @scoped(Allocator allocator, void @body) -> void
+  // Allocate [size] bytes on the stack to use for allocation,
+  macro @stack_mem(sz $size, void @body) -> void
+  macro @stack_pool(sz $size, void @body) -> void
+  macro @tclone(void value) -> void
+  macro @tclone_slice(void value) -> void
+  // Takes the address of a possibly unaligned variable or member,
+  macro @unaligned_addr(void #arg) -> void
+  macro @volatile_load(void #x) -> void
+  macro @volatile_store(void #x, void value) -> void
+  fn aligned_offset(sz offset, sz alignment) -> sz
+  macro aligned_pointer(void* ptr, sz alignment) -> void*
+  macro alloc(void $Type) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro alloc_aligned(void $Type) -> void
+  macro alloc_array(void $Type, sz elements) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro alloc_array_aligned(void $Type, sz elements) -> void
+  macro alloc_with_padding(void $Type, sz padding) -> void
+  fn calloc(sz size) -> void*
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  fn calloc_aligned(sz size, sz alignment) -> void*
+  macro clear(void* dst, sz len, sz $dst_align = 0, bool $is_volatile = false) -> void
+  macro clear_inline(void* dst, sz $len, sz $dst_align = 0, bool $is_volatile = false) -> void
+  macro compare_exchange(void ptr, void compare, void value, AtomicOrdering $success = SEQ_CONSISTENT, AtomicOrdering $failure = SEQ_CONSISTENT, bool $volatile = true, bool $weak = false, sz $alignment = 0) -> void
+  macro compare_exchange_volatile(void ptr, void compare, void value, AtomicOrdering $success = SEQ_CONSISTENT, AtomicOrdering $failure = SEQ_CONSISTENT) -> void
+  // Copy memory from src to dst efficiently, assuming the memory ranges do not overlap.
+  macro copy(void* dst, void* src, sz len, sz $dst_align = 0, sz $src_align = 0, bool $is_volatile = false) -> void
+  // Copy memory from src to dst efficiently, assuming the memory ranges do not overlap, it
+  macro copy_inline(void* dst, void* src, sz $len, sz $dst_align = 0, sz $src_align = 0, bool $is_volatile = false) -> void
+  // Test if n elements are equal in a slice, pointed to by a pointer etc.
+  macro equals(void a, void b, sz len = -1, sz $align = 0) -> bool
+  fn free(void* ptr) -> void
+  fn free_aligned(void* ptr) -> void
+  // Load values from a pointer vector, assuming default alignment.
+  macro gather(void ptrvec, bool[<*>] mask, void passthru) -> void
+  macro get_tracking_env() -> TrackingEnv*
+  macro load(void ptr, sz $align, bool $volatile = false) -> void
+  fn malloc(sz size) -> void*
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  fn malloc_aligned(sz size, sz alignment) -> void*
+  // Load a vector from memory according to a mask assuming default alignment.
+  macro masked_load(void ptr, bool[<*>] mask, void passthru) -> void
+  // Store parts of a vector according to the mask, assuming default alignment.
+  macro masked_store(void ptr, void value, bool[<*>] mask) -> void
+  // Copy memory from src to dst but correctly handle the possibility of overlapping ranges.
+  macro move(void* dst, void* src, sz len, sz $dst_align = 0, sz $src_align = 0, bool $is_volatile = false) -> void
+  macro new(void $Type, void #init) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro new_aligned(void $Type, void #init) -> void
+  macro new_array(void $Type, sz elements) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro new_array_aligned(void $Type, sz elements) -> void
+  macro new_with_padding(void $Type, sz padding, void #init) -> void
+  fn os_pagesize() -> sz
+  fn ptr_is_aligned(void* ptr, sz alignment) -> bool
+  fn ptr_is_page_aligned(void* ptr) -> bool
+  fn realloc(void* ptr, sz new_size) -> void*
+  fn realloc_aligned(void* ptr, sz new_size, sz alignment) -> void*
+  macro scatter(void ptrvec, void value, bool[<*>] mask) -> void
+  // Sets all memory in a region to that of the provided byte.
+  macro set(void* dst, char val, sz len, sz $dst_align = 0, bool $is_volatile = false) -> void
+  // Sets all memory in a region to that of the provided byte. Never calls OS memset.
+  macro set_inline(void* dst, char val, sz $len, sz $dst_align = 0, bool $is_volatile = false) -> void
+  macro store(void ptr, void value, sz $align, bool $volatile = false) -> void
+  macro talloc(void $Type) -> void
+  macro talloc_array(void $Type, sz elements) -> void
+  macro talloc_with_padding(void $Type, sz padding) -> void
+  fn tcalloc(sz size, sz alignment = 0) -> void*
+  macro temp_array(void $Type, sz elements) -> void
+  // Pop the current temp allocator. A pop must always be balanced with a push.
+  fn temp_pop(PoolState old_state) -> void
+  // Push the current temp allocator. A push must always be balanced with a pop using the current state.
+  fn temp_push() -> PoolState
+  macro temp_with_padding(void $Type, sz padding, void #init) -> void
+  fn tmalloc(sz size, sz alignment = 0) -> void*
+  macro tnew(void $Type, void #init) -> void
+  fn trealloc(void* ptr, sz size, sz alignment = mem::DEFAULT_MEM_ALIGNMENT) -> void*
+  // Check if an allocation must be aligned given the type.
+  macro type_alloc_must_be_aligned(void $Type) -> bool
+  macro zero_volatile(char[] data) -> void
+  const DEFAULT_MEM_ALIGNMENT: void = 16
+  const GB: long = 1073741824
+  const KB: long = 1024
+  const MAX_MEMORY_ALIGNMENT: void = 268435456
+  const MB: long = 1048576
+  const TB: long = 1099511627776
+
+## std::core::mem::alignment(<Type, ALIGNMENT>)
+  // An UnalignedRef offers correctly aligned access to addresses that may be unaligned or overaligned.
+  distinct type UnalignedRef(<Type, ALIGNMENT>)
+    macro UnalignedRef.get(<Type, ALIGNMENT>)(void self) -> Type
+    macro UnalignedRef.set(<Type, ALIGNMENT>)(Type val) -> Type
+
+## std::core::mem::alloc
+  struct TrackingEnv
+    .file: String
+    .function: String
+    .line: int
+  interface Allocator
+  def MemoryAllocFn = fn char[]?(sz)
+  enum AllocInitType
+    NO_ZERO
+    ZERO
+  macro alloc(Allocator allocator, void $Type) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro alloc_aligned(Allocator allocator, void $Type) -> void
+  macro alloc_array(Allocator allocator, void $Type, sz elements) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro alloc_array_aligned(Allocator allocator, void $Type, sz elements) -> void
+  macro alloc_array_try(Allocator allocator, void $Type, sz elements) -> void
+  macro alloc_try(Allocator allocator, void $Type) -> void
+  macro alloc_with_padding(Allocator allocator, void $Type, sz padding) -> void
+  macro calloc(Allocator allocator, sz size) -> void*
+  macro calloc_aligned(Allocator allocator, sz size, sz alignment) -> void*?
+  macro calloc_try(Allocator allocator, sz size) -> void*?
+  // Clone a value.
+  macro clone(Allocator allocator, void value) -> void
+  // Clone overaligned values. Must be released using free_aligned.
+  macro clone_aligned(Allocator allocator, void value) -> void
+  fn clone_any(Allocator allocator, any value) -> any
+  macro clone_slice(Allocator allocator, void slice) -> void
+  macro free(Allocator allocator, void* ptr) -> void
+  macro free_aligned(Allocator allocator, void* ptr) -> void
+  macro malloc(Allocator allocator, sz size) -> void*
+  macro malloc_aligned(Allocator allocator, sz size, sz alignment) -> void*?
+  macro malloc_try(Allocator allocator, sz size) -> void*?
+  macro new(Allocator allocator, void $Type, void #init) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro new_aligned(Allocator allocator, void $Type, void #init) -> void
+  macro new_array(Allocator allocator, void $Type, sz elements) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro new_array_aligned(Allocator allocator, void $Type, sz elements) -> void
+  macro new_array_try(Allocator allocator, void $Type, sz elements) -> void
+  macro new_try(Allocator allocator, void $Type, void #init) -> void
+  macro new_with_padding(Allocator allocator, void $Type, sz padding) -> void
+  macro realloc(Allocator allocator, void* ptr, sz new_size) -> void*
+  macro realloc_aligned(Allocator allocator, void* ptr, sz new_size, sz alignment) -> void*?
+  macro realloc_array(Allocator allocator, void* ptr, void $Type, sz elements) -> void
+  // Allocate using an aligned allocation. This is necessary for types with a default memory alignment
+  macro realloc_array_aligned(Allocator allocator, void* ptr, void $Type, sz elements) -> void
+  macro realloc_array_try(Allocator allocator, void* ptr, void $Type, sz elements) -> void
+  macro realloc_try(Allocator allocator, void* ptr, sz new_size) -> void*?
+
+## std::core::mem::allocators
+  struct Allocation
+    .ptr: void*
+    .size: sz
+    .backtrace: void*[16]
+  def AllocMap = void
+  struct TrackingAllocator
+    .inner_allocator: Allocator
+    .map: AllocMap
+    .mem_total: sz
+    .allocs_total: sz
+    .usage: sz
+    .max_usage: sz
+    fn TrackingAllocator.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    fn TrackingAllocator.allocated() -> sz
+    fn TrackingAllocator.allocation_count() -> sz
+    fn TrackingAllocator.allocations_tlist(Allocator allocator) -> Allocation[]
+    fn TrackingAllocator.clear() -> void
+    fn TrackingAllocator.fprint_report(OutStream out) -> void?
+    // Free this tracking allocator.
+    fn TrackingAllocator.free() -> void
+    fn TrackingAllocator.has_leaks() -> bool
+    // Initialize a tracking allocator to wrap (and track) another allocator.
+    fn TrackingAllocator.init(Allocator allocator) -> void
+    fn TrackingAllocator.max_allocated() -> sz
+    fn TrackingAllocator.print_report() -> void
+    fn TrackingAllocator.release(void* old_pointer, bool is_aligned) -> void
+    fn TrackingAllocator.resize(void* old_pointer, sz size, sz alignment) -> void*?
+    fn TrackingAllocator.total_allocated() -> sz
+    fn TrackingAllocator.total_allocation_count() -> sz
+  // The OnStackAllocator is similar to the ArenaAllocator: it allocates from a chunk of memory
+  struct OnStackAllocator
+    .backing_allocator: Allocator
+    .data: char[]
+    .used: sz
+    .chunk: OnStackAllocatorExtraChunk*
+    fn OnStackAllocator.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    fn OnStackAllocator.free() -> void
+    // Initialize a memory arena for use using the provided bytes.
+    fn OnStackAllocator.init(char[] data, Allocator allocator) -> void
+    fn OnStackAllocator.release(void* old_pointer, bool aligned) -> void
+    fn OnStackAllocator.resize(void* old_pointer, sz size, sz alignment) -> void*?
+  struct OnStackAllocatorHeader
+    .size: sz
+    .data: char[*]
+  // The SimpleHeapAllocator implements a simple heap allocator on top of an allocator function.
+  struct SimpleHeapAllocator
+    .alloc_fn: MemoryAllocFn
+    .free_list: Header*
+    fn SimpleHeapAllocator.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    fn SimpleHeapAllocator.init(MemoryAllocFn allocator) -> void
+    fn SimpleHeapAllocator.release(void* old_pointer, bool aligned) -> void
+    fn SimpleHeapAllocator.resize(void* old_pointer, sz size, sz alignment) -> void*?
+  // The dynamic arena allocator is an arena allocator that can grow by adding additional arena "pages".
+  struct DynamicArenaAllocator
+    .backing_allocator: Allocator
+    .page: DynamicArenaPage*
+    .unused_page: DynamicArenaPage*
+    .page_size: sz
+    fn DynamicArenaAllocator.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    fn DynamicArenaAllocator.free() -> void
+    fn DynamicArenaAllocator.init(Allocator allocator, sz page_size) -> void
+    fn DynamicArenaAllocator.release(void* ptr, bool) -> void
+    fn DynamicArenaAllocator.reset() -> void
+    fn DynamicArenaAllocator.resize(void* old_pointer, sz size, sz alignment) -> void*?
+  // The LibcAllocator is a wrapper around malloc to conform to the Allocator interface.
+  distinct type LibcAllocator
+    fn LibcAllocator.acquire(sz bytes, AllocInitType init_type, sz alignment) -> void*?
+    fn LibcAllocator.release(void* old_ptr, bool aligned) -> void
+    fn LibcAllocator.resize(void* old_ptr, sz new_bytes, sz alignment) -> void*?
+  distinct type NullAllocator
+    fn NullAllocator.acquire(sz bytes, AllocInitType init_type, sz alignment) -> void*?
+    fn NullAllocator.release(void* old_ptr, bool aligned) -> void
+    fn NullAllocator.resize(void* old_ptr, sz new_bytes, sz alignment) -> void*?
+  // The backed arena allocator provides an allocator that will allocate from a pre-allocated chunk of memory
+  struct BackedArenaAllocator
+    .backing_allocator: Allocator
+    .last_page: ExtraPage*
+    .used: sz
+    .capacity: sz
+    .data: char[*]
+    fn BackedArenaAllocator.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    fn BackedArenaAllocator.destroy() -> void
+    fn BackedArenaAllocator.mark() -> sz
+    fn BackedArenaAllocator.release(void* old_pointer, bool) -> void
+    fn BackedArenaAllocator.reset(sz mark) -> void
+    fn BackedArenaAllocator.resize(void* pointer, sz size, sz alignment) -> void*?
+  struct ArenaAllocator
+    .data: char[]
+    .used: sz
+    // Implements the Allocator interface method.
+    fn ArenaAllocator.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    // Reset the usage completely.
+    fn ArenaAllocator.clear() -> void
+    // Initialize a memory arena for use using the provided bytes.
+    fn ArenaAllocator.init(char[] data) -> ArenaAllocator*
+    // "Mark" the current state of the arena allocator by returning the use count.
+    fn ArenaAllocator.mark() -> sz
+    // Implements the Allocator interface method.
+    fn ArenaAllocator.release(void* ptr, bool) -> void
+    // Reset to a previous mark.
+    fn ArenaAllocator.reset(sz mark) -> void
+    // Implements the Allocator interface method.
+    fn ArenaAllocator.resize(void* old_pointer, sz size, sz alignment) -> void*?
+  struct TempAllocator
+    .backing_allocator: Allocator
+    .last_page: TempAllocatorPage*
+    .derived: TempAllocator*
+    .allocated: bool
+    .reserve_size: sz
+    .realloc_size: sz
+    .min_size: sz
+    .used: sz
+    .capacity: sz
+    .original_capacity: sz
+    .data: char[*]
+    fn TempAllocator.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    fn TempAllocator.derive_allocator(sz reserve = 0) -> TempAllocator*?
+    fn TempAllocator.free() -> void
+    fn TempAllocator.release(void* old_pointer, bool) -> void
+    // Reset the entire temp allocator, which will merge all the children into it.
+    fn TempAllocator.reset() -> void
+    fn TempAllocator.resize(void* pointer, sz size, sz alignment) -> void*?
+  struct TempAllocatorPage
+    .prev_page: TempAllocatorPage*
+    .start: void*
+    .size: sz
+    .ident: sz
+    .data: char[*]
+    macro TempAllocatorPage.is_aligned() -> bool
+    macro TempAllocatorPage.pagesize() -> sz
+  struct Vmem
+    .memory: VirtualMemory
+    .allocated: sz
+    .pagesize: sz
+    .page_pot: sz
+    .last_page: sz
+    .high_water: sz
+    .options: VmemOptions
+    // Implements the Allocator interface method.
+    fn Vmem.acquire(sz size, AllocInitType init_type, sz alignment) -> void*?
+    fn Vmem.free() -> void
+    // Implements the Allocator interface method.
+    fn Vmem.init(sz preferred_size, sz reserve_page_size = 0, VmemOptions options = { true, true, env::COMPILER_SAFE_MODE }, sz min_size = 0) -> void?
+    fn Vmem.mark() -> sz
+    fn Vmem.owns_pointer(void* ptr) -> bool
+    // Implements the Allocator interface method.
+    fn Vmem.release(void* ptr, bool) -> void
+    fn Vmem.reset(sz mark) -> void
+    // Implements the Allocator interface method.
+    fn Vmem.resize(void* old_pointer, sz size, sz alignment) -> void*?
+  bitstruct VmemOptions
+    .shrink_on_reset: bool
+    .protect_unused_pages: bool
+    .scratch_released_data: bool
+  fault VMEM_RESERVE_FAILED
+  struct WasmMemory
+    .allocation: sz
+    .use: sz
+    fn WasmMemory.allocate_block(sz bytes) -> char[]?
+  distinct type PoolState
+  struct AlignedBlock
+    .len: sz
+    .start: void*
+  macro @aligned_alloc(void #alloc_fn, sz bytes, sz alignment) -> void*?
+  macro @aligned_alloc_fn(void context, void #alloc_fn, sz bytes, sz alignment) -> void*?
+  macro @aligned_free(void #free_fn, void* old_pointer) -> void?
+  macro @aligned_free_fn(void context, void #free_fn, void* old_pointer) -> void?
+  macro @aligned_realloc(void #calloc_fn, void #free_fn, void* old_pointer, sz bytes, sz alignment) -> void*?
+  macro @aligned_realloc_fn(void context, void #calloc_fn, void #free_fn, void* old_pointer, sz bytes, sz alignment) -> void*?
+  fn alignment_for_allocation(sz alignment) -> sz
+  // Call this to destroy any memory used by the temp allocators. This will invalidate all temp memory.
+  fn destroy_temp_allocators() -> void
+  fn new_backed_allocator(sz size, Allocator allocator) -> BackedArenaAllocator*?
+  fn new_temp_allocator(Allocator allocator, sz size, sz reserve = temp_allocator_reserve_size, sz min_size = temp_allocator_min_size, sz realloc_size = temp_allocator_realloc_size) -> TempAllocator*?
+  // Pop the current pool manually after a `push_pool`
+  fn pop_pool(PoolState old) -> void
+  // Push the current pool manually, must be partnered with a `pop_pool(state)`
+  fn push_pool(sz reserve = 0) -> PoolState
+  fn temp_allocator_destroy(TempAllocator* self) -> void
+  // Given some memory, create an arena allocator on the stack for it.
+  macro wrap(char[] bytes) -> ArenaAllocator*
+  const DEFAULT_SIZE_PREFIX: void = 8
+  const DEFAULT_SIZE_PREFIX_ALIGNMENT: void = 8
+  const LIBC_ALLOCATOR: LibcAllocator = 0
+  const MAX_BACKTRACE: void = 16
+  const NULL_ALLOCATOR: NullAllocator = 0
+  const WASM_BLOCK_SIZE: sz = 65536
+
+## std::core::mem::mempool
+  struct FixedBlockPoolNode
+    .buffer: void*
+    .next: FixedBlockPoolNode*
+    .capacity: sz
+  struct FixedBlockPoolEntry
+    .previous: void*
+  // Fixed blocks pool pre-allocating blocks backed by an Allocator which are then reserved for the user,
+  struct FixedBlockPool
+    .allocator: Allocator
+    .head: FixedBlockPoolNode
+    .tail: FixedBlockPoolNode*
+    .next_free: void*
+    .freelist: void*
+    .block_size: sz
+    .grow_capacity: sz
+    .allocated: sz
+    .page_size: sz
+    .alignment: sz
+    .used: sz
+    .initialized: bool
+    // Allocate an block on the block pool, re-uses previously deallocated blocks
+    fn FixedBlockPool.alloc() -> void*
+    // Deallocate a block from the block pool
+    fn FixedBlockPool.dealloc(void* ptr) -> void
+    // Free up the entire block pool
+    fn FixedBlockPool.free() -> void
+    // Initialize an block pool
+    fn FixedBlockPool.init(Allocator allocator, sz block_size, sz capacity = INITIAL_CAPACITY, sz alignment = 0) -> FixedBlockPool*
+    // Initialize an block pool
+    macro FixedBlockPool.init_for_type(Allocator allocator, void $Type, sz capacity = INITIAL_CAPACITY) -> FixedBlockPool*
+    // Initialize an block pool using Temporary allocator
+    macro FixedBlockPool.tinit(sz block_size, sz capacity = INITIAL_CAPACITY) -> FixedBlockPool*
+    // Initialize an block pool using Temporary allocator
+    macro FixedBlockPool.tinit_for_type(void $Type, sz capacity = INITIAL_CAPACITY) -> FixedBlockPool*
+  const INITIAL_CAPACITY: void = 0
+
+## std::core::mem::rc
+  // A RefCounted struct should be an inline base of a struct.
+  struct RefCounted
+    .refcount: Atomic{int}
+  macro release(void refcounted) -> void
+  macro retain(void refcounted) -> void
+
+## std::core::mem::ref(<Type>)
+Ref provides a general *external* ref counted wrapper for a pointer. For convenience, a ref count of 0
+ means the reference is still valid.
+
+ When the rc drops to -1, it will first run the dealloc function on the underlying pointer (if it exists),
+ then free the pointer and the atomic variable assuming that they are allocated using the Allocator in the Ref.
+  def DeallocFn = fn void(void*)
+  struct Ref(<Type>)
+    .refcount: Atomic{int}*
+    .ptr: Type*
+    .allocator: Allocator
+    fn Ref.release(<Type>)() -> void
+    fn Ref.retain(<Type>)() -> Ref*
+  macro new(<Type>)(Allocator allocator, void #init) -> Ref
+  fn wrap(<Type>)(Type* ptr, Allocator allocator = mem) -> Ref
+
+## std::core::mem::vm
+The VM module holds code for working with virtual memory on supported platforms (currently Win32 and Posix)
+  // VirtualMemory is an abstraction for working with an allocated virtual memory area. It will invoke vm:: functions
+  struct VirtualMemory
+    .ptr: void*
+    .size: sz
+    .default_access: VirtualMemoryAccess
+    // Commits memory, using vm::commit
+    macro VirtualMemory.commit(VirtualMemory self, sz offset, sz len) -> void?
+    // Decommits a part of memory using vm::decommit
+    fn VirtualMemory.decommit(VirtualMemory self, sz offset, sz len, bool block = true) -> void?
+    // Releases the memory region
+    fn VirtualMemory.destroy() -> void?
+    // Changes protection of a part of memory using vm::protect
+    macro VirtualMemory.protect(VirtualMemory self, sz offset, sz len, VirtualMemoryAccess access) -> void?
+  enum VirtualMemoryAccess
+    PROTECTED
+    READ
+    WRITE
+    READWRITE
+    EXEC
+    EXECREAD
+    EXECWRITE
+    ANY
+    fn VirtualMemoryAccess.to_posix(VirtualMemoryAccess self) -> CInt
+  fault RANGE_OVERFLOW
+  fault UNKNOWN_ERROR
+  fault ACCESS_DENIED
+  fault UNMAPPED_ACCESS
+  fault UNALIGNED_ADDRESS
+  fault RELEASE_FAILED
+  fault UPDATE_FAILED
+  fault INVALID_ARGS
+  fn aligned_alloc_size(sz size) -> sz
+  // Allocate virtual memory, size is rounded up to platform granularity (Win32) / page size (Posix).
+  fn alloc(sz size, VirtualMemoryAccess access) -> void*?
+  // Map a portion of an already-opened file into memory.
+  fn mmap_file(Fd fd, sz size, sz offset = 0, VirtualMemoryAccess access = READ, bool shared = false) -> void*?
+  // Release memory allocated with "alloc".
+  fn release(void* ptr, sz size) -> void?
+  // Create a VirtualMemory using
+  fn virtual_alloc(sz size, VirtualMemoryAccess access = PROTECTED) -> VirtualMemory?
+
+## std::core::mem::volatile(<Type>)
+  distinct type Volatile(<Type>)
+    macro Volatile.get(<Type>)() -> Type
+    macro Volatile.set(<Type>)(Type val) -> Type
+
+## std::core::runtime
+  struct AnyRaw
+    .ptr: void*
+    .type: typeid
+  struct SliceRaw
+    .ptr: void*
+    .len: sz
+  def TestFn = void
+  struct TestContext
+    .buf: JmpBuf
+    .test_filter: String
+    .breakpoint_on_assert: bool
+    .log_level: LogPriority
+    .assert_print_backtrace: bool
+    .has_ansi_codes: bool
+    .is_in_panic: bool
+    .is_quiet_mode: bool
+    .is_no_capture: bool
+    .sort: bool
+    .check_leaks: bool
+    .current_test_name: String
+    .setup_fn: TestFn
+    .teardown_fn: TestFn
+    .error_buffer: char*
+    .error_buffer_capacity: sz
+    .fake_stdout: File
+    .stored: void
+  struct TestUnit
+    .name: String
+    .func: TestFn
+  macro @enum_lookup(void $Type, void $name, void value) -> void
+  fn cmp_test_unit(TestUnit a, TestUnit b) -> int
+  fn default_test_runner(String[] args) -> bool
+  fn test_collection_create(Allocator allocator) -> TestUnit[]
+
+## std::core::sanitizer
+  macro annotate_contiguous_container(void* beg, void* end, void* old_mid, void* new_mid) -> void
+  macro annotate_double_ended_contiguous_container(void* storage_beg, void* storage_end, void* old_container_beg, void* old_container_end, void* new_container_beg, void* new_container_end) -> void
+  macro print_stack_trace() -> void
+  fn set_death_callback(VoidFn callback) -> void
+
+## std::core::sanitizer::asan
+  def ErrorCallback = fn void(ZString)
+  // Checks if an address is poisoned.
+  macro address_is_poisoned(void* addr) -> bool
+  // Marks a memory region ([addr, addr+size)) as unaddressable.
+  macro poison_memory_region(void* addr, sz size) -> void
+  // Checks if a region is poisoned.
+  macro region_is_poisoned(void* beg, sz size) -> void*
+  // Sets the callback function to be called during ASan error reporting.
+  fn set_error_report_callback(ErrorCallback callback) -> void
+  // Marks a memory region ([addr, addr+size)) as addressable.
+  macro unpoison_memory_region(void* addr, sz size) -> void
+
+## std::core::sanitizer::tsan
+  distinct type MutexFlags
+  macro mutex_create(void* addr, MutexFlags flags) -> void
+  macro mutex_destroy(void* addr, MutexFlags flags) -> void
+  macro mutex_post_divert(void* addr, MutexFlags flags) -> void
+  macro mutex_post_lock(void* addr, MutexFlags flags, CInt recursion) -> void
+  macro mutex_post_signal(void* addr, MutexFlags flags) -> void
+  macro mutex_post_unlock(void* addr, MutexFlags flags) -> void
+  macro mutex_pre_divert(void* addr, MutexFlags flags) -> void
+  macro mutex_pre_lock(void* addr, MutexFlags flags) -> void
+  macro mutex_pre_signal(void* addr, MutexFlags flags) -> void
+  macro mutex_pre_unlock(void* addr, MutexFlags flags) -> CInt
+  const MUTEX_LINKER_INIT: MutexFlags = 1
+  const MUTEX_NOT_STATIC: MutexFlags = 256
+  const MUTEX_READ_LOCK: MutexFlags = 8
+  const MUTEX_READ_REENTRANT: MutexFlags = 4
+  const MUTEX_RECURSIVE_LOCK: MutexFlags = 64
+  const MUTEX_RECURSIVE_UNLOCK: MutexFlags = 128
+  const MUTEX_TRY_LOCK: MutexFlags = 16
+  const MUTEX_TRY_LOCK_FAILED: MutexFlags = 32
+  const MUTEX_TRY_READ_LOCK: MutexFlags = 24
+  const MUTEX_TRY_READ_LOCK_FAILED: MutexFlags = 56
+  const MUTEX_WRITE_REENTRANT: MutexFlags = 2
+
+## std::core::string
+This module provides functionality for escaping and unescaping strings
+ with standard C-style escape sequences, similar to what's used in JSON
+ and other string literals.
+  // ZString is a pointer to a zero terminated array of chars.
+  distinct type ZString
+    fn ZString.char_len(ZString str) -> sz
+    fn ZString.copy(ZString self, Allocator allocator) -> String
+    fn ZString.eq(ZString self, ZString other) -> bool
+    fn ZString.len(ZString self) -> sz
+    fn ZString.str_view(ZString self) -> String
+    fn ZString.tcopy(ZString self) -> String
+  // WString is a pointer to a zero terminated array of Char16.
+  distinct type WString
+    fn WString.len(WString self) -> sz
+  def Char32 = void
+  def Char16 = void
+  // Splitter is handles tokenizing strings.
+  struct Splitter
+    .string: String
+    .split: String
+    .current: sz
+    .type: SplitterType
+    .last_index: int
+    fn Splitter.at_end() -> bool
+    fn Splitter.next() -> String?
+    fn Splitter.reset() -> void
+  enum SplitterType
+    TOKENIZE
+    TOKENIZE_ALL
+    TOKENIZE_ALL_SKIP_LAST
+  fault INVALID_UTF8
+  fault INVALID_UTF16
+  fault CONVERSION_FAILED
+  fault EMPTY_STRING
+  fault NEGATIVE_VALUE
+  fault MALFORMED_INTEGER
+  fault INTEGER_OVERFLOW
+  fault MALFORMED_FLOAT
+  fault FLOAT_OUT_OF_RANGE
+  fault BUFFER_EXCEEDED
+  fault INVALID_ESCAPE_SEQUENCE
+  fault UNTERMINATED_STRING
+  fault INVALID_HEX_ESCAPE
+  fault INVALID_UNICODE_ESCAPE
+  // Create a slice of an UTF16 encoded string at compile time.
+  macro @char16(String $string) -> Char16[]
+  // Create a slice of an UTF32 encoded string at compile time.
+  macro @char32(String $string) -> Char32[]
+  macro @sprintf(String $format) -> String
+  // Create a WString (an UTF16 encoded string) at compile time.
+  macro @wstring(String $string) -> WString
+  // Create a pointer to an UTF32 encoded string at compile time.
+  macro @wstring32(String $string) -> Char32*
+  // Return a new String created using the formatting function, the resulting string must fit the buffer.
+  fn bformat(char[] buffer, String fmt, any[][] args...) -> String
+  // Check if a character is in a set.
+  macro char_in_set(char c, String set) -> bool
+  macro decfloat(char[] chars, int $bits, int $emin, int sign) -> double?
+  // Calculate the length needed for an escaped string (including quotes).
+  fn escape_len(String s) -> sz
+  // Return a new String created using the formatting function, this function will implicitly
+  fn format(Allocator allocator, String fmt, any[][] args...) -> String
+  // This macro will create a string description of a struct.
+  macro from_struct(Allocator allocator, void x) -> String
+  fn from_utf16(Allocator allocator, Char16[] utf16) -> String?
+  fn from_utf16_bytes(Allocator allocator, char[] utf16, bool swap_endianess) -> String?
+  fn from_utf32(Allocator allocator, Char32[] utf32) -> String?
+  fn from_utf32_bytes(Allocator allocator, char[] utf32, bool swap_endianess) -> String?
+  fn from_wstring(Allocator allocator, WString wstring) -> String?
+  macro hexfloat(char[] chars, int $bits, int $emin, int sign) -> double?
+  // Join together an array of strings via a "joiner" sequence, which is inserted between each element.
+  fn join(Allocator allocator, String[] s, String joiner) -> String
+  // Check if a character needs to be escaped in a string literal.
+  fn needs_escape(char c) -> bool
+  // Return a temporary String created using the formatting function.
+  fn tformat(String fmt, any[][] args...) -> String
+  // Return a temporary ZString created using the formatting function.
+  fn tformat_zstr(String fmt, any[][] args...) -> ZString
+  // This macro will create a temporary string description of a struct.
+  macro tfrom_struct(void x) -> String
+  fn tfrom_utf16(Char16[] utf16) -> String?
+  fn tfrom_wstring(WString wstring) -> String?
+  // Alias for `string::join` using the temp allocator.
+  macro tjoin(String[] s, String joiner) -> String
+  // Convert a number to a given base. If the base is not given, then
+  fn to_integer(<IntType>)(String self, int base = 10) -> IntType?
+  const B1B_DIG: void = 2
+  const B1B_MAX: uint[2] = { 9007199, 254740991 }
+  const KMAX: void = 128
+  const MASK: void = 127
+
+## std::core::string::ansi
+  struct AnsiColor
+    .r: char
+    .g: char
+    .b: char
+    .bg: bool
+    fn AnsiColor.to_format(Formatter* fmt) -> sz?
+  constdef Ansi
+  // 24-bit color code rgb
+  macro color(uint $rgb, bool $bg = false) -> String
+  // 8-bit color code
+  macro color_8bit(char $index, bool $bg = false) -> String
+  // 24-bit color code
+  macro color_rgb(char $r, char $g, char $b, bool $bg = false) -> String
+  // 24-bit color code
+  fn get_color(uint rgb, bool bg = false) -> AnsiColor
+  // 24-bit color code
+  fn get_color_rgb(char r, char g, char b, bool bg = false) -> AnsiColor
+
+## std::core::string::conv
+  enum UnicodeBom
+    NO_BOM
+    UTF8
+    UTF16_LE
+    UTF16_BE
+    UTF32_LE
+    UTF32_BE
+  // Convert 1-2 UTF16 data points into UTF8.
+  macro char16_to_utf8_unsafe(Char16* ptr, sz* available, char** output, bool $unaligned, bool $byteswap) -> void?
+  // Convert a code pointer into 1-2 UTF16 characters.
+  fn char32_to_utf16_unsafe(Char32 c, Char16** output) -> void
+  fn char32_to_utf8(Char32 c, char[] output) -> sz?
+  macro char32_to_utf8_unsafe(Char32 c, char** output) -> sz
+  fn detect_bom(char[] input) -> UnicodeBom
+  macro is_cont(char c) -> bool
+  fn utf16len_for_utf32(Char32[] utf32) -> sz
+  // Calculate the UTF16 length required to encode a UTF8 array.
+  fn utf16len_for_utf8(String utf8) -> sz
+  // Copy an array of UTF16 data into an UTF8 buffer without bounds
+  macro utf16to8_unsafe(Char16[] utf16, char* utf8_buffer, void $unaligned, void $byteswap) -> void?
+  // Convert an UTF32 array to an UTF8 array.
+  fn utf32_bytes_to8(char[] utf32, char[] utf8_buffer, bool swap_endianess) -> sz?
+  // Convert an UTF32 array to an UTF8 array.
+  fn utf32to8(Char32[] utf32, char[] utf8_buffer) -> sz?
+  // Copy an array of UTF32 code points into an UTF8 buffer without bounds
+  macro utf32to8_unsafe(Char32[] utf32, char* utf8_buffer, void $unaligned, void $byteswap) -> void
+  fn utf8_codepoints(String utf8) -> sz
+  fn utf8_to_char32(char* ptr, sz* size) -> Char32?
+  // Calculate the UTF8 length required to encode an UTF16 array.
+  fn utf8len_for_utf16(Char16[] utf16) -> sz
+  // Calculate the UTF8 length required to encode an UTF16 array.
+  fn utf8len_for_utf16_bytes(char[] utf16, bool swap_endianness) -> sz
+  // Calculate the UTF8 length required to encode an UTF32 array.
+  fn utf8len_for_utf32(Char32[] utf32) -> sz
+  // Calculate the UTF8 length required to encode an UTF32 array.
+  fn utf8len_for_utf32_bytes(char[] utf32, bool swap_endianness) -> sz
+  // Copy an array of UTF8 data into an UTF16 buffer without bounds
+  fn utf8to16_unsafe(String utf8, Char16* utf16_buffer) -> void?
+  // Convert an UTF8 array to an UTF32 array.
+  fn utf8to32(String utf8, Char32[] utf32_buffer) -> sz?
+  // Copy an array of UTF8 data into an UTF32 buffer without bounds
+  fn utf8to32_unsafe(String utf8, Char32* utf32_buffer) -> void?
+
+## std::core::string::iterator
+  struct StringIterator
+    .utf8: String
+    .current: sz
+    fn StringIterator.has_next() -> bool
+    fn StringIterator.next() -> Char32?
+    fn StringIterator.peek() -> Char32?
+    fn StringIterator.reset() -> void
+
+## std::core::test
+Unit test module
+
+This module provides a toolset of macros for running unit test checks 
+
+Example:
+```c3
+module sample::m;
+import std::io;
+
+faultdef DIVISION_BY_ZERO;
+
+fn double? divide(int a, int b)
+{
+	if (b == 0) return DIVISION_BY_ZERO~;
+	return (double)(a) / (double)(b);
+}
+
+fn void test_div() @test
+{
+	test::eq(2, divide(6, 3)!!);
+	test::ne(1, 2);
+	test::ge(3, 3);
+	test::gt(2, divide(3, 3)!!);
+	test::lt(2, 3);
+	test::le(2, 3);
+	test::eq_approx(m::divide(1, 3)!!, 0.333, places: 3);
+	test::@check(2 == 2, "divide: %d", divide(6, 3)!!);
+	test::@error(m::divide(3, 0));
+	test::@error(m::divide(3, 0), DIVISION_BY_ZERO);
+}
+
+```
+  // Checks condition and fails assertion if not true
+  macro @check(void #condition, String format = "", any[][] args...) -> void
+  // Check if function returns (specific) error
+  macro @error(void #funcresult, fault error_expected) -> void
+  // Initializes test case context.
+  macro @setup(TestFn setup_fn, TestFn teardown_fn = null) -> void
+  // Check if left == right
+  macro eq(void left, void right) -> void
+  // Check left floating point value is approximately equals to right value
+  macro eq_approx(double left, double right, int places = 7, double delta = 0, bool equal_nan = true) -> void
+  // Check if left >= right
+  macro ge(void left, void right) -> void
+  // Check if left > right
+  macro gt(void left, void right) -> void
+  // Check if left <= right
+  macro le(void left, void right) -> void
+  // Check if left < right
+  macro lt(void left, void right) -> void
+  // Check if left != right
+  macro ne(void left, void right) -> void
+
+## std::core::values
+  macro @alignof(void #value) -> sz
+  macro @all_const() -> void
+  macro @expand(String $value) -> void
+  macro @inner_kind(void #value) -> TypeKind
+  // Return true if two values have the same type before any conversions.
+  macro @is_bool(void #value) -> bool
+  macro @is_flat_intlike(void #value) -> bool
+  macro @is_float(void #value) -> bool
+  macro @is_floatlike(void #value) -> bool
+  macro @is_int(void #value) -> bool
+  macro @is_promotable_to_float(void #value) -> bool
+  macro @is_promotable_to_floatlike(void #value) -> bool
+  macro @is_same_vector_type(void #value1, void #value2) -> bool
+  macro @is_vector(void #value) -> bool
+  macro @kindof(void #value) -> TypeKind
+  macro @sizeof(void #value) -> sz
+  macro @typematch(void #value1, void #value2) -> bool
+  macro promote_int(void x) -> void
+  macro promote_int_same(void x, void y) -> void

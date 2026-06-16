@@ -1,0 +1,350 @@
+C3 Standard Library — hash
+============================================================
+
+## std::hash::a5hash
+  fn hash(char[] data, ulong seed = 0) -> ulong
+
+## std::hash::adler32
+  struct Adler32
+    .a: uint
+    .b: uint
+    fn Adler32.final() -> uint
+    fn Adler32.init() -> void
+    fn Adler32.update(char[] data) -> void
+    fn Adler32.update_byte(char c) -> void
+  fn hash(char[] data) -> uint
+
+## std::hash::blake2
+  struct Blake2b
+    .h: ulong[8]
+    .t: ulong[2]
+    .f: ulong[2]
+    .buf: char[128]
+    .buflen: sz
+    .outlen: sz
+    .last_node: char
+    // Core compression inline function for Blake2b.
+    fn Blake2b._compress(char[128] block) -> void
+    // Finalize the hash context and return the hash result at the given size.
+    macro Blake2b.final(char[] into) -> void
+    // Blake2b initialization method. Presents various options for customizing the hash output.
+    fn Blake2b.init(sz out_len, char[] key = {}, char[] salt = {}, char[] personal = {}) -> void
+    // Add more data to the hash context or stream.
+    fn Blake2b.update(char[] data) -> void
+  struct Blake2s
+    .h: uint[8]
+    .t: uint[2]
+    .f: uint[2]
+    .buf: char[64]
+    .buflen: sz
+    .outlen: sz
+    .last_node: char
+    // Core compression inline function for Blake2s.
+    fn Blake2s._compress(char[64] block) -> void
+    // Finalize the hash context and return the hash result at the given size.
+    macro Blake2s.final(char[] into) -> void
+    // Blake2s initialization method. Presents various options
+    fn Blake2s.init(sz out_len, char[] key = {}, char[] salt = {}, char[] personal = {}) -> void
+    // Add more data to the hash context or stream.
+    fn Blake2s.update(char[] data) -> void
+  macro blake2b_224(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2b_256(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2b_384(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2b_512(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2b_hash(void $out_len, void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2s_128(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2s_160(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2s_224(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2s_256(void data, char[] key = {}, char[] salt = {}) -> void
+  macro blake2s_hash(void $out_len, void data, char[] key = {}, char[] salt = {}) -> void
+  const SIZE_128: void = 16
+  const SIZE_160: void = 20
+  const SIZE_224: void = 28
+  const SIZE_256: void = 32
+  const SIZE_384: void = 48
+  const SIZE_512: void = 64
+
+## std::hash::blake3
+  struct Blake3
+    .key: uint[8]
+    .chunk: Blake3ChunkState
+    .cv_stack_len: char
+    .cv_stack: char[1760]
+    // Destroy a BLAKE3 hashing context.
+    fn Blake3.destroy() -> void
+    // Yield the results of the hash into a specified output buffer, at the specified length.
+    fn Blake3.final(char[] into, sz into_len, sz seek = 0) -> void
+    // Initialize a BLAKE3 context.
+    fn Blake3.init(char[] key = {}, char explicit_flags = 0) -> void
+    // Private function to add a new tree onto the stack.
+    fn Blake3.push_cv(char* new_cv, long chunk_counter) -> void
+    // Update the hash context by consuming incoming data.
+    fn Blake3.update(char[] input, bool use_tbb = false) -> void
+  // Flags used during hash computation based on its state.
+  constdef Blake3Flags
+  // Generate a hash from a context string. This call allows one to use the "context" to
+  macro ctx_hash(char[] data, char[] context, sz seek = 0, sz $out_size = 32) -> char[*]
+  // Generate an XOF hash based on the given inputs.
+  macro hash(char[] data, char[] key = {}, sz seek = 0, sz $out_size = 32) -> char[*]
+  // Generate a new Blake3 hashing structure from the given context string. The context string
+  macro new_from_context(char[] context) -> Blake3
+  const BLOCK_SIZE: void = 64
+  const CHUNK_SIZE: void = 1024
+  const FORCE_PORTABLE: void = true
+  const IS_X86: void = false
+  const KEY_SIZE: void = 32
+  const KEY_SIZE_WORDS: void = 8
+  const MAX_DEPTH: void = 54
+  const MAX_SIMD_DEGREE: void = 1
+  const MAX_SIMD_DEGREE_OR_2: void = 2
+  const OUT_SIZE: void = 32
+  const USE_NEON: void = false
+
+## std::hash::crc32
+  struct Crc32
+    .result: uint
+    fn Crc32.final() -> uint
+    fn Crc32.init(uint seed = 0) -> void
+    fn Crc32.update(char[] data) -> void
+    fn Crc32.update_byte(char c) -> void
+  fn hash(char[] data) -> uint
+
+## std::hash::crc64
+  struct Crc64
+    .result: ulong
+    fn Crc64.final() -> ulong
+    fn Crc64.init(uint seed = 0) -> void
+    fn Crc64.update(char[] data) -> void
+    fn Crc64.update_byte(char c) -> void
+  fn hash(char[] data) -> ulong
+
+## std::hash::fnv32a
+  distinct type Fnv32a
+    fn Fnv32a.init() -> void
+    fn Fnv32a.update(char[] data) -> void
+    macro Fnv32a.update_byte(char c) -> void
+  fn hash(char[] data) -> uint
+
+## std::hash::fnv64a
+  distinct type Fnv64a
+    fn Fnv64a.init() -> void
+    fn Fnv64a.update(char[] data) -> void
+    macro Fnv64a.update_byte(char c) -> void
+  fn hash(char[] data) -> ulong
+
+## std::hash::hmac(<HashAlg, HASH_BYTES, BLOCK_BYTES>)
+  struct Hmac(<HashAlg, HASH_BYTES, BLOCK_BYTES>)
+    .a: HashAlg
+    .b: HashAlg
+    fn Hmac.final(<HashAlg, HASH_BYTES, BLOCK_BYTES>)() -> char[HASH_BYTES]
+    fn Hmac.init(<HashAlg, HASH_BYTES, BLOCK_BYTES>)(char[] key) -> void
+    fn Hmac.update(<HashAlg, HASH_BYTES, BLOCK_BYTES>)(char[] data) -> void
+  macro @derive(<HashAlg, HASH_BYTES, BLOCK_BYTES>)(Hmac* hmac_start, char[] salt, int iterations, sz index, char[] out) -> void
+  fn hash(<HashAlg, HASH_BYTES, BLOCK_BYTES>)(char[] key, char[] message) -> char[HASH_BYTES]
+  fn pbkdf2(<HashAlg, HASH_BYTES, BLOCK_BYTES>)(char[] pw, char[] salt, int iterations, char[] output) -> void
+
+## std::hash::komi
+  fn hash(char[] data, ulong seed = 0) -> ulong
+
+## std::hash::md5
+  struct Md5
+    .lo: uint
+    .hi: uint
+    .a: uint
+    .b: uint
+    .c: uint
+    .d: uint
+    .buffer: char[64]
+    .block: uint[16]
+    fn Md5.final(Md5* ctx) -> char[16]
+    fn Md5.init() -> void
+    fn Md5.update(Md5* ctx, char[] data) -> void
+  def HmacMd5 = void
+  fn hash(char[] data) -> char[16]
+  const BLOCK_BYTES: void = 64
+  const HASH_BYTES: void = 16
+
+## std::hash::metro128
+  struct MetroHash128
+    .?: void
+    .?: void
+    .bytes: long
+    fn MetroHash128.final() -> uint128
+    fn MetroHash128.init(ulong seed = 0) -> void
+    fn MetroHash128.update(char[] data) -> void
+  fn hash(char[] data, ulong seed = 0) -> uint128
+
+## std::hash::metro64
+  struct MetroHash64
+    .?: void
+    .?: void
+    .bytes: long
+    .vseed: ulong
+    fn MetroHash64.final() -> ulong
+    fn MetroHash64.init(ulong seed = 0) -> void
+    fn MetroHash64.update(char[] data) -> void
+  fn hash(char[] data, ulong seed = 0) -> ulong
+
+## std::hash::murmur3
+  fn hash128_32(char[] data, uint seed) -> uint128
+  fn hash128_64(char[] data, uint seed) -> uint128
+  fn hash32(char[] data, uint seed) -> uint
+
+## std::hash::poly1305
+  struct Poly1305
+    .h: ulong[3]
+    .r: uint128
+    .nonce: uint128
+    .temp: char[16]
+    .num: sz
+    .r0: ulong
+    .r1: ulong
+    .s1: ulong
+    fn Poly1305.final() -> char[16]
+    fn Poly1305.init(char[32] key) -> void
+    fn Poly1305.update(char[] input) -> void
+  // Compute a Poly1305 message authentication code for the input with the given key (secret + nonce) value.
+  fn hash(char[] input, char[32] key) -> char[16]
+  const BLOCK_SIZE: void = 16
+  const KEY_SIZE: void = 32
+  const TAG_SIZE: void = 16
+
+## std::hash::ripemd(<DIGEST_BITS>)
+  struct RipeMd(<DIGEST_BITS>)
+    .state: uint[10]
+    .buffer: uint[16]
+    .byte_count: long
+    // Finalize the RIPE-MD hash context and return the final hash value.
+    fn RipeMd.final(<DIGEST_BITS>)() -> char[DIGEST_BYTES]
+    // Initialize the RIPE-MD hash context.
+    fn RipeMd.init(<DIGEST_BITS>)() -> void
+    // Apply a transformation to some input data, but DO NOT inline the contents of the macro within the parent call.
+    fn RipeMd.transform(<DIGEST_BITS>)(uint[BLOCK_SIZE / uint::size] in) -> void
+    // Update the RIPE-MD hash context with the given data.
+    fn RipeMd.update(<DIGEST_BITS>)(char[] data) -> void
+  // Compute the RIPE-MD hash of the given data.
+  macro hash(<DIGEST_BITS>)(char[] data) -> char[]
+  const BLOCK_SIZE: void = 64
+  const DIGEST_BYTES: void = DIGEST_BITS / 8
+  const PERMISSIBLE_SIZES_BITS: sz[4] = { 128, 160, 256, 320 }
+
+## std::hash::sha1
+  struct Sha1
+    .state: uint[5]
+    .count: uint[2]
+    .buffer: char[64]
+    fn Sha1.final() -> char[20]
+    fn Sha1.init() -> void
+    fn Sha1.update(char[] data) -> void
+  def HmacSha1 = void
+  fn hash(char[] data) -> char[20]
+  const BLOCK_BYTES: void = 64
+  const HASH_BYTES: void = 20
+
+## std::hash::sha256
+  def HmacSha256 = void
+  struct Sha256
+    .state: uint[8]
+    .buffer: char[64]
+    .bitcount: long
+    fn Sha256.final() -> char[32]
+    fn Sha256.init() -> void
+    fn Sha256.update(char[] data) -> void
+  // Compute and return a hash value.
+  fn hash(char[] data) -> char[32]
+  const BLOCK_SIZE: void = 64
+  const HASH_SIZE: void = 32
+
+## std::hash::sha512
+  struct Sha512
+    .length: long
+    .hash_state: ulong[8]
+    .buffer: char[128]
+    fn Sha512.final() -> char[64]
+    fn Sha512.init() -> void
+    fn Sha512.update(char[] data) -> void
+  def HmacSha512 = void
+  enum HashTruncationType
+    SHA512
+    SHA384
+    SHA512_224
+    SHA512_256
+  fn hash(char[] data) -> char[64]
+  const BLOCK_SIZE: void = 128
+  const HASH_SIZE: void = 64
+
+## std::hash::siphash(<OutType, BLOCK_ROUNDS, FINALIZE_ROUNDS>)
+SipHash is a secure pseudorandom function (PRF) which digests a 128-bit key
+  and a variable-length message to produce a 64- or 128-bit hash value.
+
+ SipHash can be employed in numerous useful ways and structures, e.g.:
+  - Hash Tables
+  - Message Authentication Codes
+  - Denial of Service (hash flooding) resistance
+  - Bloom filters
+  - Keyed runtime identifier derivation
+
+  Read more: https://en.wikipedia.org/wiki/SipHash
+  struct SipHash(<OutType, BLOCK_ROUNDS, FINALIZE_ROUNDS>)
+    .v: ulong[4]
+    .m: long
+    .m_idx: int
+    .len: sz
+    fn SipHash.final(<OutType, BLOCK_ROUNDS, FINALIZE_ROUNDS>)() -> OutType
+    fn SipHash.init(<OutType, BLOCK_ROUNDS, FINALIZE_ROUNDS>)(uint128 key) -> void
+    fn SipHash.update(<OutType, BLOCK_ROUNDS, FINALIZE_ROUNDS>)(char[] data) -> void
+  fn hash(<OutType, BLOCK_ROUNDS, FINALIZE_ROUNDS>)(char[] data, uint128 key) -> OutType
+
+## std::hash::siphash24
+Best for performance-critical applications.
+ See std::hash::siphash for more information.
+  def SipHash24 = void
+
+## std::hash::siphash24_128
+Exact same as siphash24, but for 128-bit outputs. Algorithm internally changes slightly.
+  def SipHash24_128 = void
+
+## std::hash::siphash48
+Best for security-focused applications.
+ See std::hash::siphash for more information.
+  def SipHash48 = void
+
+## std::hash::siphash48_128
+Exact same as siphash48, but for 128-bit outputs. Algorithm internally changes slightly.
+  def SipHash48_128 = void
+
+## std::hash::streebog
+  struct Streebog
+    .h: ulong[8]
+    .n: ulong[8]
+    .s: ulong[8]
+    .message: ulong[8]
+    .index: sz
+    .hash_size: sz
+    macro Streebog.final(StreebogLength $hash_size) -> char[*]
+    macro Streebog.init(StreebogLength $hash_size) -> void
+    fn Streebog.update(char[] data) -> void
+  constdef StreebogLength
+  macro hash(StreebogLength $hash_size, void data) -> char[*]
+  macro hash_256(char[] data) -> char[*]
+  macro hash_512(char[] data) -> char[*]
+
+## std::hash::whirlpool
+  struct Whirlpool
+    .hash: ulong[8]
+    .?: void
+    .counter_high: uint128
+    .counter_low: uint128
+    fn Whirlpool.final() -> char[64]
+    macro Whirlpool.init() -> void
+    fn Whirlpool.update(char[] data) -> void
+  def HmacWhirlpool = void
+  fn hash(char[] data) -> char[64]
+  const BLOCK_128: void = 4
+  const BLOCK_SIZE: void = 64
+  const HASH_SIZE: void = 64
+  const ROUNDS: void = 10
+
+## std::hash::wyhash2
+  fn hash(char[] input, ulong seed = 0) -> ulong
+  fn wyr3(char* in, sz len) -> ulong

@@ -1,0 +1,27 @@
+C3 Standard Library — sort
+============================================================
+
+## std::sort(<Type, CmpFn, Context>)
+  macro @is_any_sortable(void #list) -> bool
+  macro @is_any_valid_cmp_fn(void #cmp, void #list, void #context) -> bool
+  macro @is_cmp_key_fn(void #key_fn, void #list) -> bool
+  macro @is_sortable(void #list) -> bool
+  macro @is_valid_cmp_fn(void #cmp, void #list, void #context) -> bool
+  macro @is_valid_context(void #cmp, void #context) -> bool
+  macro @list_is_by_ref(void #list) -> bool
+  // Perform a binary search over the sorted array and return the index
+  macro binarysearch(void list, void element, void cmp, void context) -> sz
+  // Sort list using the counting sort algorithm.
+  macro countingsort(void list, void key_fn) -> void
+  // Sort list using the insertion sort algorithm.
+  macro insertionsort(void list, void cmp, void context) -> void
+  macro insertionsort_indexed(void list, void start, void end, void cmp, void context) -> void
+  // Returns true if list is sorted in either ascending or descending order.
+  macro is_sorted(void list, void cmp, void ctx) -> bool
+  // Sort list using the mergesort algorithm.
+  macro mergesort(void list, void cmp, void context, void buffer_allocator = tmem) -> void
+  // Select the (k+1)th smallest element in an unordered list using Hoare's
+  macro quickselect(void list, sz k, void cmp, void context) -> void
+  // Sort list using the quick sort algorithm.
+  macro quicksort(void list, void cmp, void context) -> void
+  macro quicksort_indexed(void list, void start, void end, void cmp, void context) -> void

@@ -1,0 +1,16 @@
+C3 Standard Library — experimental
+============================================================
+
+## std::experimental::scheduler(<Event>)
+  struct FrameScheduler(<Event>)
+    .delayed_events: PriorityQueue{DelayedSchedulerEvent}
+    .events: List{Event}
+    .pending_events: List{Event}
+    .pending: bool
+    .mtx: Mutex
+    macro FrameScheduler.@destroy(<Event>)(void @destruct) -> void
+    fn FrameScheduler.has_delayed(<Event>)() -> bool
+    fn FrameScheduler.init(<Event>)() -> void
+    fn FrameScheduler.pop_event(<Event>)() -> Event?
+    fn FrameScheduler.queue_delayed_event(<Event>)(Event event, Duration delay) -> void
+    fn FrameScheduler.queue_event(<Event>)(Event event) -> void

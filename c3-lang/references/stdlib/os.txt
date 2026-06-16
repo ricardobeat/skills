@@ -1,0 +1,99 @@
+C3 Standard Library — os
+============================================================
+
+## libc::os
+  fn __errno_location() -> int*
+  macro errno() -> int
+  macro errno_set(int err) -> void
+
+## std::os
+  // Exit the process with a given exit code. This will typically call 'exit' in LibC
+  fn exit(int result) -> void
+  // Exit the process with a given exit code. This will typically call '_Exit' in LibC
+  fn fastexit(int result) -> void
+  fn num_cpu() -> int
+
+## std::os::backtrace
+  struct Backtrace
+    .offset: sz
+    .function: String
+    .object_file: String
+    .file: String
+    .line: int
+    .allocator: Allocator
+    .is_inline: bool
+    fn Backtrace.equals(Backtrace self, Backtrace other) -> bool
+    fn Backtrace.free() -> void
+    fn Backtrace.has_file() -> bool
+    fn Backtrace.init(Allocator allocator, sz offset, String function, String object_file, String file = "", int line = 0) -> Backtrace*
+    fn Backtrace.is_unknown() -> bool
+    fn Backtrace.to_format(Formatter* formatter) -> sz?
+  def BacktraceList = void
+  fault SEGMENT_NOT_FOUND
+  fault EXECUTABLE_PATH_NOT_FOUND
+  fault IMAGE_NOT_FOUND
+  fault NO_BACKTRACE_SYMBOLS
+  fault RESOLUTION_FAILED
+  fn capture_current(void*[] buffer) -> void*[]
+  // Returns the symbolized backtrace as a string.
+  fn get(Allocator allocator) -> String?
+  const BACKTRACE_UNKNOWN: Backtrace = { 0, "", "", "", 0, null, false }
+
+## std::os::env
+  fn clear_var(String name) -> bool
+  fn executable_path() -> String?
+  // Returns the current user's config directory.
+  fn get_config_dir(Allocator allocator) -> Path?
+  // Returns the current user's home directory.
+  fn get_home_dir(Allocator allocator) -> String?
+  fn get_var(Allocator allocator, String name) -> String?
+  fn set_var(String name, String value, bool overwrite = true) -> bool
+  fn tget_var(String name) -> String?
+
+## std::os::process
+  struct Process
+    .stdin_file: CFile
+    .stdout_file: CFile
+    .stderr_file: CFile
+    .child: Pid_t
+    .return_status: int
+    .is_alive: bool
+    fn Process.destroy() -> bool
+    fn Process.is_running() -> bool?
+    fn Process.join() -> CInt?
+    fn Process.read_stderr(char* buffer, sz size) -> sz?
+    fn Process.read_stdout(char* buffer, sz size) -> sz?
+    fn Process.stderr() -> File
+    fn Process.stdout() -> File
+    fn Process.terminate() -> void?
+    fn Process.write_stdin(char[] buffer) -> sz?
+  def RawFd = void
+  struct ProcessStdio
+    .action: ProcessStdioAction
+    .fd: RawFd
+  constdef SpawnOptions
+  enum ProcessStdioAction
+    DEFAULT
+    CAPTURE
+    INHERIT
+    BIND
+  fault FAILED_TO_CREATE_PIPE
+  fault FAILED_TO_OPEN_STDIN
+  fault FAILED_TO_OPEN_STDOUT
+  fault FAILED_TO_OPEN_STDERR
+  fault FAILED_TO_BIND_STDIN
+  fault FAILED_TO_BIND_STDOUT
+  fault FAILED_TO_BIND_STDERR
+  fault FAILED_TO_START_PROCESS
+  fault FAILED_TO_INITIALIZE_ACTIONS
+  fault PROCESS_JOIN_FAILED
+  fault PROCESS_TERMINATION_FAILED
+  fault READ_FAILED
+  macro bind(RawFd fd) -> ProcessStdio
+  fn run(String[] command_line, SpawnOptions options = {}, String[] environment = {}, ProcessStdio in = DEFAULT, ProcessStdio out = DEFAULT, ProcessStdio err = DEFAULT) -> int?
+  fn run_capture_stdout(char[] buffer, String[] command_line, SpawnOptions options = {}, String[] environment = {}) -> String?
+  fn spawn(String[] command_line, SpawnOptions options = {}, String[] environment = {}, ProcessStdio in = DEFAULT, ProcessStdio out = DEFAULT, ProcessStdio err = DEFAULT) -> Process?
+  const CAPTURE: ProcessStdio = { .action = CAPTURE }
+  const DEFAULT: ProcessStdio = { .action = DEFAULT }
+  const EMPTY_ENVIRONMENT: ZString[1] = { null }
+  const INHERIT: ProcessStdio = { .action = INHERIT }

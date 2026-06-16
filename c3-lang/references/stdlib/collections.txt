@@ -1,0 +1,999 @@
+C3 Standard Library — collections
+============================================================
+
+## std::collections::anylist
+  def AnyPredicate = void
+  def AnyTest = void
+  // The AnyList contains a heterogeneous set of types. Anything placed in the
+  distinct type AnyList
+    // Return the first element by value, assuming it is the given type.
+    macro AnyList.first(void $Type) -> void
+    // Return the first element
+    fn AnyList.first_any() -> any?
+    // Return an element in the list by value, assuming it is the given type.
+    macro AnyList.get(sz index, void $Type) -> void
+    // Return an element in the list.
+    fn AnyList.get_any(sz index) -> any
+    // Return the last element by value, assuming it is the given type.
+    macro AnyList.last(void $Type) -> void
+    // Return the last element
+    fn AnyList.last_any() -> any?
+    // Return the length of the list.
+    fn AnyList.len() -> sz
+    // Pop a value who's type is known. If the type is incorrect, this
+    macro AnyList.pop(void $Type) -> void
+    // Pop a value who's type is known. If the type is incorrect, this
+    macro AnyList.pop_first(void $Type) -> void
+
+## std::collections::bitset(<SIZE>)
+  struct BitSet(<SIZE>)
+    .data: uint[SZ]
+    // Perform & over all bits, returning a new bit set.
+    fn BitSet.and(<SIZE>)(BitSet set) -> BitSet
+    // Perform & over all bits, mutating itself.
+    macro BitSet.and_self(<SIZE>)(BitSet set) -> BitSet
+    fn BitSet.cardinality(<SIZE>)() -> sz
+    // Get a particular bit in the bitset
+    fn BitSet.get(<SIZE>)(sz i) -> bool
+    // Return the number of bits.
+    fn BitSet.len(<SIZE>)() -> sz
+    // Perform or over all bits, returning a new bit set.
+    fn BitSet.or(<SIZE>)(BitSet set) -> BitSet
+    // Perform or over all bits, mutating itself
+    macro BitSet.or_self(<SIZE>)(BitSet set) -> BitSet
+    // Set a bit in the bitset.
+    fn BitSet.set(<SIZE>)(sz i) -> void
+    // Change a particular bit in the bitset
+    fn BitSet.set_bool(<SIZE>)(sz i, bool value) -> void
+    // Unset (clear) a bit in the bitset.
+    fn BitSet.unset(<SIZE>)(sz i) -> void
+    // Perform xor over all bits, returning a new bit set.
+    fn BitSet.xor(<SIZE>)(BitSet set) -> BitSet
+    // Perform xor over all bits, mutating itself
+    macro BitSet.xor_self(<SIZE>)(BitSet set) -> BitSet
+  const BITS: void = uint::size * 8
+  const SZ: void = (SIZE + BITS - 1) / BITS
+
+## std::collections::blockingqueue(<Value>)
+  struct QueueEntry(<Value>)
+    .value: Value
+    .next: QueueEntry*
+    .prev: QueueEntry*
+  struct LinkedBlockingQueue(<Value>)
+    .head: QueueEntry*
+    .tail: QueueEntry*
+    .count: sz
+    .capacity: sz
+    .lock: Mutex
+    .not_empty: ConditionVariable
+    .not_full: ConditionVariable
+    .allocator: Allocator
+    fn LinkedBlockingQueue.free(<Value>)() -> void
+    fn LinkedBlockingQueue.init(<Value>)(Allocator allocator, sz capacity = 0) -> LinkedBlockingQueue*
+    fn LinkedBlockingQueue.is_empty(<Value>)() -> bool
+    fn LinkedBlockingQueue.is_initialized(<Value>)() -> bool
+    fn LinkedBlockingQueue.peek(<Value>)() -> Value?
+    // Get a value from the queue, blocking if there is no element in the queue.
+    fn LinkedBlockingQueue.poll(<Value>)() -> Value
+    // Poll with a timeout.
+    fn LinkedBlockingQueue.poll_timeout(<Value>)(Duration timeout) -> Value?
+    // Pop an element from the queue, fail is it is empty.
+    fn LinkedBlockingQueue.pop(<Value>)() -> Value?
+    fn LinkedBlockingQueue.push(<Value>)(Value value) -> void
+    // Try to push, return CAPACITY_EXCEEDED if the queue is still full after timeout is reached.
+    fn LinkedBlockingQueue.push_timeout(<Value>)(Value value, Duration timeout) -> void?
+    fn LinkedBlockingQueue.size(<Value>)() -> sz
+    fn LinkedBlockingQueue.tinit(<Value>)(sz capacity = 0) -> LinkedBlockingQueue*
+    // Try to push, return CAPACITY_EXCEEDED if the queue is full.
+    fn LinkedBlockingQueue.try_push(<Value>)(Value value) -> void?
+  const INITIAL_CAPACITY: void = 16
+
+## std::collections::deque(<Type>)
+  // Deque is a dynamically resizable double-ended queue/ring-buffer.
+  struct Deque(<Type>)
+    .entries: Type*
+    .capacity: sz
+    .start: sz
+    .size: sz
+    .allocator: Allocator
+    // Reset the deque's length and offset to zero, letting it write new elements over
+    fn Deque.clear(<Type>)() -> void
+    // Get an element at the front of the deque.
+    fn Deque.first(<Type>)() -> Type
+    // Get a reference to an element at the front of the deque.
+    fn Deque.first_ref(<Type>)() -> Type*
+    // Free the memory that has been dynamically allocated for deque.
+    fn Deque.free(<Type>)() -> void
+    fn Deque.get(<Type>)(sz index) -> Type
+    fn Deque.get_ref(<Type>)(sz index) -> Type*
+    fn Deque.init(<Type>)(Allocator allocator, sz capacity = DEFAULT_CAPACITY) -> void
+    fn Deque.is_empty(<Type>)(Deque* self) -> bool
+    // Get an element at the back of the deque.
+    fn Deque.last(<Type>)() -> Type
+    // Get a reference to an element at the back of the deque.
+    fn Deque.last_ref(<Type>)() -> Type*
+    fn Deque.len(<Type>)() -> sz
+    // Makes deque's internal buffer contiguous.
+    fn Deque.normalize(<Type>)() -> void
+    // Pop an element from the back of the deque.
+    fn Deque.pop(<Type>)() -> Type?
+    // Pop an element from the front of the deque.
+    fn Deque.pop_first(<Type>)() -> Type?
+    // Pop multiple elements from the front of the deque into 'target'.
+    fn Deque.pop_first_into(<Type>)(Type[] target) -> Type[]
+    // Pop multiple elements from the back of the deque into 'target'.
+    fn Deque.pop_into(<Type>)(Type[] target) -> Type[]
+    // Push an element to the back of the deque.
+    fn Deque.push(<Type>)(Type element) -> void
+    // Push multiple elements to the back of the deque.
+    fn Deque.push_all(<Type>)(Type[] elements) -> void
+    // Push an element to the front of the deque.
+    fn Deque.push_front(<Type>)(Type element) -> void
+    // Push multiple elements to the front of the deque.
+    fn Deque.push_front_all(<Type>)(Type[] elements) -> void
+    fn Deque.remain_space(<Type>)(Deque* self) -> sz
+    // Reserve enough space in the queue for at least the specified value.
+    fn Deque.reserve(<Type>)(sz added) -> void
+    fn Deque.set(<Type>)(sz index, Type value) -> void
+    // Makes deque's internal buffer contiguous and sets the 'capacity' to 'size'.
+    fn Deque.shrink(<Type>)() -> void
+    fn Deque.swap(<Type>)(sz i, sz j) -> void
+    fn Deque.tinit(<Type>)(sz capacity = DEFAULT_CAPACITY) -> void
+    fn Deque.to_format(<Type>)(Formatter* fmt) -> sz?
+  const DEFAULT_CAPACITY: sz = 16
+
+## std::collections::enummap(<Enum, ValueType>)
+  struct EnumMap(<Enum, ValueType>)
+    .values: ValueType[Enum::len]
+    fn EnumMap.get(<Enum, ValueType>)(Enum key) -> ValueType
+    fn EnumMap.get_ref(<Enum, ValueType>)(Enum key) -> ValueType*
+    fn EnumMap.init(<Enum, ValueType>)(ValueType init_value) -> void
+    fn EnumMap.len(<Enum, ValueType>)() -> sz
+    fn EnumMap.set(<Enum, ValueType>)(Enum key, ValueType value) -> void
+    fn EnumMap.to_format(<Enum, ValueType>)(Formatter* formatter) -> sz?
+
+## std::collections::enumset(<Enum>)
+  distinct type EnumSet(<Enum>)
+    fn EnumSet.add(<Enum>)(Enum v) -> void
+    fn EnumSet.add_all(<Enum>)(EnumSet s) -> void
+    fn EnumSet.and_of(<Enum>)(EnumSet s) -> EnumSet
+    fn EnumSet.clear(<Enum>)() -> void
+    fn EnumSet.diff_of(<Enum>)(EnumSet s) -> EnumSet
+    fn EnumSet.has(<Enum>)(Enum v) -> bool
+    fn EnumSet.or_of(<Enum>)(EnumSet s) -> EnumSet
+    fn EnumSet.remove(<Enum>)(Enum v) -> bool
+    fn EnumSet.remove_all(<Enum>)(EnumSet s) -> void
+    fn EnumSet.retain_all(<Enum>)(EnumSet s) -> void
+    fn EnumSet.to_format(<Enum>)(void set, Formatter* formatter) -> sz?
+    fn EnumSet.xor_of(<Enum>)(EnumSet s) -> EnumSet
+  const IS_CHAR_ARRAY: void = ENUM_COUNT > 128
+
+## std::collections::fixedlist(<Type, MAX_SIZE>)
+  def ElementPredicate = fn bool(Type* type)
+  def ElementTest = fn bool(Type* type, any context)
+  struct FixedList(<Type, MAX_SIZE>)
+    .size: sz
+    .entries: Type[MAX_SIZE]
+    macro FixedList.@item_at(<Type, MAX_SIZE>)(sz index) -> Type
+    fn FixedList.add_all(<Type, MAX_SIZE>)(FixedList* other_list) -> void
+    // Add as many elements as possible to the new array,
+    fn FixedList.add_all_to_limit(<Type, MAX_SIZE>)(FixedList* other_list) -> sz
+    fn FixedList.array_view(<Type, MAX_SIZE>)() -> Type[]
+    fn FixedList.byte_size(<Type, MAX_SIZE>)() -> sz
+    fn FixedList.clear(<Type, MAX_SIZE>)() -> void
+    fn FixedList.compact(<Type, MAX_SIZE>)() -> sz
+    fn FixedList.compact_count(<Type, MAX_SIZE>)() -> sz
+    // Check for presence of a value in a list.
+    fn FixedList.contains(<Type, MAX_SIZE>)(Type value) -> bool
+    fn FixedList.equals(<Type, MAX_SIZE>)(FixedList other_list) -> bool
+    fn FixedList.first(<Type, MAX_SIZE>)() -> Type?
+    fn FixedList.get(<Type, MAX_SIZE>)(sz index) -> Type
+    fn FixedList.get_ref(<Type, MAX_SIZE>)(sz index) -> Type*
+    fn FixedList.index_of(<Type, MAX_SIZE>)(Type type) -> sz?
+    fn FixedList.insert_at(<Type, MAX_SIZE>)(sz index, Type type) -> void
+    fn FixedList.insert_at_try(<Type, MAX_SIZE>)(sz index, Type value) -> void?
+    fn FixedList.is_empty(<Type, MAX_SIZE>)() -> bool
+    fn FixedList.last(<Type, MAX_SIZE>)() -> Type?
+    fn FixedList.len(<Type, MAX_SIZE>)() -> sz
+    fn FixedList.pop(<Type, MAX_SIZE>)() -> Type?
+    fn FixedList.pop_first(<Type, MAX_SIZE>)() -> Type?
+    fn FixedList.push(<Type, MAX_SIZE>)(Type element) -> void
+    // Add the values of an array to this list.
+    fn FixedList.push_all(<Type, MAX_SIZE>)(Type[] array) -> void
+    // Add as many values from this array as possible, returning the
+    fn FixedList.push_all_to_limit(<Type, MAX_SIZE>)(Type[] array) -> sz
+    fn FixedList.push_front(<Type, MAX_SIZE>)(Type type) -> void
+    fn FixedList.push_front_try(<Type, MAX_SIZE>)(Type type) -> void?
+    // Try to add an element. Will fail if it is full.
+    fn FixedList.push_try(<Type, MAX_SIZE>)(Type element) -> void?
+    fn FixedList.remove_all_from(<Type, MAX_SIZE>)(FixedList* other_list) -> void
+    // Remove an element at a particular place.
+    fn FixedList.remove_at(<Type, MAX_SIZE>)(sz index) -> void
+    fn FixedList.remove_first(<Type, MAX_SIZE>)() -> void?
+    fn FixedList.remove_first_item(<Type, MAX_SIZE>)(Type value) -> bool
+    fn FixedList.remove_if(<Type, MAX_SIZE>)(ElementPredicate filter) -> sz
+    fn FixedList.remove_item(<Type, MAX_SIZE>)(Type value) -> sz
+    fn FixedList.remove_last(<Type, MAX_SIZE>)() -> void?
+    fn FixedList.remove_last_item(<Type, MAX_SIZE>)(Type value) -> bool
+    // Removes an element at "index" by copying the last element to this slot and reducing
+    fn FixedList.remove_unordered_at(<Type, MAX_SIZE>)(sz index) -> void
+    fn FixedList.remove_using_test(<Type, MAX_SIZE>)(ElementTest filter, any context) -> sz
+    fn FixedList.retain_if(<Type, MAX_SIZE>)(ElementPredicate selection) -> sz
+    fn FixedList.retain_using_test(<Type, MAX_SIZE>)(ElementTest filter, any context) -> sz
+    // Reverse the elements in a list.
+    fn FixedList.reverse(<Type, MAX_SIZE>)() -> void
+    fn FixedList.rindex_of(<Type, MAX_SIZE>)(Type type) -> sz?
+    fn FixedList.set(<Type, MAX_SIZE>)(sz index, Type value) -> void
+    fn FixedList.set_at(<Type, MAX_SIZE>)(sz index, Type type) -> void
+    fn FixedList.swap(<Type, MAX_SIZE>)(sz i, sz j) -> void
+    // IMPORTANT The returned array must be freed using free_aligned.
+    fn FixedList.to_aligned_array(<Type, MAX_SIZE>)(Allocator allocator) -> Type[]
+    macro FixedList.to_array(<Type, MAX_SIZE>)(Allocator allocator) -> Type[]
+    fn FixedList.to_format(<Type, MAX_SIZE>)(Formatter* formatter) -> sz?
+    fn FixedList.to_tarray(<Type, MAX_SIZE>)() -> Type[]
+  macro type_is_overaligned(<Type, MAX_SIZE>)() -> bool
+  const ELEMENT_IS_EQUATABLE: void = types::is_equatable_type(Type)
+  const ELEMENT_IS_POINTER: void = Type::kind == POINTER
+
+## std::collections::growablebitset(<Type>)
+  def GrowableBitSetList = void
+  struct GrowableBitSet(<Type>)
+    .data: GrowableBitSetList
+    fn GrowableBitSet.cardinality(<Type>)() -> sz
+    // Free all memory associated with the set.
+    fn GrowableBitSet.free(<Type>)() -> void
+    fn GrowableBitSet.get(<Type>)(sz i) -> bool
+    fn GrowableBitSet.init(<Type>)(Allocator allocator, sz initial_capacity = 1) -> GrowableBitSet*
+    fn GrowableBitSet.len(<Type>)() -> sz
+    fn GrowableBitSet.max_bit_set(<Type>)() -> sz
+    // Set a bit in the bitset.
+    fn GrowableBitSet.set(<Type>)(sz i) -> void
+    fn GrowableBitSet.set_bool(<Type>)(sz i, bool value) -> void
+    fn GrowableBitSet.tinit(<Type>)(sz initial_capacity = 1) -> GrowableBitSet*
+    // Clear a bit in the bitset.
+    fn GrowableBitSet.unset(<Type>)(sz i) -> void
+  const BITS: void = Type::size * 8
+
+## std::collections::interfacelist(<Type>)
+  def InterfacePredicate = fn bool(Type value)
+  def InterfaceTest = fn bool(Type type, Type context)
+  // The InterfaceList contains a heterogeneous set of types implementing an interface. anything placed in the
+  struct InterfaceList(<Type>)
+    .size: sz
+    .capacity: sz
+    .allocator: Allocator
+    .entries: Type*
+    // Add all the elements in another InterfaceList.
+    fn InterfaceList.add_all(<Type>)(InterfaceList* other_list) -> void
+    // Return a view of the data as a slice.
+    fn InterfaceList.array_view(<Type>)() -> Type[]
+    // Remove all elements in the list.
+    fn InterfaceList.clear(<Type>)() -> void
+    // Copy the last value, pop it and return the copy of it.
+    fn InterfaceList.copy_pop(<Type>)(Allocator allocator) -> Type?
+    // Copy the first value, pop it and return the copy of it.
+    fn InterfaceList.copy_pop_first(<Type>)(Allocator allocator) -> Type?
+    // Return the first element
+    fn InterfaceList.first(<Type>)() -> Type?
+    // Completely free and clear a list.
+    fn InterfaceList.free(<Type>)() -> void
+    // Free a retained element removed using *_retained.
+    fn InterfaceList.free_element(<Type>)(Type element) -> void
+    // Return an element in the list.
+    fn InterfaceList.get(<Type>)(sz index) -> Type
+    // Initialize the list. If not initialized then it will use the temp allocator
+    fn InterfaceList.init(<Type>)(Allocator allocator, sz initial_capacity = 16) -> InterfaceList*
+    // Insert an element at a particular index.
+    macro InterfaceList.insert_at(<Type>)(sz index, void type) -> void
+    // Return whether the list is empty.
+    fn InterfaceList.is_empty(<Type>)() -> bool
+    fn InterfaceList.is_initialized(<Type>)() -> bool
+    // Return the last element
+    fn InterfaceList.last(<Type>)() -> Type?
+    // Return the length of the list.
+    fn InterfaceList.len(<Type>)() -> sz
+    // Pop the first value. It must later be released using `list.free_element()`.
+    fn InterfaceList.pop_first_retained(<Type>)() -> Type?
+    // Pop the last value. It must later be released using `list.free_element()`.
+    fn InterfaceList.pop_retained(<Type>)() -> Type?
+    // Push an element on the list by cloning it.
+    macro InterfaceList.push(<Type>)(void element) -> void
+    // Push an element to the front of the list.
+    macro InterfaceList.push_front(<Type>)(void value) -> void
+    // Remove the element at the particular index.
+    fn InterfaceList.remove_at(<Type>)(sz index) -> void
+    // Remove the first element in the list, the list may not be empty.
+    fn InterfaceList.remove_first(<Type>)() -> void
+    // Remove Type elements matching the predicate.
+    fn InterfaceList.remove_if(<Type>)(InterfacePredicate filter) -> sz
+    // Remove the last element in the list. The list may not be empty.
+    fn InterfaceList.remove_last(<Type>)() -> void
+    // Remove Type elements matching the predicate.
+    fn InterfaceList.remove_using_test(<Type>)(InterfaceTest filter, Type context) -> sz
+    // Reserve memory so that at least the `min_capacity` exists.
+    fn InterfaceList.reserve(<Type>)(sz min_capacity) -> void
+    // Retain the elements matching the predicate.
+    fn InterfaceList.retain_if(<Type>)(InterfacePredicate selection) -> sz
+    // Retain Type elements matching the predicate.
+    fn InterfaceList.retain_using_test(<Type>)(InterfaceTest selection, Type context) -> sz
+    // Reverse the order of the elements in the list.
+    fn InterfaceList.reverse(<Type>)() -> void
+    // Set the element at Type index.
+    macro InterfaceList.set(<Type>)(sz index, void value) -> void
+    // Swap two elements in a list.
+    fn InterfaceList.swap(<Type>)(sz i, sz j) -> void
+    // Copy the last value, pop it and return the copy of it.
+    fn InterfaceList.tcopy_pop(<Type>)() -> Type?
+    // Copy the first value, pop it and return the temp copy of it.
+    fn InterfaceList.tcopy_pop_first(<Type>)() -> Type?
+    // Initialize the list using the temp allocator.
+    fn InterfaceList.tinit(<Type>)(sz initial_capacity = 16) -> InterfaceList*
+    // Print the list to a formatter.
+    fn InterfaceList.to_format(<Type>)(Formatter* formatter) -> sz?
+
+## std::collections::linkedlist(<Type>)
+  struct Node(<Type>)
+    .next: Node*
+    .prev: Node*
+    .value: Type
+  struct LinkedList(<Type>)
+    .allocator: Allocator
+    .size: sz
+    ._first: Node*
+    ._last: Node*
+    fn LinkedList.array_view(<Type>)() -> LinkedListArrayView
+    fn LinkedList.clear(<Type>)() -> void
+    macro LinkedList.eq(<Type>)(LinkedList other) -> bool
+    fn LinkedList.first(<Type>)() -> Type?
+    fn LinkedList.free(<Type>)() -> void
+    fn LinkedList.get(<Type>)(sz index) -> Type
+    fn LinkedList.get_ref(<Type>)(sz index) -> Type*
+    fn LinkedList.index_of(<Type>)(Type t) -> sz?
+    fn LinkedList.init(<Type>)(Allocator allocator) -> LinkedList*
+    fn LinkedList.insert_at(<Type>)(sz index, Type element) -> void
+    fn LinkedList.is_empty(<Type>)() -> bool
+    fn LinkedList.is_initialized(<Type>)() -> bool
+    fn LinkedList.last(<Type>)() -> Type?
+    fn LinkedList.len(<Type>)() -> sz
+    macro LinkedList.node_at_index(<Type>)(sz index) -> Node*
+    fn LinkedList.peek(<Type>)() -> Type?
+    fn LinkedList.peek_last(<Type>)() -> Type?
+    fn LinkedList.pop(<Type>)() -> Type?
+    fn LinkedList.pop_first(<Type>)() -> Type?
+    fn LinkedList.push(<Type>)(Type value) -> void
+    fn LinkedList.push_all(<Type>)(Type[] value) -> void
+    fn LinkedList.push_front(<Type>)(Type value) -> void
+    fn LinkedList.push_front_all(<Type>)(Type[] value) -> void
+    fn LinkedList.remove(<Type>)(Type t) -> sz
+    fn LinkedList.remove_at(<Type>)(sz index) -> void
+    fn LinkedList.remove_first(<Type>)() -> void?
+    fn LinkedList.remove_first_match(<Type>)(Type t) -> bool
+    fn LinkedList.remove_last(<Type>)() -> void?
+    fn LinkedList.remove_last_match(<Type>)(Type t) -> bool
+    fn LinkedList.rindex_of(<Type>)(Type t) -> sz?
+    fn LinkedList.set(<Type>)(sz index, Type element) -> void
+    fn LinkedList.tinit(<Type>)() -> LinkedList*
+    fn LinkedList.to_format(<Type>)(Formatter* f) -> sz?
+  struct LinkedListArrayView(<Type>)
+    .list: LinkedList*
+    .current_node: Node*
+    .current_index: sz
+    fn LinkedListArrayView.get(<Type>)(sz index) -> Type
+    fn LinkedListArrayView.get_ref(<Type>)(sz index) -> Type*
+    fn LinkedListArrayView.len(<Type>)() -> sz
+  macro @new(<Type>)(Allocator allocator, Type[] #default_values = {}) -> LinkedList
+  macro @tnew(<Type>)(Type[] #default_values = {}) -> LinkedList
+  const ELEMENT_IS_EQUATABLE: void = types::is_equatable_type(Type)
+
+## std::collections::list(<Type>)
+  def ElementPredicate = fn bool(Type* type)
+  def ElementTest = fn bool(Type* type, any context)
+  struct List(<Type>)
+    .size: sz
+    .capacity: sz
+    .allocator: Allocator
+    .entries: Type*
+    macro List.@item_at(<Type>)(sz index) -> Type
+    fn List.add_all(<Type>)(List* other_list) -> void
+    fn List.array_view(<Type>)() -> Type[]
+    fn List.byte_size(<Type>)() -> sz
+    fn List.clear(<Type>)() -> void
+    fn List.compact(<Type>)() -> sz
+    fn List.compact_count(<Type>)() -> sz
+    // Check for presence of a value in a list.
+    fn List.contains(<Type>)(Type value) -> bool
+    fn List.equals(<Type>)(List other_list) -> bool
+    fn List.first(<Type>)() -> Type?
+    fn List.free(<Type>)() -> void
+    fn List.get(<Type>)(sz index) -> Type
+    fn List.get_ref(<Type>)(sz index) -> Type*
+    fn List.index_of(<Type>)(Type type) -> sz?
+    fn List.init(<Type>)(Allocator allocator, sz initial_capacity = 16) -> List*
+    // Initialize a new list with an array.
+    fn List.init_with_array(<Type>)(Allocator allocator, Type[] values) -> List*
+    fn List.init_wrapping_array(<Type>)(Allocator allocator, Type[] types) -> void
+    fn List.insert_at(<Type>)(sz index, Type type) -> void
+    fn List.is_empty(<Type>)() -> bool
+    fn List.is_initialized(<Type>)() -> bool
+    fn List.last(<Type>)() -> Type?
+    fn List.len(<Type>)() -> sz
+    fn List.pop(<Type>)() -> Type?
+    fn List.pop_first(<Type>)() -> Type?
+    fn List.push(<Type>)(Type element) -> void
+    // Add the values of an array to this list.
+    fn List.push_all(<Type>)(Type[] array) -> void
+    fn List.push_front(<Type>)(Type type) -> void
+    fn List.remove_all_from(<Type>)(List* other_list) -> void
+    fn List.remove_at(<Type>)(sz index) -> void
+    fn List.remove_first(<Type>)() -> void?
+    fn List.remove_first_item(<Type>)(Type value) -> bool
+    fn List.remove_if(<Type>)(ElementPredicate filter) -> sz
+    fn List.remove_item(<Type>)(Type value) -> sz
+    fn List.remove_last(<Type>)() -> void?
+    fn List.remove_last_item(<Type>)(Type value) -> bool
+    // Removes an element at "index" by copying the last element to this slot and reducing
+    fn List.remove_unordered_at(<Type>)(sz index) -> void
+    fn List.remove_using_test(<Type>)(ElementTest filter, any context) -> sz
+    fn List.reserve(<Type>)(sz added) -> void
+    fn List.retain_if(<Type>)(ElementPredicate selection) -> sz
+    fn List.retain_using_test(<Type>)(ElementTest filter, any context) -> sz
+    // Reverse the elements in a list.
+    fn List.reverse(<Type>)() -> void
+    fn List.rindex_of(<Type>)(Type type) -> sz?
+    fn List.set(<Type>)(sz index, Type value) -> void
+    fn List.set_at(<Type>)(sz index, Type type) -> void
+    fn List.swap(<Type>)(sz i, sz j) -> void
+    // Initialize the list using the temp allocator.
+    fn List.tinit(<Type>)(sz initial_capacity = 16) -> List*
+    // Initialize a temporary list with an array.
+    fn List.tinit_with_array(<Type>)(Type[] values) -> List*
+    // IMPORTANT The returned array must be freed using free_aligned.
+    fn List.to_aligned_array(<Type>)(Allocator allocator) -> Type[]
+    macro List.to_array(<Type>)(Allocator allocator) -> Type[]
+    fn List.to_format(<Type>)(Formatter* formatter) -> sz?
+    fn List.to_tarray(<Type>)() -> Type[]
+  macro type_is_overaligned(<Type>)() -> bool
+  const ELEMENT_IS_EQUATABLE: void = types::is_equatable_type(Type)
+  const ELEMENT_IS_POINTER: void = Type::kind == POINTER
+  const LIST_HEAP_ALLOCATOR: Allocator = (Allocator)&dummy
+  const ONHEAP: List = { .allocator = LIST_HEAP_ALLOCATOR }
+
+## std::collections::map(<Key, Value>)
+  struct LinkedEntry(<Key, Value>)
+    .hash: uint
+    .key: Key
+    .value: Value
+    .next: LinkedEntry*
+    .before: LinkedEntry*
+    .after: LinkedEntry*
+  def LinkedHashMap = void
+    fn LinkedHashMap.init(<Key, Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> LinkedHashMap*
+    fn LinkedHashMap.tinit(<Key, Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> LinkedHashMap*
+  struct OrderedMap(<Key, Value>)
+    .table: LinkedEntry*[]
+    .allocator: Allocator
+    .count: int
+    .threshold: int
+    .load_factor: float
+    .head: LinkedEntry*
+    .tail: LinkedEntry*
+    macro OrderedMap.@each(<Key, Value>)(void map, void @body) -> void
+    macro OrderedMap.@each_entry(<Key, Value>)(void map, void @body) -> void
+    // Get the value or set it to the value
+    macro OrderedMap.@get_or_set(<Key, Value>)(void map, Key key, Value #expr) -> Value
+    fn OrderedMap.clear(<Key, Value>)(void map) -> void
+    fn OrderedMap.free(<Key, Value>)(void map) -> void
+    fn OrderedMap.get(<Key, Value>)(void map, Key key) -> Value?
+    fn OrderedMap.get_entry(<Key, Value>)(void map, Key key) -> LinkedEntry*?
+    fn OrderedMap.get_ref(<Key, Value>)(void map, Key key) -> Value*?
+    fn OrderedMap.has_key(<Key, Value>)(void map, Key key) -> bool
+    fn OrderedMap.has_value(<Key, Value>)(void map, Value v) -> bool
+    fn OrderedMap.init_from_keys_and_values(<Key, Value>)(Allocator allocator, Key[] keys, Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedMap*
+    fn OrderedMap.init_from_map(<Key, Value>)(Allocator allocator, OrderedMap* other_map) -> OrderedMap*
+    macro OrderedMap.init_with_key_values(<Key, Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedMap*
+    fn OrderedMap.is_empty(<Key, Value>)(void map) -> bool
+    // Has this hash map been initialized yet?
+    fn OrderedMap.is_initialized(<Key, Value>)(void map) -> bool
+    fn OrderedMap.iter(<Key, Value>)() -> OrderedMapIterator
+    fn OrderedMap.key_iter(<Key, Value>)() -> OrderedMapKeyIterator
+    fn OrderedMap.keys(<Key, Value>)(Allocator allocator) -> Key[]
+    fn OrderedMap.len(<Key, Value>)(void map) -> sz
+    fn OrderedMap.remove(<Key, Value>)(void map, Key key) -> void?
+    fn OrderedMap.set(<Key, Value>)(void map, Key key, Value value) -> bool
+    fn OrderedMap.tinit_from_keys_and_values(<Key, Value>)(Key[] keys, Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedMap*
+    fn OrderedMap.tinit_from_map(<Key, Value>)(void map, OrderedMap* other_map) -> OrderedMap*
+    macro OrderedMap.tinit_with_key_values(<Key, Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedMap*
+    fn OrderedMap.tkeys(<Key, Value>)() -> Key[]
+    fn OrderedMap.to_format(<Key, Value>)(Formatter* f) -> sz?
+    fn OrderedMap.tvalues(<Key, Value>)(void map) -> Value[]
+    fn OrderedMap.value_iter(<Key, Value>)() -> OrderedMapValueIterator
+    fn OrderedMap.values(<Key, Value>)(Allocator allocator) -> Value[]
+  def LinkedHashMapLiterator = void
+  struct OrderedMapIterator(<Key, Value>)
+    .map: OrderedMap*
+    .current: LinkedEntry*
+    .started: bool
+    fn OrderedMapIterator.get(<Key, Value>)() -> LinkedEntry*?
+    fn OrderedMapIterator.has_next(<Key, Value>)() -> bool
+    fn OrderedMapIterator.len(<Key, Value>)(void self) -> sz
+    fn OrderedMapIterator.next(<Key, Value>)() -> bool
+  def LinkedHashMapValueIterator = void
+  def LinkedHashMapKeyIterator = void
+  distinct type OrderedMapValueIterator(<Key, Value>)
+    fn OrderedMapValueIterator.get(<Key, Value>)() -> Value*?
+    fn OrderedMapValueIterator.len(<Key, Value>)(void self) -> sz
+  distinct type OrderedMapKeyIterator(<Key, Value>)
+    fn OrderedMapKeyIterator.get(<Key, Value>)() -> Key*?
+    fn OrderedMapKeyIterator.len(<Key, Value>)(void self) -> sz
+  struct Entry(<Key, Value>)
+    .hash: uint
+    .key: Key
+    .value: Value
+    .next: Entry*
+  struct HashMap(<Key, Value>)
+    .table: Entry*[]
+    .allocator: Allocator
+    .count: int
+    .threshold: int
+    .load_factor: float
+    macro HashMap.@each(<Key, Value>)(void map, void @body) -> void
+    macro HashMap.@each_entry(<Key, Value>)(void map, void @body) -> void
+    // Get the value or set it to the value
+    macro HashMap.@get_or_set(<Key, Value>)(void map, Key key, Value #expr) -> Value
+    fn HashMap.clear(<Key, Value>)(void map) -> void
+    fn HashMap.free(<Key, Value>)(void map) -> void
+    fn HashMap.get(<Key, Value>)(void map, Key key) -> Value?
+    fn HashMap.get_entry(<Key, Value>)(void map, Key key) -> Entry*?
+    fn HashMap.get_or_create_ref(<Key, Value>)(void map, Key key) -> Value*
+    fn HashMap.get_ref(<Key, Value>)(void map, Key key) -> Value*?
+    fn HashMap.has_key(<Key, Value>)(void map, Key key) -> bool
+    fn HashMap.has_value(<Key, Value>)(void map, Value v) -> bool
+    fn HashMap.init(<Key, Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashMap*
+    fn HashMap.init_from_keys_and_values(<Key, Value>)(Allocator allocator, Key[] keys, Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashMap*
+    fn HashMap.init_from_map(<Key, Value>)(Allocator allocator, HashMap* other_map) -> HashMap*
+    macro HashMap.init_with_key_values(<Key, Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashMap*
+    fn HashMap.is_empty(<Key, Value>)(void map) -> bool
+    // Has this hash map been initialized yet?
+    fn HashMap.is_initialized(<Key, Value>)(void map) -> bool
+    fn HashMap.iter(<Key, Value>)() -> HashMapIterator
+    fn HashMap.key_iter(<Key, Value>)() -> HashMapKeyIterator
+    fn HashMap.keys(<Key, Value>)(Allocator allocator) -> Key[]
+    fn HashMap.len(<Key, Value>)(void map) -> sz
+    fn HashMap.remove(<Key, Value>)(void map, Key key) -> void?
+    fn HashMap.set(<Key, Value>)(void map, Key key, Value value) -> bool
+    fn HashMap.tinit(<Key, Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashMap*
+    fn HashMap.tinit_from_keys_and_values(<Key, Value>)(Key[] keys, Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashMap*
+    fn HashMap.tinit_from_map(<Key, Value>)(void map, HashMap* other_map) -> HashMap*
+    macro HashMap.tinit_with_key_values(<Key, Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashMap*
+    fn HashMap.tkeys(<Key, Value>)() -> Key[]
+    fn HashMap.to_format(<Key, Value>)(Formatter* f) -> sz?
+    fn HashMap.tvalues(<Key, Value>)() -> Value[]
+    fn HashMap.value_iter(<Key, Value>)() -> HashMapValueIterator
+    fn HashMap.values(<Key, Value>)(Allocator allocator) -> Value[]
+  struct HashMapIterator(<Key, Value>)
+    .map: HashMap*
+    .top_index: int
+    .index: int
+    .current_entry: Entry*
+    fn HashMapIterator.get(<Key, Value>)(sz idx) -> Entry
+    fn HashMapIterator.len(<Key, Value>)(void self) -> sz
+  distinct type HashMapValueIterator(<Key, Value>)
+    fn HashMapValueIterator.get(<Key, Value>)(sz idx) -> Value
+    fn HashMapValueIterator.len(<Key, Value>)(void self) -> sz
+  distinct type HashMapKeyIterator(<Key, Value>)
+    fn HashMapKeyIterator.get(<Key, Value>)(sz idx) -> Key
+    fn HashMapKeyIterator.len(<Key, Value>)(void self) -> sz
+  const COPY_KEYS: bool = types::implements_copy(Key)
+  const DEFAULT_INITIAL_CAPACITY: int = 16
+  const DEFAULT_LOAD_FACTOR: float = 0.75
+  const MAP_HEAP_ALLOCATOR: Allocator = (Allocator)&dummy
+  const MAXIMUM_CAPACITY: int = 1 << 30
+  const ONHEAP: HashMap = { .allocator = MAP_HEAP_ALLOCATOR }
+  const ORDEREDONHEAP: OrderedMap = { .allocator = MAP_HEAP_ALLOCATOR }
+  const VALUE_IS_EQUATABLE: void = Value::has_equals
+
+## std::collections::maybe(<Type>)
+  struct Maybe(<Type>)
+    .value: Type
+    .has_value: bool
+    fn Maybe.equals(<Type>)(void self, Maybe other) -> bool
+    macro Maybe.get(<Type>)(void self) -> Type?
+    fn Maybe.reset(<Type>)() -> void
+    fn Maybe.set(<Type>)(Type val) -> void
+    fn Maybe.to_format(<Type>)(Formatter* f) -> sz?
+  fn value(<Type>)(Type val) -> Maybe
+  const EMPTY: Maybe = { }
+
+## std::collections::object
+  struct Object
+    .type: typeid
+    .allocator: Allocator
+    .?: void
+    // Iterate over all key/value pairs in this object when it is a map.
+    macro Object.@each_entry(void @body) -> void
+    fn Object.free() -> void
+    fn Object.get(String key) -> Object*?
+    fn Object.get_at(sz index) -> Object*
+    fn Object.get_bool(String key) -> bool?
+    fn Object.get_bool_at(sz index) -> bool?
+    fn Object.get_char(String key) -> char?
+    fn Object.get_char_at(sz index) -> char?
+    macro Object.get_enum(void $EnumType, String key) -> void
+    macro Object.get_enum_at(void $EnumType, sz index) -> void
+    fn Object.get_float(String key) -> double?
+    fn Object.get_float_at(sz index) -> double?
+    fn Object.get_ichar(String key) -> ichar?
+    fn Object.get_ichar_at(sz index) -> ichar?
+    fn Object.get_int(String key) -> int?
+    fn Object.get_int128(String key) -> int128?
+    fn Object.get_int128_at(sz index) -> int128?
+    fn Object.get_int_at(sz index) -> int?
+    fn Object.get_len() -> sz
+    fn Object.get_long(String key) -> long?
+    fn Object.get_long_at(sz index) -> long?
+    fn Object.get_or_create_obj(String key) -> Object*
+    fn Object.get_short(String key) -> short?
+    fn Object.get_short_at(sz index) -> short?
+    fn Object.get_string(String key) -> String?
+    fn Object.get_string_at(sz index) -> String?
+    fn Object.get_uint(String key) -> uint?
+    fn Object.get_uint128(String key) -> uint128?
+    fn Object.get_uint128_at(sz index) -> uint128?
+    fn Object.get_uint_at(sz index) -> uint?
+    fn Object.get_ulong(String key) -> ulong?
+    fn Object.get_ulong_at(sz index) -> ulong?
+    fn Object.get_ushort(String key) -> ushort?
+    fn Object.get_ushort_at(sz index) -> ushort?
+    fn Object.has_key(String key) -> bool
+    fn Object.is_array() -> bool
+    fn Object.is_bool() -> bool
+    fn Object.is_empty() -> bool
+    fn Object.is_enum() -> bool
+    fn Object.is_float() -> bool
+    fn Object.is_indexable() -> bool
+    fn Object.is_int() -> bool
+    fn Object.is_keyable() -> bool
+    fn Object.is_map() -> bool
+    fn Object.is_null() -> bool
+    fn Object.is_string() -> bool
+    macro Object.push(void value) -> Object*
+    fn Object.push_object(Object* to_append) -> void
+    macro Object.set(String key, void value) -> Object*
+    macro Object.set_at(sz index, void value) -> Object*
+    fn Object.set_object_at(sz index, Object* to_set) -> void
+    fn Object.to_format(Formatter* formatter) -> sz?
+    macro Object.to_value(void $Type, void strict = true) -> void
+  macro get_integer_value(Object* value, void $Type) -> void
+  fn new_bool(bool b) -> Object*
+  macro new_enum(Allocator allocator, void e) -> Object*
+  fn new_float(Allocator allocator, double f) -> Object*
+  fn new_int(Allocator allocator, int128 i) -> Object*
+  fn new_null() -> Object*
+  fn new_obj(Allocator allocator) -> Object*
+  fn new_string(Allocator allocator, String s) -> Object*
+  const FALSE_OBJECT: Object = { .b = false, .type = bool }
+  const NULL_OBJECT: Object = { .type = void* }
+  const TRUE_OBJECT: Object = { .b = true, .type = bool }
+
+## std::collections::pair(<Type1, Type2>)
+  struct Pair(<Type1, Type2>)
+    .first: Type1
+    .second: Type2
+    fn Pair.equal(<Type1, Type2>)(void self, Pair other) -> bool
+    fn Pair.to_format(<Type1, Type2>)(Formatter* f) -> sz?
+    macro Pair.unpack(<Type1, Type2>)(void a, void b) -> void
+
+## std::collections::priorityqueue
+  distinct type PriorityQueue(<Type>)
+  distinct type PriorityQueueMax(<Type>)
+  struct PrivatePriorityQueue(<Type, MAX>)
+    .heap: List{Type}
+    fn PrivatePriorityQueue.first(<Type, MAX>)() -> Type?
+    fn PrivatePriorityQueue.free(<Type, MAX>)() -> void
+    fn PrivatePriorityQueue.get(<Type, MAX>)(sz index) -> Type
+    fn PrivatePriorityQueue.init(<Type, MAX>)(Allocator allocator, sz initial_capacity = 16) -> PrivatePriorityQueue*
+    fn PrivatePriorityQueue.is_empty(<Type, MAX>)() -> bool
+    fn PrivatePriorityQueue.len(<Type, MAX>)() -> sz
+    fn PrivatePriorityQueue.pop(<Type, MAX>)() -> Type?
+    fn PrivatePriorityQueue.push(<Type, MAX>)(Type element) -> void
+    fn PrivatePriorityQueue.remove_at(<Type, MAX>)(sz index) -> void
+    fn PrivatePriorityQueue.tinit(<Type, MAX>)(sz initial_capacity = 16) -> PrivatePriorityQueue*
+    fn PrivatePriorityQueue.to_format(<Type, MAX>)(Formatter* formatter) -> sz?
+
+## std::collections::range(<Type>)
+  struct Range(<Type>)
+    .start: Type
+    .end: Type
+    fn Range.contains(<Type>)(Type value) -> bool
+    fn Range.get(<Type>)(sz index) -> Type
+    fn Range.len(<Type>)() -> sz
+    fn Range.to_format(<Type>)(Formatter* formatter) -> sz?
+  struct ExclusiveRange(<Type>)
+    .start: Type
+    .end: Type
+    fn ExclusiveRange.contains(<Type>)(Type value) -> bool
+    fn ExclusiveRange.get(<Type>)(sz index) -> Type
+    fn ExclusiveRange.len(<Type>)() -> sz
+    fn ExclusiveRange.to_format(<Type>)(Formatter* formatter) -> sz?
+
+## std::collections::result(<OkType, ErrType>)
+  fault RESULT_ERROR
+  fault RESULT_OK
+  // Result{OkType, ErrType} holds either a success value or an error value with a payload.
+  struct Result(<OkType, ErrType>)
+    .?: void
+    .is_ok: bool
+    // This macro allows the result to diverge on error (return/break/continue)
+    macro Result.@or_else(<OkType, ErrType>)(void @body) -> OkType
+    fn Result.equals(<OkType, ErrType>)(void self, Result other) -> bool
+    // Returns the error value or a fault
+    fn Result.err(<OkType, ErrType>)() -> ErrType?
+    // Returns the ok value or a fault
+    fn Result.ok(<OkType, ErrType>)() -> OkType?
+    fn Result.to_format(<OkType, ErrType>)(Formatter* f) -> sz?
+
+## std::collections::ringbuffer(<Type, CAPACITY>)
+  // Ring list is a queue-like, FIFO, fixed size (stack allocated) data structure.
+  struct RingBuffer(<Type, CAPACITY>)
+    .buf: Type[CAPACITY]
+    .head: sz
+    .tail: sz
+    // Reset the ring list's length and offset to zero, letting it write new elements over
+    fn RingBuffer.clear(<Type, CAPACITY>)() -> void
+    // Allocates a slice and copies the contents from the ring list in push order.
+    fn RingBuffer.copy_to_array(<Type, CAPACITY>)(Allocator alloc) -> Type[]?
+    // Returns the element at the start of the ring list.
+    fn RingBuffer.first(<Type, CAPACITY>)() -> Type?
+    // Returns a reference to the element at the start of the ring list.
+    fn RingBuffer.first_ref(<Type, CAPACITY>)() -> Type*?
+    fn RingBuffer.get(<Type, CAPACITY>)(sz index) -> Type
+    fn RingBuffer.get_ref(<Type, CAPACITY>)(sz index) -> Type*
+    fn RingBuffer.init(<Type, CAPACITY>)() -> void
+    fn RingBuffer.init_from_values(<Type, CAPACITY>)(Type[] values) -> void
+    // Tells if the ring list is currently empty.
+    fn RingBuffer.is_empty(<Type, CAPACITY>)() -> bool
+    // Tells if the ring list is currently full, it is full 1 slot behind actually being full or we can't detect it.
+    fn RingBuffer.is_full(<Type, CAPACITY>)() -> bool
+    // Returns the element at the end of the ring list.
+    fn RingBuffer.last(<Type, CAPACITY>)() -> Type?
+    // Returns a reference to the element at the end of the ring list.
+    fn RingBuffer.last_ref(<Type, CAPACITY>)() -> Type*?
+    // Calculates count of elements in ring list.
+    fn RingBuffer.len(<Type, CAPACITY>)() -> sz
+    // Pops the element from the start of the ring list.
+    fn RingBuffer.pop_first(<Type, CAPACITY>)() -> Type?
+    // Performs subsequent 'pop' calls and writes the output into 'target'
+    fn RingBuffer.pop_first_into(<Type, CAPACITY>)(Type[] target) -> Type[]
+    // Pushes a new element to the end of the ring list.
+    fn RingBuffer.push(<Type, CAPACITY>)(Type element) -> void
+    // Performs subsequent 'push' calls on each value in the array or slice
+    fn RingBuffer.push_all(<Type, CAPACITY>)(Type[] array) -> void
+    fn RingBuffer.set(<Type, CAPACITY>)(sz index, Type value) -> void
+    fn RingBuffer.to_format(<Type, CAPACITY>)(Formatter* formatter) -> sz?
+
+## std::collections::set(<Value>)
+  struct LinkedEntry(<Value>)
+    .hash: uint
+    .value: Value
+    .next: LinkedEntry*
+    .before: LinkedEntry*
+    .after: LinkedEntry*
+  def LinkedHashSet = void
+  struct OrderedSet(<Value>)
+    .table: LinkedEntry*[]
+    .allocator: Allocator
+    .count: int
+    .threshold: int
+    .load_factor: float
+    .head: LinkedEntry*
+    .tail: LinkedEntry*
+    // Iterate over all the values in the set
+    macro OrderedSet.@each(<Value>)(void set, void @body) -> void
+    fn OrderedSet.add(<Value>)(void set, Value value) -> bool
+    // Add all elements in the slice to the set.
+    fn OrderedSet.add_all(<Value>)(void set, Value[] list) -> int
+    fn OrderedSet.add_all_from(<Value>)(void set, OrderedSet* other) -> int
+    // Clear all elements from the set while keeping the underlying storage
+    fn OrderedSet.clear(<Value>)(void set) -> void
+    // Check if the set contains the given value.
+    fn OrderedSet.contains(<Value>)(void set, Value value) -> bool
+    // Return this set - other, so (A & ~B)
+    fn OrderedSet.difference(<Value>)(Allocator allocator, OrderedSet* other) -> OrderedSet
+    // Free all memory allocated by the hash set.
+    fn OrderedSet.free(<Value>)(void set) -> void
+    fn OrderedSet.init(<Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedSet*
+    fn OrderedSet.init_from_set(<Value>)(Allocator allocator, OrderedSet* other_set) -> OrderedSet*
+    fn OrderedSet.init_from_values(<Value>)(Allocator allocator, Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedSet*
+    macro OrderedSet.init_with_values(<Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedSet*
+    // Returns the intersection of the two sets (A & B)
+    fn OrderedSet.intersection(<Value>)(Allocator allocator, OrderedSet* other) -> OrderedSet
+    // Check if the set is empty
+    fn OrderedSet.is_empty(<Value>)(void set) -> bool
+    // Has this linked hash set been initialized yet?
+    fn OrderedSet.is_initialized(<Value>)(void set) -> bool
+    // Check if this hash set is a subset of another set.
+    fn OrderedSet.is_subset(<Value>)(OrderedSet* other) -> bool
+    fn OrderedSet.iter(<Value>)(void set) -> OrderedSetIterator
+    fn OrderedSet.len(<Value>)() -> sz
+    // Remove a single value from the set.
+    fn OrderedSet.remove(<Value>)(void set, Value value) -> void?
+    fn OrderedSet.remove_all(<Value>)(void set, Value[] values) -> int
+    fn OrderedSet.remove_all_from(<Value>)(void set, OrderedSet* other) -> int
+    fn OrderedSet.reserve(<Value>)(void set, int capacity) -> void
+    // Returns the union of two sets (A | B)
+    fn OrderedSet.set_union(<Value>)(Allocator allocator, OrderedSet* other) -> OrderedSet
+    // Return (A ^ B)
+    fn OrderedSet.symmetric_difference(<Value>)(Allocator allocator, OrderedSet* other) -> OrderedSet
+    fn OrderedSet.tdifference(<Value>)(OrderedSet* other) -> OrderedSet
+    fn OrderedSet.tinit(<Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedSet*
+    fn OrderedSet.tinit_from_set(<Value>)(void set, OrderedSet* other_set) -> OrderedSet*
+    fn OrderedSet.tinit_from_values(<Value>)(Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedSet*
+    macro OrderedSet.tinit_with_values(<Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> OrderedSet*
+    fn OrderedSet.tintersection(<Value>)(OrderedSet* other) -> OrderedSet
+    fn OrderedSet.to_format(<Value>)(Formatter* f) -> sz?
+    fn OrderedSet.tset_union(<Value>)(OrderedSet* other) -> OrderedSet
+    fn OrderedSet.tsymmetric_difference(<Value>)(OrderedSet* other) -> OrderedSet
+  def LinkedHashSetIterator = void
+  struct OrderedSetIterator(<Value>)
+    .set: OrderedSet*
+    .current: LinkedEntry*
+    .started: bool
+    fn OrderedSetIterator.get(<Value>)() -> Value*?
+    fn OrderedSetIterator.has_next(<Value>)() -> bool
+    fn OrderedSetIterator.len(<Value>)() -> sz
+    fn OrderedSetIterator.next(<Value>)() -> bool
+  struct Entry(<Value>)
+    .hash: uint
+    .value: Value
+    .next: Entry*
+  struct HashSet(<Value>)
+    .table: Entry*[]
+    .allocator: Allocator
+    .count: int
+    .threshold: int
+    .load_factor: float
+    // Iterate over all the values in the set
+    macro HashSet.@each(<Value>)(void set, void @body) -> void
+    fn HashSet.add(<Value>)(void set, Value value) -> bool
+    // Add all elements in the slice to the set.
+    fn HashSet.add_all(<Value>)(void set, Value[] list) -> sz
+    fn HashSet.add_all_from(<Value>)(void set, HashSet* other) -> sz
+    // Clear all elements from the set while keeping the underlying storage
+    fn HashSet.clear(<Value>)(void set) -> void
+    // Check if the set contains the given value.
+    fn HashSet.contains(<Value>)(void set, Value value) -> bool
+    // Return this set - other, so (A & ~B)
+    fn HashSet.difference(<Value>)(Allocator allocator, HashSet* other) -> HashSet
+    // Free all memory allocated by the hash set.
+    fn HashSet.free(<Value>)(void set) -> void
+    fn HashSet.init(<Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashSet*
+    fn HashSet.init_from_set(<Value>)(Allocator allocator, HashSet* other_set) -> HashSet*
+    fn HashSet.init_from_values(<Value>)(Allocator allocator, Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashSet*
+    macro HashSet.init_with_values(<Value>)(Allocator allocator, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashSet*
+    // Returns the intersection of the two sets (A & B)
+    fn HashSet.intersection(<Value>)(Allocator allocator, HashSet* other) -> HashSet
+    // Check if the set is empty
+    fn HashSet.is_empty(<Value>)(void set) -> bool
+    // Has this hash set been initialized yet?
+    fn HashSet.is_initialized(<Value>)(void set) -> bool
+    // Check if this hash set is a subset of another set.
+    fn HashSet.is_subset(<Value>)(HashSet* other) -> bool
+    fn HashSet.iter(<Value>)(void set) -> HashSetIterator
+    fn HashSet.len(<Value>)() -> sz
+    // Remove a single value from the set.
+    fn HashSet.remove(<Value>)(void set, Value value) -> void?
+    fn HashSet.remove_all(<Value>)(void set, Value[] values) -> sz
+    fn HashSet.remove_all_from(<Value>)(void set, HashSet* other) -> sz
+    fn HashSet.reserve(<Value>)(void set, int capacity) -> void
+    // Returns the union of two sets (A | B)
+    fn HashSet.set_union(<Value>)(Allocator allocator, HashSet* other) -> HashSet
+    // Return (A ^ B)
+    fn HashSet.symmetric_difference(<Value>)(Allocator allocator, HashSet* other) -> HashSet
+    fn HashSet.tdifference(<Value>)(HashSet* other) -> HashSet
+    fn HashSet.tinit(<Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashSet*
+    fn HashSet.tinit_from_set(<Value>)(void set, HashSet* other_set) -> HashSet*
+    fn HashSet.tinit_from_values(<Value>)(Value[] values, sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashSet*
+    macro HashSet.tinit_with_values(<Value>)(sz capacity = DEFAULT_INITIAL_CAPACITY, float load_factor = DEFAULT_LOAD_FACTOR) -> HashSet*
+    fn HashSet.tintersection(<Value>)(HashSet* other) -> HashSet
+    fn HashSet.to_format(<Value>)(Formatter* f) -> sz?
+    fn HashSet.tset_union(<Value>)(HashSet* other) -> HashSet
+    fn HashSet.tsymmetric_difference(<Value>)(HashSet* other) -> HashSet
+    fn HashSet.tvalues(<Value>)() -> Value[]
+    fn HashSet.values(<Value>)(Allocator allocator) -> Value[]
+  struct HashSetIterator(<Value>)
+    .set: HashSet*
+    .bucket_index: int
+    .current: Entry*
+    fn HashSetIterator.len(<Value>)() -> sz
+    fn HashSetIterator.next(<Value>)() -> Value?
+  const DEFAULT_INITIAL_CAPACITY: int = 16
+  const DEFAULT_LOAD_FACTOR: float = 0.75
+  const MAXIMUM_CAPACITY: int = 1 << 30
+  const ONHEAP: HashSet = { .allocator = SET_HEAP_ALLOCATOR }
+  const ORDEREDONHEAP: OrderedSet = { .allocator = SET_HEAP_ALLOCATOR }
+  const SET_HEAP_ALLOCATOR: Allocator = (Allocator)&dummy
+
+## std::collections::sortedmap(<Key, Value>)
+  struct SkipNode(<Key, Value>)
+    .key: Key
+    .value: Value
+    .level: int
+    .forward: SkipNode*[]
+  def CmpFn = fn bool(Key, Key)
+  struct Entry(<Key, Value>)
+    .key: Key
+    .value: Value
+  struct SortedMap(<Key, Value>)
+    .allocator: Allocator
+    .head: SkipNode*
+    .current_level: int
+    .count: sz
+    .rng: SimpleRandom
+    .custom_cmp: CmpFn
+    // Returns the value for key; inserts and returns #default_value if key is absent.
+    macro SortedMap.@get_or_set(<Key, Value>)(Key key, Value #default_value) -> Value
+    fn SortedMap.ceiling_key(<Key, Value>)(Key key) -> Key?
+    fn SortedMap.clear(<Key, Value>)() -> void
+    // Copy all entries of this map into a new map backed by allocator.
+    fn SortedMap.clone(<Key, Value>)(Allocator allocator) -> SortedMap
+    fn SortedMap.first_key(<Key, Value>)() -> Key?
+    fn SortedMap.floor_key(<Key, Value>)(Key key) -> Key?
+    fn SortedMap.free(<Key, Value>)() -> void
+    fn SortedMap.get(<Key, Value>)(Key key) -> Value?
+    fn SortedMap.get_ref(<Key, Value>)(Key key) -> Value*?
+    fn SortedMap.has_key(<Key, Value>)(Key key) -> bool
+    fn SortedMap.higher_key(<Key, Value>)(Key key) -> Key?
+    fn SortedMap.init(<Key, Value>)(Allocator allocator) -> SortedMap*
+    // Init with a custom comparator. The comparator replaces the built-in ordering.
+    fn SortedMap.init_with_cmp(<Key, Value>)(Allocator allocator, CmpFn cmp_fn) -> SortedMap*
+    fn SortedMap.is_empty(<Key, Value>)() -> bool
+    fn SortedMap.is_initialized(<Key, Value>)() -> bool
+    // Returns an iterator that yields Entry values in sorted key order.
+    fn SortedMap.iter(<Key, Value>)() -> SortedMapIterator
+    // Returns an iterator starting at the first key >= from_key in cmp order.
+    fn SortedMap.iter_from(<Key, Value>)(Key from_key) -> SortedMapRangeIterator
+    // Returns an iterator over keys in [from_key, to_key) in cmp order.
+    fn SortedMap.iter_range(<Key, Value>)(Key from_key, Key to_key) -> SortedMapRangeIterator
+    fn SortedMap.last_key(<Key, Value>)() -> Key?
+    fn SortedMap.len(<Key, Value>)() -> sz
+    fn SortedMap.lower_key(<Key, Value>)(Key key) -> Key?
+    // Insert all entries from other into self, overwriting on key collision.
+    fn SortedMap.merge(<Key, Value>)(SortedMap* other) -> void
+    // Remove and return the first entry in iteration order.
+    fn SortedMap.pop_first(<Key, Value>)() -> Entry?
+    // Remove and return the last entry in iteration order.
+    fn SortedMap.pop_last(<Key, Value>)() -> Entry?
+    fn SortedMap.random_level(<Key, Value>)() -> int
+    fn SortedMap.remove(<Key, Value>)(Key key) -> bool
+    // Insert or update the value associated with key.
+    fn SortedMap.set(<Key, Value>)(Key key, Value value) -> bool
+    fn SortedMap.tclone(<Key, Value>)() -> SortedMap
+    fn SortedMap.tinit(<Key, Value>)() -> SortedMap*
+    fn SortedMap.tinit_with_cmp(<Key, Value>)(CmpFn cmp_fn) -> SortedMap*
+    fn SortedMap.to_format(<Key, Value>)(Formatter* f) -> sz?
+  struct SortedMapIterator(<Key, Value>)
+    .map: SortedMap*
+    .current: SkipNode*
+    .index: sz
+    fn SortedMapIterator.get(<Key, Value>)(sz idx) -> Entry
+    fn SortedMapIterator.len(<Key, Value>)() -> sz
+  struct SortedMapRangeIterator(<Key, Value>)
+    .map: SortedMap*
+    .start_node: SkipNode*
+    .current: SkipNode*
+    .current_idx: sz
+    .count: sz
+    fn SortedMapRangeIterator.get(<Key, Value>)(sz idx) -> Entry
+    fn SortedMapRangeIterator.len(<Key, Value>)() -> sz
+  const MAX_LEVEL: int = 32
+  const ONHEAP: SortedMap = { .allocator = ONHEAP_ALLOCATOR }
+  const ONHEAP_ALLOCATOR: Allocator = (Allocator)&dummy
+
+## std::collections::triple(<Type1, Type2, Type3>)
+  struct Triple(<Type1, Type2, Type3>)
+    .first: Type1
+    .second: Type2
+    .third: Type3
+    fn Triple.equal(<Type1, Type2, Type3>)(void self, Triple other) -> bool
+    fn Triple.to_format(<Type1, Type2, Type3>)(Formatter* f) -> sz?
+    macro Triple.unpack(<Type1, Type2, Type3>)(void a, void b, void c) -> void

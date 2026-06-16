@@ -1,0 +1,195 @@
+C3 Standard Library
+Public API reference. One file per namespace in stdlib/.
+Signatures: fn name(Type param) -> ReturnType
+Methods shown indented under their type.
+
+NAMESPACES
+
+  atomic  ->  stdlib/atomic.txt
+    std::atomic
+    std::atomic::types
+
+  bits  ->  stdlib/bits.txt
+    std::bits
+
+  collections  ->  stdlib/collections.txt
+    std::collections::anylist
+    std::collections::bitset
+    std::collections::blockingqueue
+    std::collections::deque
+    std::collections::enummap
+    std::collections::enumset
+    std::collections::fixedlist
+    std::collections::growablebitset
+    std::collections::interfacelist
+    std::collections::linkedlist
+    std::collections::list
+    std::collections::map
+    std::collections::maybe
+    std::collections::object
+    std::collections::pair
+    std::collections::priorityqueue
+    std::collections::range
+    std::collections::result
+    std::collections::ringbuffer
+    std::collections::set
+    std::collections::sortedmap
+    std::collections::triple
+
+  compression  ->  stdlib/compression.txt
+    std::compression::deflate
+    std::compression::gzip
+    std::compression::qoi
+    std::compression::zip
+
+  core  ->  stdlib/core.txt
+    std::core::array
+    std::core::ascii
+    std::core::bitorder
+    std::core::cpudetect
+    std::core::dstring
+    std::core::env
+    std::core::log
+    std::core::main_stub
+    std::core::mem
+    std::core::mem::alignment
+    std::core::mem::alloc
+    std::core::mem::allocators
+    std::core::mem::mempool
+    std::core::mem::rc
+    std::core::mem::ref
+    std::core::mem::vm
+    std::core::mem::volatile
+    std::core::runtime
+    std::core::sanitizer
+    std::core::sanitizer::asan
+    std::core::sanitizer::tsan
+    std::core::string
+    std::core::string::ansi
+    std::core::string::conv
+    std::core::string::iterator
+    std::core::test
+    std::core::values
+
+  crypto  ->  stdlib/crypto.txt
+    std::crypto
+    std::crypto::aes
+    std::crypto::aes128
+    std::crypto::aes192
+    std::crypto::aes256
+    std::crypto::argon2
+    std::crypto::chacha20
+    std::crypto::cshake
+    std::crypto::dh
+    std::crypto::ed25519
+    std::crypto::entropy
+    std::crypto::keccak
+    std::crypto::keccak::nist
+    std::crypto::kmac
+    std::crypto::parallel_hash
+    std::crypto::rc4
+    std::crypto::sha3
+    std::crypto::shake
+    std::crypto::tuple_hash
+    std::crypto::turbo_shake
+
+  encoding  ->  stdlib/encoding.txt
+    std::encoding
+    std::encoding::base32
+    std::encoding::base64
+    std::encoding::codepage
+    std::encoding::csv
+    std::encoding::hex
+    std::encoding::ini
+    std::encoding::json
+    std::encoding::pem
+    std::encoding::xml
+
+  experimental  ->  stdlib/experimental.txt
+    std::experimental::scheduler
+
+  hash  ->  stdlib/hash.txt
+    std::hash::a5hash
+    std::hash::adler32
+    std::hash::blake2
+    std::hash::blake3
+    std::hash::crc32
+    std::hash::crc64
+    std::hash::fnv32a
+    std::hash::fnv64a
+    std::hash::hmac
+    std::hash::komi
+    std::hash::md5
+    std::hash::metro128
+    std::hash::metro64
+    std::hash::murmur3
+    std::hash::poly1305
+    std::hash::ripemd
+    std::hash::sha1
+    std::hash::sha256
+    std::hash::sha512
+    std::hash::siphash
+    std::hash::siphash24
+    std::hash::siphash24_128
+    std::hash::siphash48
+    std::hash::siphash48_128
+    std::hash::streebog
+    std::hash::whirlpool
+    std::hash::wyhash2
+
+  io  ->  stdlib/io.txt
+    std::io
+    std::io::file
+    std::io::file::mmap
+    std::io::os
+    std::io::path
+
+  math  ->  stdlib/math.txt
+    std::math
+    std::math::bigint
+    std::math::complex
+    std::math::distributions
+    std::math::easing
+    std::math::matrix
+    std::math::quaternion
+    std::math::random
+    std::math::random::xoroshiro
+    std::math::random::xoshiro
+    std::math::rectangle
+    std::math::uuid
+    std::math::vector
+
+  net  ->  stdlib/net.txt
+    std::net
+    std::net::os
+    std::net::tcp
+    std::net::udp
+    std::net::url
+
+  os  ->  stdlib/os.txt
+    libc::os
+    std::os
+    std::os::backtrace
+    std::os::env
+    std::os::process
+
+  sort  ->  stdlib/sort.txt
+    std::sort
+
+  termios  ->  stdlib/termios.txt
+    libc::termios
+
+  thread  ->  stdlib/thread.txt
+    std::thread
+    std::thread::channel
+    std::thread::cpu
+    std::thread::experimental::threadgroup
+    std::thread::os
+    std::thread::pool
+    std::thread::threadpool
+
+  time  ->  stdlib/time.txt
+    std::time
+    std::time::clock
+    std::time::datetime
+    std::time::os

@@ -1,0 +1,39 @@
+C3 Standard Library — atomic
+============================================================
+
+## std::atomic
+  macro fetch_add(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT, bool $volatile = false, sz $alignment = 0) -> void
+  macro fetch_and(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT, bool $volatile = false, sz $alignment = 0) -> void
+  macro fetch_div(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT) -> void
+  macro fetch_max(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT, bool $volatile = false, sz $alignment = 0) -> void
+  macro fetch_min(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT, bool $volatile = false, sz $alignment = 0) -> void
+  macro fetch_mul(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT) -> void
+  macro fetch_or(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT, bool $volatile = false, sz $alignment = 0) -> void
+  macro fetch_shift_left(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT) -> void
+  macro fetch_shift_right(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT) -> void
+  macro fetch_sub(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT, bool $volatile = false, sz $alignment = 0) -> void
+  macro fetch_xor(void ptr, void y, AtomicOrdering $ordering = SEQ_CONSISTENT, bool $volatile = false, sz $alignment = 0) -> void
+  macro flag_clear(void ptr, AtomicOrdering $ordering = SEQ_CONSISTENT) -> void
+  macro flag_set(void ptr, AtomicOrdering $ordering = SEQ_CONSISTENT) -> void
+  macro is_native_atomic_type(void $Type) -> bool
+
+## std::atomic::types
+  struct Atomic(<Type>)
+    .data: Type
+    macro Atomic.add(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.and(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.clear(<Type>)(AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.div(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    // Loads data atomically, by default this uses SEQ_CONSISTENT ordering.
+    macro Atomic.load(<Type>)(AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.max(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.min(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.mul(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.or(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.set(<Type>)(AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.shl(<Type>)(Type amount, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.shr(<Type>)(Type amount, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    // Stores data atomically, by default this uses SEQ_CONSISTENT ordering.
+    macro Atomic.store(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> void
+    macro Atomic.sub(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type
+    macro Atomic.xor(<Type>)(Type value, AtomicOrdering $ordering = SEQ_CONSISTENT) -> Type

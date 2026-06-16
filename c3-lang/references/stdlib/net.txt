@@ -1,0 +1,232 @@
+C3 Standard Library — net
+============================================================
+
+## std::net
+  fault INVALID_URL
+  fault URL_TOO_LONG
+  fault INVALID_SOCKET
+  fault GENERAL_ERROR
+  fault INVALID_IP_STRING
+  fault ADDRINFO_FAILED
+  fault CONNECT_FAILED
+  fault LISTEN_FAILED
+  fault ACCEPT_FAILED
+  fault WRITE_FAILED
+  fault READ_FAILED
+  fault SOCKOPT_FAILED
+  fault SOCKETS_NOT_INITIALIZED
+  fault STILL_PROCESSING_CALLBACK
+  fault BAD_SOCKET_DESCRIPTOR
+  fault NOT_A_SOCKET
+  fault CONNECTION_REFUSED
+  fault CONNECTION_TIMED_OUT
+  fault ADDRESS_IN_USE
+  fault CONNECTION_ALREADY_IN_PROGRESS
+  fault ALREADY_CONNECTED
+  fault NETWORK_UNREACHABLE
+  fault OPERATION_NOT_SUPPORTED_ON_SOCKET
+  fault CONNECTION_RESET
+  struct InetAddress
+    .is_ipv6: bool
+    .?: void
+    fn InetAddress.is_any_local(InetAddress* addr) -> bool
+    fn InetAddress.is_link_local(InetAddress* addr) -> bool
+    fn InetAddress.is_loopback(InetAddress* addr) -> bool
+    fn InetAddress.is_multicast(InetAddress* addr) -> bool
+    fn InetAddress.is_multicast_global(InetAddress* addr) -> bool
+    fn InetAddress.is_multicast_link_local(InetAddress* addr) -> bool
+    fn InetAddress.is_multicast_node_local(InetAddress* addr) -> bool
+    fn InetAddress.is_multicast_org_local(InetAddress* addr) -> bool
+    fn InetAddress.is_multicast_site_local(InetAddress* addr) -> bool
+    fn InetAddress.is_site_local(InetAddress* addr) -> bool
+    fn InetAddress.to_format(InetAddress* addr, Formatter* formatter) -> sz?
+    fn InetAddress.to_string(Allocator allocator) -> String
+    fn InetAddress.to_tstring() -> String
+  enum IpProtocol
+    UNSPECIFIED
+    IPV4
+    IPV6
+  struct Socket
+    .sock: NativeSocket
+    .addrlen: Socklen_t
+    .addr_storage: char[128]
+    fn Socket.close() -> void?
+    fn Socket.destroy() -> void?
+    fn Socket.get_broadcast() -> bool?
+    fn Socket.get_dontroute() -> bool?
+    fn Socket.get_keepalive() -> bool?
+    fn Socket.get_oobinline() -> bool?
+    fn Socket.get_option(SocketOption option) -> bool?
+    fn Socket.get_reuseaddr() -> bool?
+    fn Socket.peek(char[] bytes) -> sz?
+    fn Socket.read(char[] bytes) -> sz?
+    fn Socket.read_byte() -> char?
+    fn Socket.set_broadcast(bool value) -> void?
+    fn Socket.set_dontroute(bool value) -> void?
+    fn Socket.set_keepalive(bool value) -> void?
+    fn Socket.set_oobinline(bool value) -> void?
+    fn Socket.set_option(SocketOption option, bool value) -> void?
+    fn Socket.set_reuseaddr(bool value) -> void?
+    fn Socket.shutdown(SocketShutdownHow how) -> void?
+    fn Socket.write(char[] bytes) -> sz?
+    fn Socket.write_byte(char byte) -> void?
+  struct Poll
+    .socket: NativeSocket
+    .events: PollSubscribe
+    .revents: PollEvent
+  constdef PollSubscribe
+  constdef PollEvent
+  enum SocketOption
+    REUSEADDR
+    REUSEPORT
+    KEEPALIVE
+    BROADCAST
+    OOBINLINE
+    DONTROUTE
+  enum SocketShutdownHow
+    RECEIVE
+    SEND
+    BOTH
+  // Loop over sockets. Caller should set *retain_socket = true, when creating a new socket.
+  macro @loop_over_addresses(AddrInfo* ai, void @body) -> void
+  // Loop over sockets. Caller must close unused sockets
+  macro @loop_over_ai(AddrInfo* ai, void @body) -> void
+  fn addrinfo(String host, int port, AIFamily ai_family, AISockType ai_socktype) -> AddrInfo*?
+  fn int_to_ipv4(uint val, Allocator allocator) -> String?
+  fn ipv4_from_str(String s) -> InetAddress?
+  fn ipv4toint(String s) -> uint?
+  fn ipv6_from_str(String s) -> InetAddress?
+  fn last_error_is_delayed_connect() -> bool
+  macro new_socket(void fd, void ai) -> Socket
+  fn poll(Poll[] polls, Duration timeout) -> ulong?
+  fn poll_ms(Poll[] polls, long timeout_ms) -> ulong?
+  const POLL_FOREVER: Duration = -1
+
+## std::net::os
+  distinct type AIFamily
+  distinct type AIProtocol
+  distinct type AISockType
+  distinct type AIFlags
+  distinct type SockAddrPtr
+  struct AddrInfo
+    .ai_flags: AIFlags
+    .ai_family: AIFamily
+    .ai_socktype: AISockType
+    .ai_protocol: AIProtocol
+    .ai_addrlen: Socklen_t
+    .?: void
+    .ai_next: AddrInfo*
+  def Socklen_t = void
+  distinct type NativeSocket
+    macro NativeSocket.close(NativeSocket self) -> void?
+    macro NativeSocket.is_non_blocking(NativeSocket self) -> bool
+    macro NativeSocket.is_valid(NativeSocket self) -> bool
+    macro NativeSocket.set_non_blocking(NativeSocket self, bool non_blocking) -> void?
+  struct Posix_pollfd
+    .fd: CInt
+    .events: CUShort
+    .revents: CUShort
+  def Posix_nfds_t = void
+  fn accept(NativeSocket socket, SockAddrPtr address, Socklen_t* address_len) -> NativeSocket
+  fn bind(NativeSocket socket, SockAddrPtr address, Socklen_t address_len) -> CInt
+  fn connect(NativeSocket socket, SockAddrPtr address, Socklen_t address_len) -> CInt
+  fn convert_error(Errno error) -> fault
+  fn fcntl(NativeSocket socket, CInt cmd) -> CInt
+  // freeaddrinfo() frees an AddrInfo created by getaddrinfo.
+  fn freeaddrinfo(AddrInfo* res) -> void
+  // The getaddrinfo() function is used to get a list of IP addresses and port numbers for host hostname and service servname.
+  fn getaddrinfo(ZString nodename, ZString servname, AddrInfo* hints, AddrInfo** res) -> CInt
+  // Get options on a socket
+  fn getsockopt(NativeSocket socket, CInt level, CInt optname, void* optval, Socklen_t* optlen) -> CInt
+  fn listen(NativeSocket socket, CInt backlog) -> CInt
+  fn poll(Posix_pollfd* fds, Posix_nfds_t nfds, CInt timeout) -> CInt
+  // Set options on a socket.
+  fn setsockopt(NativeSocket socket, CInt level, CInt optname, void* optval, Socklen_t optlen) -> CInt
+  fn socket(AIFamily af, AISockType type, AIProtocol ip_protocol) -> NativeSocket
+  fn socket_error() -> fault
+  fn socketpair(AIFamily domain, AISockType type, AIProtocol protocol, NativeSocket[2]* sv) -> NativeSocket
+
+## std::net::tcp
+  distinct type TcpSocket
+  distinct type TcpServerSocket
+  struct TcpSocketPair
+    .send: TcpSocket
+    .recv: TcpSocket
+    fn TcpSocketPair.destroy() -> void?
+    fn TcpSocketPair.init() -> TcpSocketPair*?
+  fn accept(TcpServerSocket* server_socket) -> TcpSocket?
+  fn connect(String host, int port, Duration timeout = time::DURATION_ZERO, SocketOption[][] options..., IpProtocol ip_protocol = UNSPECIFIED) -> TcpSocket?
+  fn connect_async(String host, int port, SocketOption[][] options..., IpProtocol ip_protocol = UNSPECIFIED) -> TcpSocket?
+  fn connect_async_to(AddrInfo* ai, SocketOption[][] options...) -> TcpSocket?
+  fn connect_to(AddrInfo* ai, SocketOption[][] options...) -> TcpSocket?
+  fn listen(String host, int port, int backlog, SocketOption[][] options..., IpProtocol ip_protocol = UNSPECIFIED) -> TcpServerSocket?
+  fn listen_to(AddrInfo* ai, int backlog, SocketOption[][] options...) -> TcpServerSocket?
+
+## std::net::udp
+  distinct type UdpSocket
+  fn connect(String host, int port, SocketOption[][] options..., IpProtocol ip_protocol = UNSPECIFIED) -> UdpSocket?
+  fn connect_async(String host, int port, SocketOption[][] options..., IpProtocol ip_protocol = UNSPECIFIED) -> UdpSocket?
+  fn connect_async_to(AddrInfo* ai, SocketOption[][] options...) -> UdpSocket?
+  fn connect_to(AddrInfo* ai, SocketOption[][] options...) -> UdpSocket?
+
+## std::net::url
+This module section provides encoding and decoding functions for URL
+ components according to RFC 3986.
+  // Represents the actual (decoded) Url.
+  struct Url
+    .scheme: String
+    .host: String
+    .port: int
+    .username: String
+    .password: String
+    .path: String
+    .query: String
+    .fragment: String
+    .allocator: Allocator
+    // Free an Url struct.
+    fn Url.free() -> void
+    fn Url.to_format(Formatter* f) -> sz?
+    fn Url.to_string(Allocator allocator) -> String
+  def UrlQueryValueList = void
+  struct UrlQueryValues
+    .map: HashMap{String, List{String}}
+    .key_order: UrlQueryValueList
+    // Add copies of the key and value strings to the UrlQueryValues map. These
+    fn UrlQueryValues.add(String key, String value) -> UrlQueryValues*
+    fn UrlQueryValues.free() -> void
+    fn UrlQueryValues.to_format(Formatter* f) -> sz?
+  fault EMPTY
+  fault INVALID_SCHEME
+  fault INVALID_USER
+  fault INVALID_PASSWORD
+  fault INVALID_HOST
+  fault INVALID_PATH
+  fault INVALID_FRAGMENT
+  enum UrlEncodingMode
+    UNRESERVED
+    PATH
+    HOST
+    USERPASS
+    QUERY
+    FRAGMENT
+  fault INVALID_HEX
+  // Decode string s for a given encoding mode.
+  fn decode(Allocator allocator, String s, UrlEncodingMode mode) -> String?
+  // Calculate the length of the percent-decoded string.
+  fn decode_len(String s, UrlEncodingMode mode) -> sz?
+  // Encode the string s for a given encoding mode.
+  fn encode(Allocator allocator, String s, UrlEncodingMode mode) -> String
+  // Calculate the length of the percent-encoded string.
+  fn encode_len(String s, UrlEncodingMode mode) -> sz
+  // Parse a URL string into a Url struct.
+  fn parse(Allocator allocator, String url_string) -> Url?
+  // Parse the query parameters of the Url into a UrlQueryValues map.
+  fn parse_query(Allocator allocator, String query) -> UrlQueryValues
+  // Parse the query parameters of the Url into a UrlQueryValues map.
+  fn parse_query_to_temp(String query) -> UrlQueryValues
+  // Decode string s for a given encoding mode, stored on the temp allocator.
+  fn tdecode(String s, UrlEncodingMode mode) -> String?
+  // Encode string s for a given encoding mode, stored on the temp allocator.
+  fn tencode(String s, UrlEncodingMode mode) -> String
+  // Parse a URL string into a Url struct.
+  fn tparse(String url_string) -> Url?

@@ -1,0 +1,278 @@
+C3 Standard Library — thread
+============================================================
+
+## std::thread
+  bitstruct MutexType
+    .timed: bool
+    .recursive: bool
+  distinct type Mutex
+    macro Mutex.@in_lock(Mutex* mutex, void @body) -> void
+    macro Mutex.destroy(Mutex* mutex) -> void
+    macro Mutex.init(Mutex* mutex) -> void?
+    macro Mutex.is_initialized(Mutex mutex) -> bool
+    macro Mutex.lock(Mutex* mutex) -> void?
+    macro Mutex.try_lock(Mutex* mutex) -> bool
+    macro Mutex.unlock(Mutex* mutex) -> void
+  distinct type RecursiveMutex
+    macro RecursiveMutex.init(RecursiveMutex* mutex) -> void?
+  distinct type TimedMutex
+    macro TimedMutex.destroy(TimedMutex* mutex) -> void
+    macro TimedMutex.init(TimedMutex* mutex) -> void?
+    macro TimedMutex.lock(TimedMutex* mutex) -> void?
+    macro TimedMutex.lock_timeout(TimedMutex* mutex, long ms) -> void?
+    macro TimedMutex.try_lock(TimedMutex* mutex) -> bool
+    macro TimedMutex.unlock(TimedMutex* mutex) -> void
+  distinct type TimedRecursiveMutex
+    macro TimedRecursiveMutex.init(TimedRecursiveMutex* mutex) -> void?
+  distinct type ConditionVariable
+    macro ConditionVariable.broadcast(ConditionVariable* cond) -> void?
+    macro ConditionVariable.destroy(ConditionVariable* cond) -> void?
+    macro ConditionVariable.init(ConditionVariable* cond) -> void?
+    macro ConditionVariable.signal(ConditionVariable* cond) -> void?
+    macro ConditionVariable.wait(ConditionVariable* cond, Mutex* mutex) -> void?
+    macro ConditionVariable.wait_timeout(ConditionVariable* cond, Mutex* mutex, void #ms_or_duration) -> void?
+    macro ConditionVariable.wait_until(ConditionVariable* cond, Mutex* mutex, Time time) -> void?
+  distinct type Thread
+    // Create and start a thread.
+    macro Thread.create(Thread* thread, ThreadFn thread_fn, void* arg, ThreadSettings settings = {}) -> void?
+    macro Thread.detach(Thread thread) -> void?
+    macro Thread.equals(Thread thread, Thread other) -> bool
+    macro Thread.join(Thread thread) -> int?
+    macro Thread.set_priority(Thread thread, ThreadPriority priority) -> bool
+  distinct type OnceFlag
+    macro OnceFlag.call(OnceFlag* flag, OnceFn func) -> void
+  def OnceFn = void
+  def ThreadFn = fn int(void* arg)
+  struct ThreadSettings
+    .stack_size: sz
+    .priority: ThreadPriority
+  enum ThreadPriority
+    DEFAULT
+    BACKGROUND
+    LOW
+    NORMAL
+    HIGH
+    REALTIME
+  fault INIT_FAILED
+  fault INVALID_THREAD_SETTINGS
+  fault LOCK_TIMEOUT
+  fault WAIT_TIMEOUT
+  fault THREAD_NOT_FOUND
+  fault THREAD_QUEUE_FULL
+  fault INTERRUPTED
+  fault CHANNEL_BLOCKED
+  fault CHANNEL_EMPTY
+  fault CHANNEL_CLOSED
+  macro current() -> Thread
+  macro exit(int result) -> void
+  macro fence(AtomicOrdering $ordering) -> void
+  macro sleep(Duration d) -> void?
+  macro sleep_ms(long ms) -> void?
+  macro sleep_ns(NanoDuration ns) -> void?
+  macro yield() -> void
+
+## std::thread::channel(<Type>)
+  distinct type UnbufferedChannel(<Type>)
+    fn UnbufferedChannel.close(<Type>)() -> void
+    fn UnbufferedChannel.destroy(<Type>)() -> void
+    fn UnbufferedChannel.pop(<Type>)() -> Type?
+    fn UnbufferedChannel.push(<Type>)(Type val) -> void?
+    fn UnbufferedChannel.try_pop(<Type>)() -> Type?
+    fn UnbufferedChannel.try_push(<Type>)(Type val) -> void?
+  distinct type BufferedChannel(<Type>)
+    fn BufferedChannel.close(<Type>)() -> void
+    fn BufferedChannel.destroy(<Type>)() -> void
+    fn BufferedChannel.pop(<Type>)() -> Type?
+    fn BufferedChannel.push(<Type>)(Type val) -> void?
+    fn BufferedChannel.try_pop(<Type>)() -> Type?
+    fn BufferedChannel.try_push(<Type>)(Type val) -> void?
+  distinct type OneShotChannel(<Type>)
+    // Close the channel and wake any blocked receivers.
+    fn OneShotChannel.close(<Type>)() -> void
+    fn OneShotChannel.destroy(<Type>)() -> void
+    // Receive the value from the channel.
+    fn OneShotChannel.pop(<Type>)() -> Type?
+    // Send the one value for this channel.
+    fn OneShotChannel.push(<Type>)(Type val) -> void?
+  distinct type UnboundedChannel(<Type>)
+    fn UnboundedChannel.clear(<Type>)() -> void
+    fn UnboundedChannel.close(<Type>)() -> void
+    fn UnboundedChannel.destroy(<Type>)() -> void
+    fn UnboundedChannel.pop(<Type>)() -> Type?
+    fn UnboundedChannel.push(<Type>)(Type val) -> void?
+    fn UnboundedChannel.try_pop(<Type>)() -> Type?
+  fn create_buffered(<Type>)(Allocator allocator, sz size = 1) -> BufferedChannel*?
+  // Initialize a one-shot channel for sending exactly one value between threads.
+  fn create_one_shot(<Type>)(Allocator allocator) -> OneShotChannel*?
+  fn create_unbounded(<Type>)(Allocator allocator, sz start_size = 16) -> UnboundedChannel*?
+  fn create_unbuffered(<Type>)(Allocator allocator) -> UnbufferedChannel*?
+
+## std::thread::cpu
+  fn native_cpu() -> int
+
+## std::thread::experimental::threadgroup(<Task, Result>)
+  def ThreadTaskFn = fn Result(Task task, void* context)
+  def ThreadInitFn = fn void(void* init_context)
+  def ThreadFinalizerFn = fn void(void* finalizer_context, void* init_context)
+  def ThreadGroupOutChannel = void
+  // Lifecycle state of a ThreadGroup.
+  enum ThreadGroupState(<Task, Result>)
+    NO_INIT
+    INIT
+    RUNNING
+    STOPPING
+  // The outcome of one task. The `task` field holds the input that was submitted,
+  struct ThreadTaskResult(<Task, Result>)
+    .task: Task
+    .result: Result
+  // ThreadGroup is a worker-pool abstraction. Submit Tasks via add_task; the workers
+  struct ThreadGroup(<Task, Result>)
+    .task_fn: ThreadTaskFn
+    .context: void*
+    .init_fn: ThreadInitFn
+    .init_context: void*
+    .finalizer_fn: ThreadFinalizerFn
+    .finalizer_context: void*
+    .allocator: Allocator
+    .mx: Mutex
+    .done: ConditionVariable
+    .?: void
+    .outbound: ThreadGroupOutChannel*
+    .threads: Thread[]
+    .pending: Atomic{sz}
+    .thread_settings: ThreadSettings
+    .queue_type: ThreadGroupQueueType
+    .state: ThreadGroupState
+    // Add a task. If the queue is full, block.
+    fn ThreadGroup.add_task(<Task, Result>)(Task task) -> void
+    // Add a task. If the queue is full, run the task on the current thread instead.
+    fn ThreadGroup.add_task_or_run(<Task, Result>)(Task task) -> void
+    // Wait for all pending tasks to finish and return the tasks + result as a list.
+    fn ThreadGroup.collect(<Task, Result>)(Allocator allocator, bool caller_help_finish = false) -> List{ThreadTaskResult}
+    // Wait for all pending tasks to finish and return the values as a List.
+    fn ThreadGroup.collect_values(<Task, Result>)(Allocator allocator, bool caller_help_finish = false) -> List{Result}
+    // Finish any pending tasks, then clean up all resources. Any results not yet consumed are discarded.
+    fn ThreadGroup.destroy(<Task, Result>)(bool caller_help_finish = false) -> void
+    // Collect the tasks + result in a list, without waiting to ensure that all pending tasks are completed.
+    fn ThreadGroup.drain(<Task, Result>)(Allocator allocator) -> List{ThreadTaskResult}
+    // Collect all available results in a list, without waiting for all pending tasks to complete.
+    fn ThreadGroup.drain_values(<Task, Result>)(Allocator allocator) -> List{Result}
+    // Discard any results that have been produced but not yet consumed via pop_result/drain.
+    fn ThreadGroup.drop_results(<Task, Result>)() -> void
+    // Initialize a ThreadGroup. The group must be started with start() before tasks
+    fn ThreadGroup.init(<Task, Result>)(Allocator allocator, ThreadTaskFn task_fn, int thread_count = 0, sz queue_capacity = 0, void* context = null, ThreadSettings thread_settings = {}) -> void?
+    // Wait for all pending tasks to finish.
+    fn ThreadGroup.join(<Task, Result>)(bool caller_help_finish = false) -> void
+    // Pop the task + result, if available – blocking if there is no result available yet. Returns an excuse
+    fn ThreadGroup.pop_result(<Task, Result>)() -> ThreadTaskResult?
+    // Register a function to run once on every worker thread after the last task completes.
+    fn ThreadGroup.set_finalizer_fn(<Task, Result>)(ThreadFinalizerFn thread_finalizer_fn, void* finalizer_context) -> void
+    // Register a function to run once on every worker thread before it processes any tasks.
+    fn ThreadGroup.set_init_fn(<Task, Result>)(ThreadInitFn thread_init_fn, void* init_context) -> void
+    // Set the OS-level thread settings (stack size, priority, etc.) used by start().
+    fn ThreadGroup.set_thread_settings(<Task, Result>)(ThreadSettings settings) -> void
+    // Startup the threads running this ThreadGroup.
+    fn ThreadGroup.start(<Task, Result>)() -> void?
+    // Add a task. If the queue is full, return an excuse.
+    fn ThreadGroup.try_add_task(<Task, Result>)(Task task) -> void?
+    // Pop the task + result, if available, otherwise return with thread::CHANNEL_EMPTY.
+    fn ThreadGroup.try_pop_result(<Task, Result>)() -> ThreadTaskResult?
+
+## std::thread::os
+  distinct type Pthread_attr_t
+  distinct type Pthread_cond_t
+    fn Pthread_cond_t.broadcast(Pthread_cond_t* cond) -> void
+    fn Pthread_cond_t.destroy(Pthread_cond_t* cond) -> void
+    fn Pthread_cond_t.init(Pthread_cond_t* cond) -> void?
+    fn Pthread_cond_t.signal(Pthread_cond_t* cond) -> void
+    fn Pthread_cond_t.wait(Pthread_cond_t* cond, NativeMutex* mtx) -> void
+    fn Pthread_cond_t.wait_timeout(Pthread_cond_t* cond, NativeMutex* mtx, long ms) -> void?
+    fn Pthread_cond_t.wait_timeout_duration(Pthread_cond_t* cond, NativeMutex* mtx, Duration duration) -> void?
+    fn Pthread_cond_t.wait_until(Pthread_cond_t* cond, NativeMutex* mtx, Time time) -> void?
+  distinct type Pthread_condattr_t
+  distinct type Pthread_key_t
+  distinct type Pthread_mutex_t
+  distinct type Pthread_mutexattr_t
+  distinct type Pthread_once_t
+    fn Pthread_once_t.call_once(Pthread_once_t* flag, OnceFn func) -> void
+  distinct type Pthread_rwlock_t
+  distinct type Pthread_rwlockattr_t
+  union Sem_t
+    .__size: char[32]
+    .__align: CLong
+  struct NativeMutex
+    .mutex: Pthread_mutex_t
+    .initialized: bool
+    fn NativeMutex.destroy() -> void
+    fn NativeMutex.init(MutexType type) -> void?
+    fn NativeMutex.is_initialized() -> bool
+    fn NativeMutex.lock() -> void
+    fn NativeMutex.lock_timeout(long ms) -> void?
+    fn NativeMutex.try_lock() -> bool
+    fn NativeMutex.unlock() -> void
+  def NativeTimedMutex = void
+  def NativeConditionVariable = void
+  struct NativeThread
+    .pthread: Pthread_t
+    .thread_fn: ThreadFn
+    .arg: void*
+    .sem: Sem_t
+    .tid: Pid_t
+    fn NativeThread.create(NativeThread* thread, ThreadFn thread_fn, void* arg, ThreadSettings settings) -> void?
+    fn NativeThread.detach(NativeThread thread) -> void
+    fn NativeThread.equals(NativeThread thread, NativeThread other) -> bool
+    fn NativeThread.join(NativeThread thread) -> int?
+    fn NativeThread.set_priority(ThreadPriority priority) -> bool
+  def NativeOnceFlag = void
+  fn native_sleep_nano(NanoDuration nano) -> void?
+  fn native_thread_current() -> NativeThread
+  fn native_thread_exit(int result) -> void
+  fn native_thread_yield() -> void
+  fn sem_destroy(Sem_t* sem) -> CInt
+  fn sem_init(Sem_t* sem, CInt pshared, CUInt value) -> CInt
+  fn sem_post(Sem_t* sem) -> CInt
+  fn sem_wait(Sem_t* sem) -> CInt
+  const ANDROID_LINUX: void = true
+
+## std::thread::pool(<SIZE>)
+  struct ThreadPool(<SIZE>)
+    .mu: Mutex
+    .queue: QueueItem[SIZE]
+    .qindex: sz
+    .qworking: sz
+    .num_threads: sz
+    .?: void
+    .pool: Thread[SIZE]
+    .notify: ConditionVariable
+    .collect: ConditionVariable
+    // Stop all the threads and cleanup the pool.
+    fn ThreadPool.destroy(<SIZE>)() -> void
+    fn ThreadPool.init(<SIZE>)(ThreadSettings thread_settings = {}) -> void?
+    // Join all threads in the pool.
+    fn ThreadPool.join(<SIZE>)() -> void
+    // Push a new job to the pool.
+    fn ThreadPool.push(<SIZE>)(ThreadFn func, void* arg) -> void
+    // Stop all the threads and cleanup the pool.
+    fn ThreadPool.stop_and_destroy(<SIZE>)() -> void
+
+## std::thread::threadpool
+  def ThreadPoolFn = fn void(any[] args)
+  struct FixedThreadPool
+    .mu: Mutex
+    .queue: QueueItem[]
+    .qindex: sz
+    .qworking: sz
+    .num_threads: sz
+    .?: void
+    .pool: Thread[]
+    .notify: ConditionVariable
+    .collect: ConditionVariable
+    // Stop all the threads and cleanup the pool.
+    fn FixedThreadPool.destroy() -> void?
+    fn FixedThreadPool.init(sz threads, sz queue_size = 0, ThreadSettings thread_settings = {}) -> void?
+    // Join all threads in the pool.
+    fn FixedThreadPool.join() -> void
+    // Push a new job to the pool.
+    fn FixedThreadPool.push(ThreadPoolFn func, any[][] args...) -> void?
+    // Stop all the threads and cleanup the pool.
+    fn FixedThreadPool.stop_and_destroy() -> void

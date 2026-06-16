@@ -1,0 +1,273 @@
+C3 Standard Library — compression
+============================================================
+
+## std::compression::deflate
+DEFLATE compression implementation (RFC 1951).
+
+ API:
+ - fn char[]? decompress(Allocator allocator, char[] input)
+ - fn void?   decompress_stream(InStream input, OutStream output)
+ - fn char[]? compress(Allocator allocator, char[] input, )
+ - struct Inflater: InStream for pull-based decompression (use `init` then `read`).
+  // Stateful DEFLATE inflater.
+  struct Inflater
+    .reader: StreamBitReader
+    .window: char[65544]
+    .pos: sz
+    .final: bool
+    .stored_len: int
+    .lit_ptr: Huffman*
+    .dist_ptr: Huffman*
+    .dyn_lit: Huffman
+    .dyn_dist: Huffman
+    .dyn_code_huff: Huffman
+    .hlit: int
+    .hdist: int
+    .hclen: int
+    .dyn_i: int
+    .dyn_num_lengths: int
+    .lit_dist_lengths: char[320]
+    .code_lengths: char[19]
+    .match_len: int
+    .match_dist: int
+    .done: bool
+    .state: InflaterState
+    fn Inflater.close() -> void?
+    fn Inflater.init(InStream input, char[] bit_reader_buf = {}) -> void
+    fn Inflater.read(char[] buffer) -> sz?
+    fn Inflater.read_byte() -> char?
+    fn Inflater.step() -> void?
+    fn Inflater.write_byte(char c) -> void
+  struct Deflater
+    .output: OutStream
+    .allocator: Allocator
+    .head: uint[]
+    .prev: uint[]
+    .window: char[]
+    .window_fill: uint
+    .tokens: Token[]
+    .token_count: sz
+    .max_tokens: sz
+    .lit_freqs: uint[286]
+    .dist_freqs: uint[30]
+    .bwriter: BitWriter
+    .hash: uint
+    .strstart: uint
+    .match_pos: uint
+    .hash_ready: bool
+    .total_in: sz
+    .total_out: sz
+    .closed: bool
+    fn Deflater.close() -> void?
+    fn Deflater.emit_block(bool final) -> void?
+    fn Deflater.free() -> void
+    fn Deflater.init(Allocator allocator, OutStream output = null) -> void
+    fn Deflater.scan_matches(bool final) -> void?
+    fn Deflater.write(char[] data) -> sz?
+    fn Deflater.write_byte(char c) -> void?
+  fault CORRUPTED_DATA
+  fault IO_ERROR
+  fault INVALID_STATE
+  // Compress data using the DEFLATE algorithm, this uses the temp allocator
+  fn compress(Allocator allocator, char[] input) -> char[]?
+  fn compress_stream(Allocator allocator, InStream input, OutStream output) -> void?
+  fn decompress(Allocator allocator, char[] input) -> char[]?
+  // Decompress stream using DEFLATE.
+  fn decompress_stream(InStream input, OutStream output) -> void?
+  const GOOD_MATCH: int = 32
+  const HASH_MASK: uint = 32767
+  const HASH_SIZE: uint = 32768
+  const MAX_CHAIN: int = 16
+  const MAX_MATCH: int = 258
+  const MIN_MATCH: int = 3
+  const NICE_MATCH: int = 128
+  const WINDOW_SIZE: uint = 32768
+
+## std::compression::gzip
+Gzip compression and decompression module (DEFLATE).
+
+ API:
+ - fn char[]?   compress(Allocator allocator, char[] src, ...)
+ - fn void?     compress_stream(OutStream writer, char[] src, ...)
+ - fn Gzip?     uncompress(Allocator allocator, char[] src)
+ - fn char[]?   uncompress_bytes(Allocator allocator, char[] src)
+ - fn void?     uncompress_stream(OutStream writer, InStream src)
+ - struct GzipWriter
+ - struct GzipReader
+
+ Initial implementation by Koni Marti.
+ Streaming and concatenation support added by Manu Linares.
+  struct GzipHeader
+    .id: char[2]
+    .cm: char
+    .flg: void
+    .mtime: UIntLE
+    .xfl: char
+    .os: char
+  struct Gzip
+    .allocator: Allocator
+    .header: GzipHeader
+    .extra: char[]
+    .filename: String
+    .comment: String
+    .uncompressed: char[]
+    fn Gzip.free() -> void
+  struct GzipWriter
+    .next: OutStream
+    .deflater: Deflater
+    .hasher: Crc32
+    .total_in: usz
+    fn GzipWriter.close() -> void?
+    fn GzipWriter.init(Allocator allocator, OutStream writer, bool hcrc = false, char[] extra = {}, String name = "", String comment = "") -> void?
+    fn GzipWriter.write(char[] bytes) -> sz?
+    fn GzipWriter.write_byte(char c) -> void?
+  struct GzipMetadata
+    .header: GzipHeader
+    .extra: char[]
+    .filename: String
+    .comment: String
+  struct GzipReader
+    .source: InStream
+    .inflater: Inflater*
+    .hasher: Crc32
+    .total_out: usz
+    .header_read: bool
+    .footer_verified: bool
+    .metadata: GzipMetadata
+    .bit_buf: char*
+    .allocator: Allocator
+    fn GzipReader.close() -> void?
+    fn GzipReader.free_metadata(Allocator allocator) -> void
+    fn GzipReader.init(InStream reader, Allocator allocator = tmem) -> void?
+    fn GzipReader.read(char[] bytes) -> sz?
+    fn GzipReader.read_byte() -> char?
+    fn GzipReader.read_header() -> void?
+  fault CORRUPT_HEADER
+  fault CORRUPT_DATA
+  fault UNSUPPORTED_METHOD
+  fault IO_ERROR
+  fn compress(Allocator allocator, char[] src, bool hcrc = false, char[] extra = {}, String name = "", String comment = "") -> char[]?
+  fn compress_stream(OutStream writer, char[] src, bool hcrc = false, char[] extra = {}, String name = "", String comment = "") -> void?
+  fn encode_latin1(OutStream writer, String s) -> void?
+  fn uncompress(Allocator allocator, char[] src) -> Gzip?
+  fn uncompress_bytes(Allocator allocator, char[] src) -> char[]?
+  fn uncompress_stream(OutStream writer, InStream src) -> void?
+  const GZIP_CM_DEFLATE: char = 8
+  const GZIP_ID1: char = 31
+  const GZIP_ID2: char = 139
+
+## std::compression::qoi
+  // Descriptor.
+  struct QOIDesc
+    .width: int
+    .height: int
+    .channels: QOIChannels
+    .colorspace: QOIColorspace
+  // Colorspace.
+  constdef QOIColorspace
+  // Channels.
+  constdef QOIChannels
+  fault INVALID_PARAMETERS
+  fault FILE_OPEN_FAILED
+  fault FILE_WRITE_FAILED
+  fault INVALID_DATA
+  fault TOO_MANY_PIXELS
+  // Decode a QOI image from memory.
+  fn decode(Allocator allocator, char[] data, QOIDesc* desc, QOIChannels channels = AUTO) -> char[]?
+  // Encode raw RGB or RGBA pixels into a QOI image in memory.
+  fn encode(Allocator allocator, char[] input, QOIDesc* desc) -> char[]?
+  // Read and decode a QOI image from the file system.
+  fn read(Allocator allocator, String filename, QOIDesc* desc, QOIChannels channels = AUTO) -> char[]?
+  // Encode raw RGB or RGBA pixels into a QOI image and write it to the
+  fn write(String filename, char[] input, QOIDesc* desc) -> sz?
+  const PIXELS_MAX: int = 400000000
+
+## std::compression::zip
+ZIP archive module (STORE and DEFLATE).
+
+ API:
+ - fn ZipArchive? open(Allocator allocator, String path, String mode = "r")
+ - fn ZipArchive? recover(Allocator allocator, String path, )
+ - fn void?       ZipArchive.extract(&self, String output_dir)
+ - fn ZipEntry?   ZipArchive.stat(&self, String filename)
+ - fn char[]?     ZipArchive.read_file_all(&self, Allocator allocator, String filename)
+ - fn void?       ZipArchive.close(&self)
+  // Describes a single entry within a ZIP archive.
+  struct ZipEntry
+    .name: String
+    .uncompressed_size: long
+    .compressed_size: long
+    .is_directory: bool
+    .is_encrypted: bool
+    .crc32: uint
+    .offset: long
+    .method: ZipMethod
+    .last_mod_time: ushort
+    .last_mod_date: ushort
+    fn ZipEntry.time() -> Time
+  def ZipEntryList = void
+  struct ZipArchive
+    .file: File*
+    .allocator: Allocator
+    .entries: ZipEntryList
+    .mode: String
+    .path: String
+    .comment: String
+    // Adds a directory entry to the archive.
+    fn ZipArchive.add_directory(String dirname) -> void?
+    // Closes the ZIP archive, writing the central directory if in write mode.
+    fn ZipArchive.close() -> void?
+    fn ZipArchive.count() -> sz
+    // Extracts the entire archive to the specified directory.
+    fn ZipArchive.extract(String output_dir, String password = "") -> void?
+    // Opens a reader for an entry.
+    fn ZipArchive.open_reader(String filename, String password = "") -> ZipEntryReader?
+    // Opens a writer for a new entry.
+    fn ZipArchive.open_writer(String filename, ZipMethod method = DEFLATE) -> ZipEntryWriter?
+    // Reads an entire file from the archive.
+    fn ZipArchive.read_file_all(Allocator allocator, String filename, String password = "") -> char[]?
+    // Returns metadata for the entry with the given filename.
+    fn ZipArchive.stat(String filename) -> ZipEntry?
+    // Returns metadata for the entry at the given index.
+    fn ZipArchive.stat_at(sz index) -> ZipEntry?
+    // Writes an entire file to the archive.
+    fn ZipArchive.write_file(String filename, char[] data, ZipMethod method = DEFLATE) -> void?
+  struct ZipEntryReader
+    .size: long
+    .pos: long
+    .method: ZipMethod
+    .inflater: Inflater*
+    .adapter: ArchiveStreamAdapter
+    .bit_buf: char*
+    fn ZipEntryReader.available() -> long?
+    fn ZipEntryReader.close() -> void?
+    fn ZipEntryReader.cursor() -> long?
+    fn ZipEntryReader.len() -> long
+    fn ZipEntryReader.read(char[] buffer) -> sz?
+    fn ZipEntryReader.read_byte() -> char?
+    fn ZipEntryReader.seek(long offset, SeekOrigin seek = FROM_START) -> void?
+  struct ZipEntryWriter
+    .archive: ZipArchive*
+    .entry: ZipEntry
+    .crc: Crc32
+    .lfh: ZipLFH
+    .lfh_offset: long
+    .deflater: Deflater
+    .use_deflater: bool
+    fn ZipEntryWriter.close() -> void?
+    fn ZipEntryWriter.write(char[] bytes) -> sz?
+    fn ZipEntryWriter.write_byte(char c) -> void?
+  constdef ZipMethod
+  fault INVALID_ARGUMENT
+  fault IO_ERROR
+  fault CORRUPTED_DATA
+  fault ENTRY_NOT_FOUND
+  fault ENCRYPTED_FILE
+  fault PASSWORD_NEEDED
+  fault PASSWORD_MISMATCH
+  fault UNSUPPORTED_METHOD
+  fault INVALID_PATH
+  // Opens a ZIP archive.
+  fn open(Allocator allocator, String path, String mode = "r") -> ZipArchive?
+  // Recovers a ZIP archive by scanning for Local File Headers
+  fn recover(Allocator allocator, String path) -> ZipArchive?

@@ -1,0 +1,117 @@
+C3 Standard Library — time
+============================================================
+
+## std::time
+  distinct type Time
+    fn Time.add_days(Time time, long days) -> Time
+    fn Time.add_duration(Time time, Duration duration) -> Time
+    fn Time.add_hours(Time time, long hours) -> Time
+    fn Time.add_minutes(Time time, long minutes) -> Time
+    fn Time.add_seconds(Time time, long seconds) -> Time
+    fn Time.add_weeks(Time time, long weeks) -> Time
+    fn Time.compare_to(Time time, Time other) -> int
+    fn Time.diff_days(Time time, Time other) -> double
+    fn Time.diff_hours(Time time, Time other) -> double
+    fn Time.diff_min(Time time, Time other) -> double
+    fn Time.diff_sec(Time time, Time other) -> double
+    fn Time.diff_us(Time time, Time other) -> Duration
+    fn Time.diff_weeks(Time time, Time other) -> double
+    fn Time.sub_duration(Time time, Duration duration) -> Time
+    fn Time.to_seconds(Time time) -> double
+  distinct type Duration
+    macro Duration.mult(Duration #td, long #val) -> Duration
+    fn Duration.to_ms(Duration td) -> long
+    fn Duration.to_nano(Duration td) -> NanoDuration
+  distinct type Clock
+  distinct type NanoDuration
+    fn NanoDuration.to_duration(NanoDuration nd) -> Duration
+    fn NanoDuration.to_format(Formatter* formatter) -> sz?
+    fn NanoDuration.to_ms(NanoDuration nd) -> long
+    fn NanoDuration.to_sec(NanoDuration nd) -> double
+    fn NanoDuration.tunit_str(bool use_short_units = true) -> String
+    fn NanoDuration.unit_str(Allocator allocator, bool use_short_units = true) -> String
+  struct DateTime
+    .usec: int
+    .sec: char
+    .min: char
+    .hour: char
+    .day: char
+    .month: Month
+    .weekday: Weekday
+    .year: int
+    .year_day: ushort
+    .time: Time
+  struct TzDateTime
+    .date_time: DateTime
+    .gmt_offset: int
+  enum Weekday
+    MONDAY
+    TUESDAY
+    WEDNESDAY
+    THURSDAY
+    FRIDAY
+    SATURDAY
+    SUNDAY
+  enum Month
+    JANUARY
+    FEBRUARY
+    MARCH
+    APRIL
+    MAY
+    JUNE
+    JULY
+    AUGUST
+    SEPTEMBER
+    OCTOBER
+    NOVEMBER
+    DECEMBER
+  fn from_float(double s) -> Duration
+  fn hour(long l) -> Duration
+  fn min(long l) -> Duration
+  fn ms(long l) -> Duration
+  fn now() -> Time
+  fn sec(long l) -> Duration
+  fn us(long l) -> Duration
+  const DAY: Duration = 86400000000
+  const DURATION_ZERO: Duration = 0
+  const FAR_FUTURE: Time = 9223372036854775807
+  const FAR_PAST: Time = -9223372036854775808
+  const FOREVER: Duration = 9223372036854775807
+  const HOUR: Duration = 3600000000
+  const MIN: Duration = 60000000
+  const MONTH: Duration = 2592000000000
+  const MS: Duration = 1000
+  const NANO_DURATION_ZERO: NanoDuration = 0
+  const SEC: Duration = 1000000
+  const US: Duration = 1
+  const WEEK: Duration = 604800000000
+  const YEAR: Duration = 31557600000000
+
+## std::time::clock
+  fn now() -> Clock
+
+## std::time::datetime
+  enum DateTimeFormat
+    ANSIC
+    UNIXDATE
+    RUBYDATE
+    RFC822
+    RFC822Z
+    RFC850
+    RFC1123
+    RFC1123Z
+    RFC3339
+    RFC3339Z
+    RFC3339MS
+    RFC3339ZMS
+    ... (3 more)
+  fn at(int year, Month month = JANUARY, int day = 1, int hour = 0, int min = 0, int sec = 0, int us = 0) -> DateTime
+  fn at_tz(int year, Month month = JANUARY, int day = 1, int hour = 0, int min = 0, int sec = 0, int us = 0, int gmt_offset = 0) -> TzDateTime
+  fn from_time(Time time) -> DateTime
+  fn from_time_tz(Time time, int gmt_offset) -> TzDateTime
+  fn now() -> DateTime
+  fn tformat(DateTimeFormat dt_format, TzDateTime dt) -> String
+
+## std::time::os
+  fn native_clock() -> Clock
+  fn native_timestamp() -> Time
