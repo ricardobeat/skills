@@ -108,7 +108,7 @@ fn Type sum_all <Type>(Type[] arr) {
 fn String IntStack.to_string(&self) { /* only works on Stack{int} */ }
 ```
 
-**Generic inference** can look through pointers (0.8.0). Nested generics inside generic functions/methods are allowed.
+**Generic inference** can look through pointers. Nested generics inside generic functions/methods are allowed.
 
 ---
 

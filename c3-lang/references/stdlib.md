@@ -1,6 +1,6 @@
-# C3 Standard Library Reference (0.8.0)
+# C3 Standard Library Reference (0.8.2)
 
-Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, browse [github.com/c3lang/c3c/tree/v0.8.0/lib/std](https://github.com/c3lang/c3c/tree/v0.8.0/lib/std).
+Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, browse [github.com/c3lang/c3c/tree/v0.8.2/lib/std](https://github.com/c3lang/c3c/tree/v0.8.2/lib/std).
 
 > **Code-block convention:** Most fenced blocks below are reference summaries — method signatures, free-function call shapes, and option lists packed onto few lines for scannability. They are **not compilable C3** and are tagged `text` rather than `c3` to disable syntax highlighting. Where a section shows real, runnable C3 (e.g. the `libc` import, the custom-stream example), it is tagged `c3`.
 
@@ -14,7 +14,7 @@ Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, br
 
 ## Module Index
 
-Every public module shipped with the C3 0.8.0 standard library. Submodules are listed under their parent.
+Every public module shipped with the C3 0.8.2 standard library. Submodules are listed under their parent.
 
 | Module | What it provides |
 |---|---|
@@ -29,8 +29,8 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | ↳ `collections::enummap` | `EnumMap{Enum, V}` — fixed array indexed by enum ordinal |
 | ↳ `collections::enumset` | `EnumSet{Enum}` — bitset over enum ordinals |
 | ↳ `collections::fixedlist` | `FixedList{T, N}` — stack-allocated, fixed capacity |
-| ↳ `collections::map` | `HashMap{K, V}`, `LinkedHashMap{K, V}` — hash maps |
-| ↳ `collections::set` | `HashSet{T}`, `LinkedHashSet{T}` — hash sets |
+| ↳ `collections::map` | `HashMap{K, V}`, `OrderedMap{K, V}` — hash maps |
+| ↳ `collections::set` | `HashSet{T}`, `OrderedSet{T}` — hash sets |
 | ↳ `collections::interfacelist` | `InterfaceList{Iface}` — list of interface-typed values (base of `AnyList`) |
 | ↳ `collections::blockingqueue` | Thread-safe linked blocking queue |
 | ↳ `collections::linkedlist` | Doubly linked list |
@@ -53,7 +53,7 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | ↳ `core::alloc` | Low-level allocator primitives |
 | ↳ `core::allocators` | Concrete allocator implementations (arena, page, …) |
 | ↳ `core::ansi` | ANSI escape-sequence constants and helpers |
-| ↳ `core::array` | `array::contains/index_of`, `array::@filter/zip/reduce/any/all/…` |
+| ↳ `core::array` | `array::contains/index_of`, `array::contains_slice/index_of_slice`, `array::@filter/zip/reduce/any/all/…` |
 | ↳ `core::ascii` | `is_*`/`to_*` char predicates, `AsciiCharset` bitmaps |
 | ↳ `core::bitorder` | Endian / bit-order conversion |
 | ↳ `core::builtin` | Built-in helpers (see `Built-ins` section above) |
@@ -149,9 +149,9 @@ Every public module shipped with the C3 0.8.0 standard library. Submodules are l
 | **`std::sort`** | `quicksort`, `mergesort`, `insertionsort`, `countingsort`, `binarysearch`, `is_sorted`, `sorted` |
 | **`std::threads`** | Threading primitives (see below) |
 | ↳ `thread::` | `Thread`, `thread::sleep/yield`, mutex + condvar + once |
-| ↳ `thread::pool` | `ThreadPool` |
-| ↳ `thread::threadpool` | `FixedThreadPool` (fixed-size worker pool) |
-| ↳ `thread::channel` | `BufferedChannel{T}`, `UnbufferedChannel{T}`, `OneShotChannel{T}` |
+| ↳ `thread::pool` | `ThreadPool` (deprecated 0.8.1) |
+| ↳ `thread::threadpool` | `FixedThreadPool` (deprecated 0.8.1) |
+| ↳ `thread::channel` | `BufferedChannel{T}`, `UnbufferedChannel{T}`, `UnboundedChannel{T}`, `OneShotChannel{T}` |
 | **`std::time`** | `Time`, `Duration`, `NanoDuration`, `DateTime` / `TzDateTime`, `Clock` |
 
 ---
@@ -305,7 +305,7 @@ f.close()             f.isatty()             f.fd()              f.memopen(data,
 
 ### `std::io::path`
 
-In 0.8.0 `Path` is `PathPosix` or `PathWin` depending on the platform. It implicitly casts to `String`.
+`Path` is `PathPosix` or `PathWin` depending on the platform. It implicitly casts to `String`.
 
 ```text
 Path? path::new(Allocator alloc, String s)     Path? path::tnew(String s)
@@ -386,7 +386,7 @@ s.difference(alloc, &other)        s.symmetric_difference(alloc, &other)
 s.is_subset(&other)                s.iter()
 ```
 
-### `SortedMap{K, V}` — skip-list ordered map (new in 0.8.0)
+### `SortedMap{K, V}` — skip-list ordered map
 ```text
 SortedMap{int, String} m;   m.init(mem);
 m.set(k, v)   m.get(k)   m.remove(k)   m.has_key(k)
@@ -464,7 +464,9 @@ any v = list.first_any();         // untyped (caller's responsibility)
 list.len();
 ```
 
-### Other collection types: `Tuple` family, `Range{T}`, `ExclusiveRange{T}`, `LinkedHashMap{K, V}`, `LinkedHashSet{T}`, `LinkedBlockingQueue{T}`, `InterfaceList{Iface}` (base of `AnyList`).
+### Other collection types: `Tuple` family, `Range{T}`, `ExclusiveRange{T}`, `OrderedMap{K, V}`, `OrderedSet{T}`, `LinkedBlockingQueue{T}`, `InterfaceList{Iface}` (base of `AnyList`).
+
+`OrderedMap` / `OrderedSet` were named `LinkedHashMap` / `LinkedHashSet` before 0.8.1; the old names still resolve but are deprecated.
 
 ---
 
@@ -494,10 +496,10 @@ s.split_to_buffer(delim, buffer, max, skip_empty)?  // no alloc, into existing s
 
 s.trim(chars = " \n\t\r\f\v")    s.trim_left(chars)    s.trim_right(chars)
 s.trim_charset(ascii_charset)
-s.strip_prefix(prefix)     s.strip_suffix(suffix)   // 0.8.0 (was strip / strip_end)
+s.strip_prefix(prefix)     s.strip_suffix(suffix)   // formerly strip / strip_end
 s.starts_with(p)           s.ends_with(p)
 s.contains(sub)            s.contains_char(c)
-s.index_of(sub)            s.rindex_of(sub)
+s.index_of(sub)            s.rindex_of(sub)     // 0.8.2: empty `sub` is accepted
 s.index_of_char(c)         s.index_of_char_from(c, start)   s.rindex_of_char(c)
 s.index_of_chars(char_slice)
 s.count(sub)               s.compare_to(other)       s.compare_to_ignore_case(other)
@@ -509,7 +511,7 @@ s.hash()                   s.free(alloc)
 zs.str_view()              zs.char_len()        zs.len()        zs == other (.eq)
 
 // Parsing into integers / floats (find on `int.parse`, `long.parse`, `float.parse`, etc.)
-int? int::parse(s, int radix = 10)        // 0.8.0: stdlib offers parse() helpers per type
+int? int::parse(s, int radix = 10)        // stdlib offers parse() helpers per type
 ```
 
 ### `std::core::dstring` — DString (dynamic, mutable string)
@@ -613,7 +615,7 @@ env::I128_NATIVE_SUPPORT   env::F16_SUPPORT   env::F128_SUPPORT
 env::ADDRESS_SANITIZER   env::MEMORY_SANITIZER   env::THREAD_SANITIZER
 env::COMPILER_BUILD_HASH   env::COMPILER_BUILD_DATE   env::LLVM_VERSION
 env::NATIVE_THREADING   env::NATIVE_STACKTRACE   env::HAS_NATIVE_ERRNO
-env::AUTHORS   env::AUTHOR_EMAILS   env::PROJECT_VERSION
+env::AUTHORS   env::AUTHOR_EMAILS   env::PROJECT_VERSION   env::PROJECT_PATH
 ```
 
 Use in `@if(env::WIN32)`, `$if env::ARCH_64_BIT:`, etc.
@@ -626,6 +628,7 @@ Functional helpers — most are macros, work on any array-like:
 
 ```text
 array::contains(arr, v)           array::index_of(arr, v)         array::rindex_of(arr, v)
+array::contains_slice(arr, needle)   array::index_of_slice(arr, needle)   // subsequence search, sz?
 array::concat(alloc, a, b)        array::tconcat(a, b)
 array::@reduce(arr, identity, |a, b| a + b)
 array::@sum(arr)                  array::@product(arr)
@@ -664,8 +667,9 @@ conv::utf16len_for_utf8(s)   conv::utf16len_for_utf32(s)
 ## `std::math`
 
 ```text
-// Constants (0.8.0 names)
+// Constants
 math::PI        math::HALF_PI       math::QUARTER_PI      math::INV_PI
+math::TAU       math::TWO_PI        // TWO_PI is an alias for TAU
 math::TWO_OVER_PI    math::TWO_OVER_SQRT_PI
 math::E         math::LOG2E         math::LOG10E
 math::LN2       math::LN10          math::SQRT2          math::INV_SQRT2
@@ -676,7 +680,7 @@ math::HALF_MAX / HALF_MIN / HALF_EPSILON …  (same for double/float128/bfloat16
 math::sin(x)   math::cos(x)   math::tan(x)   math::asin(x)   math::acos(x)   math::atan(x)
 math::atan2(y, x)
 math::sinh(x)  math::cosh(x)  math::tanh(x)  math::asinh(x)  math::acosh(x)  math::atanh(x)
-math::csc(x)   math::sec(x)   math::cot(x)    // 0.8.0 (renamed from cosec, cotan)
+math::csc(x)   math::sec(x)   math::cot(x)    // formerly cosec, cotan
 math::exp(x)   math::exp2(x)  math::exp10(x)
 math::log(x, base)             math::log2(x)   math::log10(x)   math::ln(x)
 math::pow(x, y)   math::sqrt(x)   math::cbrt(x)   math::hypot(a, b)
@@ -685,7 +689,7 @@ math::pow(x, y)   math::sqrt(x)   math::cbrt(x)   math::hypot(a, b)
 math::abs(x)   math::sign(x)   math::clamp(x, lo, hi)
 math::min(a, b, …)   math::max(a, b, …)
 math::ceil(x)  math::floor(x)  math::round(x)   math::trunc(x)
-math::fmod(x, y)  math::mad(a, b, c)            // 0.8.0 (renamed muladd → mad)
+math::fmod(x, y)  math::mad(a, b, c)            // mad was formerly muladd
 math::lerp(a, b, t)   math::lerp_smooth(a, b, t)
 math::deg_to_rad(x)   math::rad_to_deg(x)
 ```
@@ -890,19 +894,30 @@ cv.timeout_wait(&m, Duration)?
 // Once-init
 Once o;        o.call(&init_fn)
 
-// Channels (0.8.0: pointer-typed)
-BufferedChannel{int}*   bc = channel::create_buffered{int}(mem, capacity = 16);
-UnbufferedChannel{int}* uc = channel::create_unbuffered{int}(mem);
-OneShotChannel{int}     oc;       // 0.8.0 new
-bc.send(v)?    bc.recv()?       bc.close()
-oc.send(v)?    oc.recv()?
+// Channels — module std::thread::channel <Type>; all created via allocator, pointer-typed
+BufferedChannel{int}*   bc = channel::create_buffered{int}(mem, size = 1)?;
+UnbufferedChannel{int}* uc = channel::create_unbuffered{int}(mem)?;
+UnboundedChannel{int}*  ec = channel::create_unbounded{int}(mem, start_size = 16)?;
+OneShotChannel{int}*    oc = channel::create_one_shot{int}(mem)?;
+
+// Blocking ops — push / pop (NOT send / recv)
+bc.push(v)?    bc.pop()?    bc.close()    bc.destroy()
+
+// Non-blocking variants
+bc.try_push(v)?    bc.try_pop()?          // buffered + unbuffered
+ec.try_pop()?                             // unbounded: try_pop only (push never blocks)
+ec.clear()
+
+// OneShotChannel: push / pop / close / destroy only — no try_* variants
 
 // Thread pool
 ThreadPool tp;              tp.init(ThreadSettings{ .thread_count = 4 })?
 tp.push(&task_fn, arg)      tp.join()    tp.destroy()    tp.stop_and_destroy()
 ```
 
-### `std::threads::fixed_pool` — fixed-size worker pool
+**`ThreadPool` and `FixedThreadPool` are deprecated as of 0.8.1.** They still work, but new code should not build on them.
+
+### `std::threads::fixed_pool` — fixed-size worker pool (deprecated)
 ```text
 FixedThreadPool fp;           fp.init(allocator, .thread_count = 4)?   // or fixed_pool::init(...)
 fp.push(&task_fn, arg)?       fp.join()    fp.stop_and_join()
@@ -919,6 +934,10 @@ a.add(1)   a.sub(1)   a.mul(2)   a.div(2)   a.max(5)   a.min(5)
 a.or(0xFF)   a.and(mask)   a.xor(mask)   a.shr(2)   a.shl(2)
 Atomic{bool} b;       b.set()    b.clear()        // test-and-set / clear
 
+// Compare-and-swap: returns true on success; on failure `expected` is updated in place
+bool ok = a.compare_exchange(&expected, desired);
+bool ok = a.compare_exchange(&expected, desired, SEQ_CONSISTENT, SEQ_CONSISTENT);
+
 // Plain-pointer atomics
 atomic::fetch_add(&x, 1)     atomic::fetch_sub(&x, 1)     atomic::fetch_or(&x, m)
 atomic::fetch_and(&x, m)     atomic::fetch_xor(&x, m)
@@ -933,7 +952,7 @@ atomic::fetch_max(&x, v)     atomic::fetch_min(&x, v)
 
 ```text
 sort::quicksort(array)             sort::quicksort(array, cmp_fn)
-sort::mergesort(array, alloc)      // 0.8.0 — stable
+sort::mergesort(array, alloc)      // stable
 sort::insertionsort(array)         sort::countingsort(array)
 sort::sort(array)                  // chooses a good default
 sort::sorted(alloc, array)         // returns a new sorted slice
@@ -957,9 +976,9 @@ Object*? json::temp_load(InStream, JsonFlavor = JSONC)
 obj.get_string("key")?       obj.get_int("key")?     obj.get_object("key")?
 obj.set("key", val)          obj.append(item)        obj.iter()
 obj.kind                     // TYPE_NULL / TYPE_BOOL / TYPE_INT / TYPE_REAL / TYPE_STRING / TYPE_OBJECT / TYPE_ARRAY
-obj.to_value(T)              // 0.8.0: structured conversion to a struct
+obj.to_value(T)              // structured conversion to a struct
 
-// ini   (parse + encode; new in 0.8.0)
+// ini   (parse + encode)
 Object*? ini::parse(alloc, String, delim = '=')     Object*? ini::tparse(String, delim = '=')
 Object*? ini::load(alloc, InStream, delim = '=')
 String   ini::encode(alloc, Object*, delim = '=', pad = true)
@@ -979,7 +998,7 @@ String   base64::encode_into(dst_buf, src, …)                      char[]? bas
 sz       base64::encode_len(n, padding)                           sz? base64::decode_len(n, padding)
 // hex: same shape minus alphabet/padding params; base32: same shape.
 
-// xml   (new in 0.8.0) — parse + serialize.   See encoding::xml.
+// xml   — parse + serialize.   See encoding::xml.
 // pem   — PEM block parse/encode.             See encoding::pem.
 // codepage — single-byte encoding tables.     See encoding::codepage.
 ```

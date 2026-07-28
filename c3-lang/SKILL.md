@@ -5,11 +5,11 @@ description: C3 language, writing, debugging, or reviewing .c3 files; c3c builds
 
 # C3 Programming Language
 
-C3 is a systems language — an evolution over C with modules, optionals, slices, defer, generics, and compile-time features. Compiler: `c3c` (LLVM backend). **Baseline: 0.8.0.** Naming conventions (PascalCase types, snake_case functions) are enforced by the lexer.
+C3 is a systems language — an evolution over C with modules, optionals, slices, defer, generics, and compile-time features. Compiler: `c3c` (LLVM backend). **Baseline: 0.8.2.** Naming conventions (PascalCase types, snake_case functions) are enforced by the lexer.
 
 Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https://github.com/c3lang/c3c) · [Discord](https://discord.gg/qN76R87)
 
-**Docs:** [Language Fundamentals](https://c3-lang.org/language-fundamentals/variables/) · [Optionals (Essential)](https://c3-lang.org/language-common/optionals-essential/) · [Optionals (Advanced)](https://c3-lang.org/language-common/optionals-advanced/) · [Generics & Macros](https://c3-lang.org/generic-programming/generics/) · [Misc Advanced](https://c3-lang.org/misc-advanced/asm/) · [Stdlib source](https://github.com/c3lang/c3c/tree/v0.8.0/lib/std)
+**Docs:** [Language Fundamentals](https://c3-lang.org/language-fundamentals/variables/) · [Optionals (Essential)](https://c3-lang.org/language-common/optionals-essential/) · [Optionals (Advanced)](https://c3-lang.org/language-common/optionals-advanced/) · [Generics & Macros](https://c3-lang.org/generic-programming/generics/) · [Misc Advanced](https://c3-lang.org/misc-advanced/asm/) · [Stdlib source](https://github.com/c3lang/c3c/tree/v0.8.2/lib/std)
 
 **Reference files (load on demand):**
 - `references/stdlib.md` — full stdlib API (io, collections, math, threads, encoding, …)
@@ -166,6 +166,8 @@ char[] data = $embed("assets/shader.glsl");
 ```
 
 Key builtins: `$Typeof(expr)`, `$defined(expr)`, `$assert(cond)`, `Type::size` / `::alignment` / `::kind`, `@sizeof(expr)`, `$reflect(field).name`, `$eval("name")`, `$expand("expr")`, `$feature(F)`.
+
+Compile-time field access uses `a.$field` to read and `a.$field = b` to write (`a.$eval($field)` is an equivalent variant). The older `$field.get(a)` / `$field.set(a, b)` forms are deprecated as of 0.8.1.
 
 See `references/advanced.md` for macros, generics, interfaces, and operator overloading.
 
