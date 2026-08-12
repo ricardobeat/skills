@@ -1,0 +1,157 @@
+{
+  "skill_name": "human",
+  "evals": [
+    {
+      "id": 1,
+      "name": "promotional-blurb",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nNestled within the breathtaking region of Gonder in Ethiopia, Alamata Raya Kobo stands as a vibrant town with a rich cultural heritage and stunning natural beauty. This charming destination showcases a tapestry of traditions that reflect the region's enduring legacy.",
+      "expected_output": "A plain, factual rewrite that drops the promotional padding. It should name the place, its region, and country, and say something simple and concrete about it. Should read like a neutral encyclopedia line.",
+      "checks": {
+        "forbidden": [
+          "nestled",
+          "breathtaking",
+          "vibrant",
+          "stands as",
+          "rich cultural heritage",
+          "stunning",
+          "natural beauty",
+          "tapestry",
+          "showcase",
+          "enduring legacy",
+          "charming destination"
+        ],
+        "required": [
+          "Gonder",
+          "Ethiopia",
+          "Alamata Raya Kobo"
+        ]
+      },
+      "source": "Nestled within the breathtaking region of Gonder in Ethiopia, Alamata Raya Kobo stands as a vibrant town with a rich cultural heritage and stunning natural beauty. This charming destination showcases a tapestry of traditions that reflect the region's enduring legacy."
+    },
+    {
+      "id": 2,
+      "name": "significance-padding",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe Statistical Institute of Catalonia was officially established in 1989, marking a pivotal moment in the evolution of regional statistics in Spain. This initiative was part of a broader movement across Spain to decentralize administrative functions and enhance regional governance.",
+      "expected_output": "A short factual sentence stating the institute was established in 1989 as part of Spain's administrative decentralization. No significance inflation, no 'pivotal', no 'broader movement' ceremony.",
+      "checks": {
+        "forbidden": [
+          "pivotal",
+          "marking",
+          "evolution of",
+          "broader movement",
+          "enhance regional governance",
+          "officially established"
+        ],
+        "required": [
+          "1989",
+          {
+            "any": [
+              "Statistical Institute of Catalonia",
+              "statistical institute",
+              "Catalonia got its own"
+            ]
+          }
+        ]
+      },
+      "source": "The Statistical Institute of Catalonia was officially established in 1989, marking a pivotal moment in the evolution of regional statistics in Spain. This initiative was part of a broader movement across Spain to decentralize administrative functions and enhance regional governance."
+    },
+    {
+      "id": 3,
+      "name": "em-dash-and-aphorism",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe new policy \u2014 announced without warning \u2014 affects thousands of workers. It's not just about efficiency; it's a testament to the leadership's commitment to innovation, showcasing a vibrant future. The real question is whether the company can adapt.",
+      "expected_output": "Plain prose with no em dashes, no aphorism formulas ('not just about... it's', 'the real question is'), no 'testament', no 'showcasing'. States the policy affects thousands of workers and that adapting is the open question.",
+      "checks": {
+        "forbidden": [
+          "\u2014",
+          "\u2013",
+          "not just about",
+          "it's a testament",
+          "showcas",
+          "the real question is",
+          "leadership's commitment to innovation showcases"
+        ],
+        "required": [
+          "thousands of workers",
+          "policy"
+        ]
+      },
+      "source": "The new policy \u2014 announced without warning \u2014 affects thousands of workers. It's not just about efficiency; it's a testament to the leadership's commitment to innovation, showcasing a vibrant future. The real question is whether the company can adapt."
+    },
+    {
+      "id": 4,
+      "name": "chatbot-collaboration",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nHere is an overview of the French Revolution. I hope this helps! Let me know if you'd like me to expand on any section. The revolution began in 1789 when financial crisis and food shortages led to widespread unrest. This period marked a significant turning point in French history.",
+      "expected_output": "Drops the assistant-style framing ('Here is', 'I hope this helps', 'Let me know'). Keeps the 1789 facts as plain prose. No 'significant turning point' padding.",
+      "checks": {
+        "forbidden": [
+          "I hope this helps",
+          "Let me know",
+          "Here is",
+          "turning point",
+          "significant",
+          "expand on"
+        ],
+        "required": [
+          "1789",
+          "French Revolution",
+          {
+            "any": [
+              "financial crisis",
+              "broke",
+              "food shortages",
+              "bread was scarce",
+              "money troubles",
+              "ran out of money",
+              "starving",
+              "hungry",
+              "shortages",
+              "financial mess",
+              "not enough food",
+              "out of bread",
+              "out of money"
+            ]
+          }
+        ]
+      },
+      "source": "Here is an overview of the French Revolution. I hope this helps! Let me know if you'd like me to expand on any section. The revolution began in 1789 when financial crisis and food shortages led to widespread unrest. This period marked a significant turning point in French history."
+    },
+    {
+      "id": 5,
+      "name": "generic-conclusion",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe future looks bright for the company. Exciting times lie ahead as they continue their journey toward excellence. This represents a major step in the right direction. The company was founded in 1992 and now employs 400 people in three offices.",
+      "expected_output": "Cuts the upbeat generic conclusion entirely. Keeps the concrete facts (founded 1992, 400 employees, three offices). Should not end with a vacuous send-off.",
+      "checks": {
+        "forbidden": [
+          "future looks bright",
+          "exciting times",
+          "journey toward excellence",
+          "major step in the right direction",
+          "bright",
+          "ahead"
+        ],
+        "required": [
+          {
+            "any": [
+              "1992",
+              "'92",
+              "founded in 1992"
+            ]
+          },
+          {
+            "any": [
+              "400",
+              "four hundred"
+            ]
+          },
+          {
+            "any": [
+              "three offices",
+              "3 offices"
+            ]
+          }
+        ]
+      },
+      "source": "The future looks bright for the company. Exciting times lie ahead as they continue their journey toward excellence. This represents a major step in the right direction. The company was founded in 1992 and now employs 400 people in three offices."
+    }
+  ]
+}
