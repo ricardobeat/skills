@@ -1,0 +1,338 @@
+{
+  "skill_name": "human",
+  "suite": "gen",
+  "evals": [
+    {
+      "id": 1,
+      "name": "travel-blurb",
+      "prompt": "Write the opening section for the tourism page of Alamata Raya Kobo, a town in the Gonder region of Ethiopia. One or two paragraphs, around 200 words. The town sits on the road between Gonder and Mekelle, about 2,100 meters above sea level. It is known for its Saturday market, where farmers from the surrounding Raya highlands bring grain, livestock, and honey. There is an old Orthodox church in the center of town, and the rainy season runs June to September. The page needs to sell the place to travelers who have never heard of it and convince them it is worth the detour. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "town: Alamata Raya Kobo",
+        "region: Gonder, Ethiopia",
+        "elevation: about 2,100 meters",
+        "Saturday market with grain, livestock, honey from Raya highlands",
+        "old Orthodox church in the center",
+        "rainy season: June to September"
+      ],
+      "expected_output": "Plain, specific prose about the location, the market, the church, the seasons. Padding to reach 300 words on six facts is where the tells appear. No 'nestled', 'vibrant', 'gateway', 'off-the-beaten-path', 'hidden gem', 'set against a dramatic backdrop', 'authentic glimpse', 'steeped in', 'timeless', 'where past and present meet', no rule-of-three lists, no em dashes, no 'whether you're X or Y' closer. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          "Gonder",
+          "Ethiopia",
+          "Alamata Raya Kobo"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "news-brief",
+      "prompt": "Write a piece for a regional newsletter about the Statistical Institute of Catalonia. Background: it was established in 1989, one of the regional statistical offices created when Spain devolved administrative powers to the autonomous communities. It publishes the main economic indicators for Catalonia and coordinates data standards with Eurostat. Its director is stepping down in March. One paragraph, around 100 words. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "name: Statistical Institute of Catalonia",
+        "established: 1989",
+        "context: Spain devolved powers to autonomous communities",
+        "publishes Catalonia's main economic indicators",
+        "coordinates data standards with Eurostat",
+        "director steps down in March"
+      ],
+      "expected_output": "Plain reporting: the institute, 1989, the devolution context, the director's departure. No 'pivotal', 'plays a crucial role', 'broader push', 'serves as', 'cornerstone', 'comprehensive framework', 'evidence-based governance', 'in an era of', no synthesis closer ('taken together'), no 'on one hand... on the other hand', no em dashes. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          "1989",
+          {
+            "any": [
+              "Statistical Institute of Catalonia",
+              "statistical institute",
+              "statistics institute",
+              "statistical agency",
+              "statistics office",
+              "Institut d'Estadística",
+              "Idescat",
+              "Catalonia got its own",
+              "Catalonia set up its own"
+            ]
+          },
+          {
+            "any": [
+              "decentrali",
+              "regions",
+              "autonomous",
+              "devolved",
+              "devolution"
+            ]
+          },
+          {
+            "any": [
+              "director",
+              "stepping down",
+              "steps down",
+              "leaving"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "name": "explain-index",
+      "prompt": "A junior developer on your team has never used a database index and asks you to explain what one is. Write the explanation you would send back. Include: an index is like a book's table of contents; it makes lookups faster but costs extra storage and slows down writes; it is usually implemented as a tree structure. One paragraph, around 100 words. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "index is like a book's table of contents",
+        "makes lookups faster",
+        "costs extra storage and slows down writes",
+        "usually implemented as a tree structure"
+      ],
+      "expected_output": "A plain explanation: the table-of-contents analogy, faster lookups, the storage/write cost. The teaching frame invites tutor voice; a human engineer just explains. No 'great question', 'let's break this down', 'here's the thing', 'think of it this way', 'at its core', 'essentially', 'the key insight', 'hope that helps', no numbered scaffolding, no bolded lead-ins, no triads, no em dashes. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "index",
+              "indexes"
+            ]
+          },
+          {
+            "any": [
+              "faster",
+              "speed",
+              "lookup",
+              "search"
+            ]
+          },
+          {
+            "any": [
+              "storage",
+              "space",
+              "writes",
+              "write",
+              "tree"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "name": "http-vs-https",
+      "prompt": "Someone on a support forum asks: what is the difference between HTTP and HTTPS? Post a reply. Include: HTTP sends data as plain text; HTTPS encrypts it with TLS; HTTPS is what sites use when they handle passwords or payment details. One paragraph, around 100 words. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "HTTP sends data as plain text",
+        "HTTPS encrypts it with TLS",
+        "HTTPS used for passwords or payment details"
+      ],
+      "expected_output": "A plain forum reply: plain text vs TLS encryption, when HTTPS matters. The forum frame invites chatbot courtesies and the padlock cliche. No 'great question', 'in simple terms', 'at its core', 'essentially', 'simply put', 'think of it like', 'the short answer is', 'hope this helps', 'let me know if', no analogy pile-up (postcard vs sealed envelope AND padlock AND lockbox), no triads, no em dashes. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          "HTTP",
+          {
+            "any": [
+              "HTTPS",
+              "encrypt",
+              "TLS"
+            ]
+          },
+          {
+            "any": [
+              "password",
+              "payment",
+              "plain text",
+              "plaintext"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "name": "company-profile",
+      "prompt": "Write the 'About' page copy for a small logistics company's website. One or two paragraphs, around 150 words. The company was founded in 1992 by two former warehouse managers, employs 400 people, and runs three offices: Barcelona, Valencia, and Zaragoza. It specializes in cold-chain delivery for food distributors. The copy should give a visitor a reason to pick them over a larger competitor. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "founded: 1992",
+        "founders: two former warehouse managers",
+        "employees: 400",
+        "offices: three (Barcelona, Valencia, Zaragoza)",
+        "specialty: cold-chain delivery for food distributors"
+      ],
+      "expected_output": "Plain copy: founded 1992 by two warehouse managers, 400 people, three named offices, cold-chain work. 'Values' and 'what sets us apart' are direct invitations to corporate puff; a human writer answers with concrete detail instead. No 'since its inception', 'journey', 'passion', 'we don't just X, we Y', 'built on a foundation of', 'future looks bright', 'committed to excellence', 'cutting-edge', 'end-to-end solutions', 'trusted partner', 'what sets us apart is', no values triad, no em dashes. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "1992",
+              "'92",
+              "founded in 1992"
+            ]
+          },
+          {
+            "any": [
+              "400",
+              "four hundred"
+            ]
+          },
+          {
+            "any": [
+              "three offices",
+              "3 offices",
+              "Barcelona"
+            ]
+          },
+          {
+            "any": [
+              "cold-chain",
+              "cold chain",
+              "refrigerated",
+              "food distributors"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "name": "code-comments",
+      "prompt": "Add comments to the two functions below, the way a senior engineer would when committing them. For each function, explain what it does and why the guards exist. Output only the code, nothing before or after it.\n\n```python\ndef apply_discount(price, user):\n    if user.is_first_purchase and price > 100:\n        return price * 0.7\n    return price\n\n\ndef cache_fetch(key, ttl=300):\n    cached = redis.get(key)\n    if cached:\n        return cached\n    data = fetch_from_db(key)\n    redis.set(key, data, ex=ttl)\n    return data\n```",
+      "facts": [
+        "apply_discount: 30% off (price * 0.7)",
+        "apply_discount: only for first-time buyers (user.is_first_purchase)",
+        "apply_discount: only above 100 (price > 100)",
+        "cache_fetch: reads the cache first",
+        "cache_fetch: falls back to the database on a miss",
+        "cache_fetch: stores the result back with a 300s TTL"
+      ],
+      "expected_output": "Short code comments for both functions. Without the output clamp, the tell is wrapping prose before and after the code block, plus docstring bloat (Args/Returns sections nobody asked for) and comments restating the code line by line. For apply_discount: 30% off, first-time buyers, only above 100. For cache_fetch: cache first, DB fallback, store for 5 minutes. No 'Note:', 'This function is used to', 'essentially', 'in order to', 'to encourage conversion', 'leverage', no explanatory preamble or summary after, no em dashes, no marketing tone. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "30%",
+              "thirty percent",
+              "70%",
+              "0.7",
+              "first purchase",
+              "first-time"
+            ]
+          },
+          {
+            "any": [
+              "100",
+              "hundred"
+            ]
+          },
+          "first"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "name": "remote-work-balance",
+      "prompt": "Write a piece for a workplace newsletter on whether remote work helps or hurts productivity. One or two paragraphs, around 200 words. Give a balanced view and end with a takeaway readers can act on. Include: some people focus better at home; others lose the informal collaboration of an office; most teams end up with a mix. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "some people focus better at home",
+        "others lose the informal collaboration of an office",
+        "most teams end up with a mix"
+      ],
+      "expected_output": "Plain prose on the two sides and the mixed reality. 'Balanced view' plus 'actionable takeaway' is the strongest tell trap in the suite: it invites both-sidesing scaffolding and a synthesis closer. No 'on one hand... on the other hand', 'the truth lies somewhere in between', 'it's not about X, it's about Y', 'the answer, as always, is nuanced', 'the real question is', 'taken together', 'ultimately', 'at the end of the day', 'the key is to', 'one thing is clear', no false-contrast closer, no triads, no em dashes. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "focus",
+              "concentrate",
+              "quiet"
+            ]
+          },
+          {
+            "any": [
+              "collaboration",
+              "colleagues",
+              "office",
+              "hallway"
+            ]
+          },
+          {
+            "any": [
+              "mix",
+              "hybrid",
+              "both",
+              "in between"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "name": "launch-announcement",
+      "prompt": "Write a LinkedIn post announcing that your team shipped a new bulk-export feature. Background: customers asked for it for about two years; it lets them export up to 50,000 records to CSV in one go; the old limit was 1,000; it took the team four months to build because the export had to run without locking the database. One paragraph, around 100 words. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "feature: bulk export to CSV",
+        "new limit: 50,000 records; old limit: 1,000",
+        "customers asked for about two years",
+        "took four months to build",
+        "constraint: export must not lock the database"
+      ],
+      "expected_output": "A plain post stating what shipped, the numbers, and why it took time. The LinkedIn frame is the strongest promotional trigger available; expect humblebrag scaffolding. No 'thrilled to announce', 'excited to share', 'proud of this team', 'game-changer', 'this is just the beginning', 'stay tuned', 'we listened', 'incredibly', 'shoutout to', one-sentence-per-line staccato formatting, closing question to drive engagement, hashtag pile, no em dashes, no triads. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "50,000",
+              "50000",
+              "50k"
+            ]
+          },
+          {
+            "any": [
+              "1,000",
+              "1000",
+              "1k"
+            ]
+          },
+          {
+            "any": [
+              "CSV",
+              "export"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "name": "incident-writeup",
+      "prompt": "Write the summary section of an internal incident report. Background: on 4 March the checkout page returned errors for 43 minutes; the cause was a config change that pointed the payment service at a staging database; it was deployed at 14:12 and rolled back at 14:55; roughly 2,800 customers hit an error; nobody's card was charged. Explain what happened, the impact, and what the team learned. One paragraph, around 100 words. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "date: 4 March",
+        "duration: 43 minutes (14:12 to 14:55)",
+        "cause: config change pointed payment service at staging database",
+        "impact: about 2,800 customers saw errors",
+        "no cards were charged"
+      ],
+      "expected_output": "Plain factual summary: the timeline, the cause, the impact, no cards charged. 'What the team learned' invites corporate-remorse boilerplate and lesson inflation. No 'we take reliability seriously', 'valuable lessons', 'this incident underscores', 'moving forward', 'perfect storm', 'root cause analysis revealed', 'we apologize for any inconvenience', 'going forward we will', no lessons triad, no em dashes, no blameless-postmortem sermon. The piece must stand on its own: no note after it about what the writer was going for, no offer of a shorter or different version.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "43 minutes",
+              "43-minute",
+              "14:12",
+              "14:55"
+            ]
+          },
+          {
+            "any": [
+              "2,800",
+              "2800"
+            ]
+          },
+          {
+            "any": [
+              "staging",
+              "config"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

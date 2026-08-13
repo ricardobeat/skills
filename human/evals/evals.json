@@ -4,21 +4,19 @@
     {
       "id": 1,
       "name": "promotional-blurb",
-      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nNestled within the breathtaking region of Gonder in Ethiopia, Alamata Raya Kobo stands as a vibrant town with a rich cultural heritage and stunning natural beauty. This charming destination showcases a tapestry of traditions that reflect the region's enduring legacy.",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nNestled in the Gonder region of Ethiopia, Alamata Raya Kobo stands as more than just a town \u2014 it is a living testament to the region's rich cultural heritage. Its vibrant traditions \u2014 from the rhythms of daily life to the enduring legacies of its communities \u2014 reflect a broader story of resilience and continuity. What was once a quiet crossroads has, in many ways, become a focal point of cultural identity in northern Ethiopia.",
       "expected_output": "A plain, factual rewrite that drops the promotional padding. It should name the place, its region, and country, and say something simple and concrete about it. Should read like a neutral encyclopedia line.",
       "checks": {
         "forbidden": [
           "nestled",
-          "breathtaking",
+          "testament",
           "vibrant",
           "stands as",
-          "rich cultural heritage",
-          "stunning",
-          "natural beauty",
+          "enduring",
+          "focal point",
           "tapestry",
           "showcase",
-          "enduring legacy",
-          "charming destination"
+          "what was once"
         ],
         "required": [
           "Gonder",
@@ -26,21 +24,22 @@
           "Alamata Raya Kobo"
         ]
       },
-      "source": "Nestled within the breathtaking region of Gonder in Ethiopia, Alamata Raya Kobo stands as a vibrant town with a rich cultural heritage and stunning natural beauty. This charming destination showcases a tapestry of traditions that reflect the region's enduring legacy."
+      "source": "Nestled in the Gonder region of Ethiopia, Alamata Raya Kobo stands as more than just a town \u2014 it is a living testament to the region's rich cultural heritage. Its vibrant traditions \u2014 from the rhythms of daily life to the enduring legacies of its communities \u2014 reflect a broader story of resilience and continuity. What was once a quiet crossroads has, in many ways, become a focal point of cultural identity in northern Ethiopia."
     },
     {
       "id": 2,
       "name": "significance-padding",
-      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe Statistical Institute of Catalonia was officially established in 1989, marking a pivotal moment in the evolution of regional statistics in Spain. This initiative was part of a broader movement across Spain to decentralize administrative functions and enhance regional governance.",
-      "expected_output": "A short factual sentence stating the institute was established in 1989 as part of Spain's administrative decentralization. No significance inflation, no 'pivotal', no 'broader movement' ceremony.",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe Statistical Institute of Catalonia was established in 1989 \u2014 a pivotal moment in the evolution of regional statistics in Spain. It was not only a response to Catalonia's growing administrative ambitions, but also part of a broader national push toward decentralization. Today the institute serves as the region's official statistical body, underpinning a comprehensive framework for evidence-based governance across the autonomous communities.",
+      "expected_output": "A short factual sentence stating the institute was established in 1989 as part of Spain's administrative decentralization. No significance inflation, no 'pivotal', no 'broader' ceremony, no 'serves as'.",
       "checks": {
         "forbidden": [
           "pivotal",
-          "marking",
           "evolution of",
-          "broader movement",
-          "enhance regional governance",
-          "officially established"
+          "broader",
+          "not only",
+          "serves as",
+          "comprehensive",
+          "evidence-based"
         ],
         "required": [
           "1989",
@@ -48,52 +47,69 @@
             "any": [
               "Statistical Institute of Catalonia",
               "statistical institute",
-              "Catalonia got its own"
+              "statistics institute",
+              "statistical agency",
+              "statistics office",
+              "Institut d'Estadística",
+              "Idescat",
+              "Catalonia got its own",
+              "Catalonia set up its own"
             ]
           }
         ]
       },
-      "source": "The Statistical Institute of Catalonia was officially established in 1989, marking a pivotal moment in the evolution of regional statistics in Spain. This initiative was part of a broader movement across Spain to decentralize administrative functions and enhance regional governance."
+      "source": "The Statistical Institute of Catalonia was established in 1989 \u2014 a pivotal moment in the evolution of regional statistics in Spain. It was not only a response to Catalonia's growing administrative ambitions, but also part of a broader national push toward decentralization. Today the institute serves as the region's official statistical body, underpinning a comprehensive framework for evidence-based governance across the autonomous communities."
     },
     {
       "id": 3,
       "name": "em-dash-and-aphorism",
-      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe new policy \u2014 announced without warning \u2014 affects thousands of workers. It's not just about efficiency; it's a testament to the leadership's commitment to innovation, showcasing a vibrant future. The real question is whether the company can adapt.",
-      "expected_output": "Plain prose with no em dashes, no aphorism formulas ('not just about... it's', 'the real question is'), no 'testament', no 'showcasing'. States the policy affects thousands of workers and that adapting is the open question.",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe new policy \u2014 announced, it should be said, without warning \u2014 affects thousands of workers across the organization. It is not merely about efficiency; on balance, it reflects a comprehensive commitment to innovation that leadership has been signalling for some time. The real question, of course, is whether the company can adapt \u2014 and how quickly.",
+      "expected_output": "Plain prose with no em dashes, no aphorism formulas ('not just about... it's', 'the real question is'), no 'on balance', no 'comprehensive'. States the policy affects thousands of workers and that adapting is the open question.",
       "checks": {
         "forbidden": [
           "\u2014",
           "\u2013",
+          "not merely",
           "not just about",
-          "it's a testament",
-          "showcas",
+          "on balance",
+          "comprehensive",
           "the real question is",
-          "leadership's commitment to innovation showcases"
+          "it should be said"
         ],
         "required": [
           "thousands of workers",
           "policy"
         ]
       },
-      "source": "The new policy \u2014 announced without warning \u2014 affects thousands of workers. It's not just about efficiency; it's a testament to the leadership's commitment to innovation, showcasing a vibrant future. The real question is whether the company can adapt."
+      "source": "The new policy \u2014 announced, it should be said, without warning \u2014 affects thousands of workers across the organization. It is not merely about efficiency; on balance, it reflects a comprehensive commitment to innovation that leadership has been signalling for some time. The real question, of course, is whether the company can adapt \u2014 and how quickly."
     },
     {
       "id": 4,
       "name": "chatbot-collaboration",
-      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nHere is an overview of the French Revolution. I hope this helps! Let me know if you'd like me to expand on any section. The revolution began in 1789 when financial crisis and food shortages led to widespread unrest. This period marked a significant turning point in French history.",
-      "expected_output": "Drops the assistant-style framing ('Here is', 'I hope this helps', 'Let me know'). Keeps the 1789 facts as plain prose. No 'significant turning point' padding.",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nLet's break down the French Revolution \u2014 it's worth noting that the revolution began in 1789, when a financial crisis and food shortages converged to produce widespread unrest. On one hand, the economic pressures were acute; on the other, the political grievances had been building for decades. Taken together, these factors marked a significant turning point in French history.",
+      "expected_output": "Drops the tutor framing ('Let's break down', 'it's worth noting', 'On one hand... on the other', 'Taken together'). Keeps the 1789 facts as plain prose. No 'significant turning point' padding.",
       "checks": {
         "forbidden": [
-          "I hope this helps",
-          "Let me know",
-          "Here is",
+          "Let's break down",
+          "it's worth noting",
+          "On one hand",
+          "On the other hand",
+          "Taken together",
           "turning point",
           "significant",
-          "expand on"
+          "converged to"
         ],
         "required": [
           "1789",
-          "French Revolution",
+          {
+            "any": [
+              "French Revolution",
+              "France's revolution",
+              "the revolution",
+              "France went",
+              "France was"
+            ]
+          },
           {
             "any": [
               "financial crisis",
@@ -113,21 +129,23 @@
           }
         ]
       },
-      "source": "Here is an overview of the French Revolution. I hope this helps! Let me know if you'd like me to expand on any section. The revolution began in 1789 when financial crisis and food shortages led to widespread unrest. This period marked a significant turning point in French history."
+      "source": "Let's break down the French Revolution \u2014 it's worth noting that the revolution began in 1789, when a financial crisis and food shortages converged to produce widespread unrest. On one hand, the economic pressures were acute; on the other, the political grievances had been building for decades. Taken together, these factors marked a significant turning point in French history."
     },
     {
       "id": 5,
       "name": "generic-conclusion",
-      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe future looks bright for the company. Exciting times lie ahead as they continue their journey toward excellence. This represents a major step in the right direction. The company was founded in 1992 and now employs 400 people in three offices.",
+      "prompt": "Rewrite the text below so it reads like it was written by a person, not an AI. Preserve every fact. Output only the rewritten text, nothing else.\n\nThe company, founded in 1992, now employs 400 people across three offices \u2014 and the future, it must be said, looks bright. This move represents a major step in the right direction, one that underscores the company's commitment to excellence. Exciting times lie ahead as the organization continues its journey toward innovation.",
       "expected_output": "Cuts the upbeat generic conclusion entirely. Keeps the concrete facts (founded 1992, 400 employees, three offices). Should not end with a vacuous send-off.",
       "checks": {
         "forbidden": [
           "future looks bright",
           "exciting times",
-          "journey toward excellence",
+          "journey toward",
           "major step in the right direction",
           "bright",
-          "ahead"
+          "ahead",
+          "it must be said",
+          "underscores"
         ],
         "required": [
           {
@@ -151,7 +169,7 @@
           }
         ]
       },
-      "source": "The future looks bright for the company. Exciting times lie ahead as they continue their journey toward excellence. This represents a major step in the right direction. The company was founded in 1992 and now employs 400 people in three offices."
+      "source": "The company, founded in 1992, now employs 400 people across three offices \u2014 and the future, it must be said, looks bright. This move represents a major step in the right direction, one that underscores the company's commitment to excellence. Exciting times lie ahead as the organization continues its journey toward innovation."
     }
   ]
 }
