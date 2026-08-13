@@ -1,6 +1,6 @@
 ---
 name: human
-description: Make text sound like it was written by a person instead of an AI. Use when writing, rewriting, editing, or reviewing text so it reads human rather than generated.
+description: Make text sound like it was written by a person instead of an AI. Use when writing, rewriting, editing, or reviewing text, code comments and documentation.
 ---
 
 # Human
