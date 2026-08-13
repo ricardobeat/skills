@@ -493,17 +493,18 @@ for ci, ref_case in enumerate(cases):
 
             scores = case_data.get("scores", [])
             outputs = case_data["outputs"]
+            # show the best attempt, but score the cell on the average of all
             if scores:
-                worst_idx = scores.index(min(scores))
+                best_idx = scores.index(max(scores))
             else:
-                worst_idx = 0
-            output = outputs[worst_idx] if worst_idx < len(outputs) else outputs[0]
-            score = scores[worst_idx] if worst_idx < len(scores) else 0
+                best_idx = 0
+            output = outputs[best_idx] if best_idx < len(outputs) else outputs[0]
+            score = round(avg_score(scores))
             whys = case_data.get("whys", [])
             if not whys:
                 notes = case_data.get("notes", [])
                 whys = [n.get("note", "") for n in notes]
-            why = whys[worst_idx] if worst_idx < len(whys) else ""
+            why = whys[best_idx] if best_idx < len(whys) else ""
 
             html_out += f'<div class="attempt-text">{highlight_tells(output)}</div>\n'
 

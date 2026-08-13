@@ -125,6 +125,13 @@ def strip_narration(text: str) -> str:
     of short meta-commentary sentences; the judge then grades the output
     itself."""
     text = re.sub(r"<system>.*?</system>", "", text, flags=re.IGNORECASE | re.DOTALL)
+    # Sentence-splitting mangles code (redis.get -> "redis. get") and drops
+    # short lines like `def f():`. Strip narration only from the prose before
+    # the first fence, and pass the code through untouched.
+    fence = text.find("```")
+    if fence != -1:
+        head, code = text[:fence], text[fence:]
+        return (strip_narration(head) + "\n\n" + code.strip()).strip()
     segments = re.split(r"(?<=[.!?])\s*", text.strip())
     kept = []
     cut = 0
