@@ -13,7 +13,8 @@ all_runs = [json.loads(l) for l in lines if l.strip()]
 # Split by generator model, keeping only the latest run per (model, skill)
 mimo_runs = {}
 minimax_runs = {}
-claude_runs = {}
+opus_runs = {}
+sonnet_runs = {}
 for r in all_runs:
     if "skill" not in r or "model" not in r:
         continue
@@ -23,82 +24,53 @@ for r in all_runs:
         minimax_runs[skill] = r
     elif "mimo" in model:
         mimo_runs[skill] = r
+    elif "claude/opus" in model or "claude-opus" in model.lower():
+        opus_runs[skill] = r
+    elif "claude/sonnet" in model or "claude-sonnet" in model.lower():
+        sonnet_runs[skill] = r
     elif "claude" in model or "opus" in model.lower():
-        claude_runs[skill] = r
+        # legacy fallback
+        opus_runs[skill] = r
 
 GENERATORS = [
     {"key": "mimo", "label": "mimo-v2.5-pro", "runs": mimo_runs},
     {"key": "minimax", "label": "minimax/MiniMax-M3", "runs": minimax_runs},
-    {"key": "claude", "label": "claude/opus", "runs": claude_runs},
+    {"key": "claude", "label": "claude/opus", "runs": opus_runs},
+    {"key": "sonnet", "label": "claude/sonnet", "runs": sonnet_runs},
 ]
 
 SKILLS = ["human", "none", "humanizer"]
-SKILL_LABELS = {"human": "human", "none": "none (baseline)", "humanizer": "humanizer"}
+SKILL_LABELS = {"human": "human", "none": "none", "humanizer": "humanizer"}
 SKILL_COLORS = {"human": "#2d6a4f", "none": "#9b2226", "humanizer": "#3a5a8c"}
 
-TELL_PATTERNS = [
-    (r" — ", "em-dash"), (r"— ", "em-dash"), (r"—", "em-dash"),
-    (r"\bserves as\b", "stand-in verb"), (r"\bstands as\b", "stand-in verb"),
-    (r"\banchors\b", "stand-in verb"), (r"\bunderpins\b", "stand-in verb"),
-    (r"\bnot just\b.*?\bbut\b", "false contrast"),
-    (r"\bisn't just\b.*?\bit's\b", "false contrast"),
-    (r"\bon the other hand\b", "false balance"),
-    (r"\blarge enough\b.*?\byet small enough\b", "false contrast"),
-    (r"\ba person, not a queue\b", "false contrast"),
-    (r"\bwasn't.*?it was\b", "false contrast"),
-    (r"\bsimple on the surface\b.*?\bunder the hood\b", "false contrast"),
-    (r"\bhonestly\b", "throat-clearing"), (r"\bgenuinely\b", "throat-clearing"),
-    (r"\bfrankly\b", "throat-clearing"), (r"\bthe real question is\b", "throat-clearing"),
-    (r"\bwhat really matters\b", "throat-clearing"), (r"\bwhich is their loss\b", "throat-clearing"),
-    (r"\bnestled\b", "promotional"), (r"\btucked into\b", "promotional"),
-    (r"\bvibrant\b", "promotional"), (r"\bauthentic\b", "promotional"),
-    (r"\boffers something rare\b", "promotional"), (r"\bwhat sets us apart\b", "promotional"),
-    (r"\bthrilled\b", "promotional"), (r"\bbeating heart\b", "promotional"),
-    (r"\b\w+, \w+, and \w+\b", "triad"),
-    (r"\bnuanced\b", "analytic"), (r"\bgranular\b", "analytic"),
-    (r"\bcomprehensive\b", "analytic"), (r"\bdramatically faster\b", "formulaic"),
-    (r"\bdiffer significantly\b", "formulaic"), (r"\bthe key is\b", "formulaic"),
-    (r"\bthe trade-off is\b", "formulaic"), (r"\bpaints a nuanced picture\b", "formulaic"),
-    (r"\bthat is precisely\b", "meta-commentary"), (r"\bunfiltered\b", "promotional"),
-    (r"\bquiet anchor\b", "metaphor"), (r"\bheartbeat\b", "metaphor"),
-    (r"\bstudies back\b", "canned attribution"), (r"\bresearch backs\b", "canned attribution"),
-    (r"\bevidence-based\b", "stacked compound"),
-    (r"\bthe lesson is\b", "closer"), (r"\bclosing a chapter\b", "canned aphorism"),
-    (r"\bone of the most\b", "opener"), (r"\bfor over three decades\b", "opener"),
-]
-
 def highlight_tells(text):
-    t = html.escape(text)
-    highlights = []
-    for pattern, category in TELL_PATTERNS:
-        for m in re.finditer(pattern, t, re.IGNORECASE):
-            start, end = m.start(), m.end()
-            before = t[:start]
-            if before.count("`") % 2 == 1:
-                continue
-            highlights.append((start, end, category, m.group()))
-    highlights.sort()
-    merged = []
-    for h in highlights:
-        if merged and h[0] < merged[-1][1]:
-            old = merged[-1]
-            merged[-1] = (old[0], max(old[1], h[1]), old[2], old[3])
-        else:
-            merged.append(h)
-    result = t
-    for start, end, category, _ in reversed(merged):
-        tooltip = html.escape(category)
-        replacement = f'<span class="tell" title="{tooltip}">{result[start:end]}</span>'
-        result = result[:start] + replacement + result[end:]
-    return result
+    return html.escape(text)
+
+
+TELL_LABELS = [
+    ("em-dash", "#e76f51"),
+    ("stand-in verb", "#e76f51"),
+    ("false contrast", "#f4a261"),
+    ("throat-clearing", "#f4a261"),
+    ("promotional", "#e76f51"),
+    ("analytic", "#4ea8de"),
+    ("formulaic", "#4ea8de"),
+    ("triad", "#c77dff"),
+    ("meta-commentary", "#c77dff"),
+]
 
 def score_badge(score):
     if score > 80:
         return f'<span class="score pass">{score}</span>'
-    elif score >= 80:
+    elif score >= 70:
         return f'<span class="score borderline">{score}</span>'
     else:
         return f'<span class="score fail">{score}</span>'
+
+
+def score_badge_inner(score):
+    cls = "pass" if score > 80 else "borderline" if score >= 70 else "fail"
+    return f'<span class="score {cls}">{score}</span>'
 
 def avg_score(scores):
     if not scores:
@@ -114,88 +86,332 @@ html_out = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Human Skill Eval Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Literata:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #0f1117;
+    --surface: #161922;
+    --surface-2: #1c2030;
+    --border: #262a3a;
+    --border-subtle: #1e2233;
+    --text: #c9cdd8;
+    --text-muted: #6b7194;
+    --text-bright: #e8eaf0;
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.12);
+    --red: #d44545;
+    --red-dim: rgba(212,69,69,0.14);
+    --amber: #c79102;
+    --amber-dim: rgba(199,145,2,0.14);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 2rem; line-height: 1.6; }
-  h1 { text-align: center; margin-bottom: 0.5rem; color: #f0f0f0; font-size: 1.8rem; }
-  .subtitle { text-align: center; color: #888; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
 
-  /* Generator selector */
-  .gen-selector { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; }
-  .gen-btn { padding: 0.6rem 1.5rem; border: 2px solid #333; border-radius: 6px; background: #16213e; color: #aaa; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
-  .gen-btn:hover { border-color: #555; color: #ddd; }
-  .gen-btn.active { border-color: #4ea8de; color: #4ea8de; background: rgba(78,168,222,0.1); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.75rem; }
+
+  /* Header */
+  .header { margin-bottom: 2.5rem; }
+  .header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -0.025em;
+    margin-bottom: 0.35rem;
+  }
+  .header .subtitle {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 400;
+  }
+  .header .subtitle .sep { color: var(--border); margin: 0 0.5rem; }
+
+  /* Generator selector - pill tabs */
+  .gen-selector {
+    display: inline-flex;
+    gap: 2px;
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .gen-btn {
+    padding: 0.4rem 0.9rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.75rem;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .gen-btn:hover { color: var(--text); }
+  .gen-btn.active {
+    color: var(--text-bright);
+    background: var(--border);
+  }
 
   /* Summary table */
-  .summary { width: 100%; border-collapse: collapse; margin-bottom: 2.5rem; }
-  .summary th, .summary td { padding: 0.6rem 1rem; text-align: center; border-bottom: 1px solid #333; }
-  .summary th { background: #16213e; color: #aaa; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-  .summary td { font-size: 0.9rem; }
-  .summary tr:hover { background: #16213e; }
-  .skill-label { font-weight: 700; text-align: left !important; }
-  .pass-count { font-size: 1.4rem; font-weight: 700; }
-  .pass-count.good { color: #52b788; }
-  .pass-count.mid { color: #f4a261; }
-  .pass-count.bad { color: #e76f51; }
+  .summary-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .overall-wrap {
+    margin-bottom: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .overall-table th:first-child,
+  .overall-table td:first-child {
+    text-align: left !important;
+    padding-left: 1.25rem !important;
+  }
+  .summary { width: 100%; border-collapse: collapse; }
+  .summary th {
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .summary td {
+    padding: 0.65rem 0.75rem;
+    text-align: center;
+    font-size: 0.8125rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .summary tr:last-child td { border-bottom: none; }
+  .skill-label { font-weight: 600; text-align: left !important; color: var(--text-bright); padding-left: 1.25rem !important; }
+  .pass-count { font-size: 0.9375rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pass-count.good { color: var(--green); }
+  .pass-count.mid { color: var(--amber); }
+  .pass-count.bad { color: var(--red); }
 
-  .case { background: #16213e; border-radius: 8px; margin-bottom: 2rem; overflow: hidden; }
-  .case-header { padding: 1rem 1.5rem; background: #0f3460; display: flex; justify-content: space-between; align-items: center; }
-  .case-name { font-weight: 700; font-size: 1.1rem; }
-  .case-scores { display: flex; gap: 1rem; font-size: 0.85rem; }
-  .case-scores .skill-score { display: flex; align-items: center; gap: 0.3rem; }
-  .case-scores .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  /* Section divider */
+  .section-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
 
-  .tabs { display: flex; border-bottom: 2px solid #333; }
-  .tab { flex: 1; padding: 0.7rem 1rem; text-align: center; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; border-bottom: 3px solid transparent; margin-bottom: -2px; }
-  .tab:hover { background: rgba(255,255,255,0.05); }
-  .tab.active[data-skill="human"] { border-bottom-color: #52b788; color: #52b788; }
-  .tab.active[data-skill="none"] { border-bottom-color: #e76f51; color: #e76f51; }
-  .tab.active[data-skill="humanizer"] { border-bottom-color: #4ea8de; color: #4ea8de; }
+  /* Case cards */
+  .case {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .case-header {
+    padding: 0.75rem 1.25rem;
+    background: var(--surface-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .case-name { font-weight: 600; font-size: 0.9375rem; color: var(--text-bright); }
+  .case-id { color: var(--text-muted); font-weight: 400; margin-right: 0.5rem; font-variant-numeric: tabular-nums; }
 
-  .tab-content { display: none; padding: 1.5rem; }
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 1rem; }
+  .tab {
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.75rem;
+    font-family: inherit;
+    transition: color 0.15s;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    color: var(--text-muted);
+    background: transparent;
+    border-top: none; border-left: none; border-right: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tab:first-child { padding-left: 0.25rem; }
+  .tab:hover { color: var(--text); }
+  .tab-mark { font-size: 0.7rem; margin-left: 0.25rem; opacity: 0.6; }
+  .tab-mark.pass { color: var(--green); }
+  .tab-mark.fail { color: var(--red); }
+  .tab.active[data-skill="human"] { border-bottom-color: var(--green); color: var(--green); }
+  .tab.active[data-skill="none"] { border-bottom-color: var(--red); color: var(--red); }
+  .tab.active[data-skill="humanizer"] { border-bottom-color: var(--blue); color: var(--blue); }
+
+  /* Tab content */
+  .tab-content { display: none; padding: 1.25rem; }
   .tab-content.active { display: block; }
-  .attempt-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
-  .attempt-text { white-space: pre-wrap; font-family: 'Charter', 'Georgia', serif; font-size: 0.95rem; line-height: 1.7; color: #d4d4d4; }
-  .problems { margin-top: 1rem; font-size: 0.8rem; color: #e76f51; background: rgba(231,111,81,0.1); padding: 0.6rem 0.8rem; border-radius: 4px; border-left: 3px solid #e76f51; }
-  .problems .gate { color: #f4a261; }
+  .attempt-text {
+    white-space: pre-wrap;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .footer {
+    margin-top: 0.85rem;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
 
-  .tell { background: rgba(231,111,81,0.2); border-bottom: 1px solid #e76f51; padding: 0.05em 0; cursor: help; transition: background 0.2s; }
-  .tell:hover { background: rgba(231,111,81,0.4); }
+  /* AI tell highlights */
+  .tell {
+    background: var(--red-dim);
+    border-bottom: 1px solid rgba(248,113,113,0.35);
+    padding: 0 2px;
+    cursor: help;
+    border-radius: 2px;
+    transition: background 0.15s;
+  }
+  .tell:hover { background: rgba(248,113,113,0.22); }
 
-  .score { display: inline-block; padding: 0.15em 0.5em; border-radius: 4px; font-weight: 700; font-size: 0.85rem; }
-  .score.pass { background: rgba(82,183,136,0.2); color: #52b788; }
-  .score.borderline { background: rgba(244,162,97,0.2); color: #f4a261; }
-  .score.fail { background: rgba(231,111,81,0.2); color: #e76f51; }
+  /* Tell category labels (below table) */
+  .tell-labels {
+    margin: 0 0 2rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .tell-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    padding: 0.25rem 0.55rem;
+    border-radius: 5px;
+  }
+  .tell-label-dot { width: 7px; height: 7px; border-radius: 2px; }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 2rem; justify-content: center; }
-  .legend-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: #888; }
-  .legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+  /* Score badges */
+  .score {
+    display: inline-block;
+    padding: 0.15em 0.5em;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 2.2em;
+  }
+  .score.pass { background: var(--green-dim); color: var(--green); }
+  .score.borderline { background: var(--amber-dim); color: var(--amber); }
+  .score.fail { background: var(--red-dim); color: var(--red); }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+  }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    padding: 0.25rem 0.55rem;
+    border-radius: 5px;
+  }
+  .legend-swatch { width: 7px; height: 7px; border-radius: 2px; }
 </style>
 </head>
 <body>
+<div class="container">
 
-<h1>Human Skill Eval Comparison</h1>
-<div class="subtitle">Generator model comparison | Judge: mimo-v2.5-pro | Score > 80 = pass</div>
+<div class="header">
+  <h1>Human Skill Eval</h1>
+  <div class="subtitle">Comparing generator models <span class="sep">·</span> Judge: mimo-v2.5-pro <span class="sep">·</span> Avg score > 80 = pass</div>
+</div>
 
-<div class="gen-selector">
 """
+# Overall summary - one row per generator, three skill columns
+overall_rows = []
+for gen in GENERATORS:
+    runs = gen["runs"]
+    row = {"gen": gen, "cells": []}
+    for skill in SKILLS:
+        if skill in runs:
+            run = runs[skill]
+            scores_all = []
+            for c in run["cases"]:
+                scores_all.extend(c.get("scores", []))
+            if scores_all:
+                avg = sum(scores_all) / len(scores_all)
+                passed = sum(1 for c in run["cases"] if avg_score(c.get("scores", [])) > 80)
+                total = len(run["cases"])
+                row["cells"].append({"avg": avg, "passed": passed, "total": total})
+            else:
+                row["cells"].append(None)
+        else:
+            row["cells"].append(None)
+    overall_rows.append(row)
 
+html_out += '<div class="overall-wrap"><table class="summary overall-table"><tr><th>Generator</th>'
+for skill in SKILLS:
+    html_out += f'<th>{SKILL_LABELS[skill]}</th>'
+html_out += '</tr>\n'
+for row in overall_rows:
+    html_out += f'<tr><td class="skill-label">{row["gen"]["label"]}</td>'
+    for cell in row["cells"]:
+        if cell is None:
+            html_out += '<td><span class="pass-count bad">—</span></td>'
+        else:
+            passed = cell["passed"]
+            total = cell["total"]
+            pc = "good" if passed >= 7 else "mid" if passed >= 4 else "bad"
+            html_out += f'<td><span class="pass-count {pc}">{passed}/{total}</span></td>'
+    html_out += '</tr>\n'
+html_out += '</table></div>\n\n'
+
+html_out += '<div class="gen-selector">\n'
 for gen in GENERATORS:
     active = " active" if gen["key"] == "mimo" else ""
     html_out += f'<div class="gen-btn{active}" data-gen="{gen["key"]}">{gen["label"]}</div>\n'
-
-html_out += "</div>\n\n"
-
-# Legend
-legend_items = [
-    ("em-dash", "#e76f51"), ("stand-in verb", "#e76f51"), ("false contrast", "#f4a261"),
-    ("throat-clearing", "#f4a261"), ("promotional", "#e76f51"), ("analytic", "#4ea8de"),
-    ("formulaic", "#4ea8de"), ("triad", "#c77dff"), ("meta-commentary", "#c77dff"),
-]
-html_out += '<div class="legend">\n'
-for name, color in legend_items:
-    html_out += f'<div class="legend-item"><div class="legend-swatch" style="background:{color};opacity:0.5;"></div>{name}</div>\n'
 html_out += "</div>\n\n"
 
 # Summary tables - one per generator
@@ -203,7 +419,7 @@ for gen in GENERATORS:
     runs = gen["runs"]
     hidden = ' style="display:none"' if gen["key"] != "mimo" else ""
     gen_key = gen["key"]
-    html_out += f'<table class="summary" data-gen="{gen_key}"{hidden}><tr><th>Skill</th><th>Passed</th>'
+    html_out += f'<div class="summary-wrap" data-gen="{gen_key}"{hidden}><table class="summary"><tr><th>Skill</th><th>Passed</th>'
     for ci in range(len(cases)):
         case_name = cases[ci]["name"]
         html_out += f'<th>{case_name}</th>'
@@ -222,20 +438,43 @@ for gen in GENERATORS:
             avg = round(avg_score(scores))
             html_out += f'<td>{score_badge(avg)}</td>'
         html_out += '</tr>\n'
-    html_out += '</table>\n\n'
+    html_out += '</table></div>\n\n'
+
+# Labels below all tables
+html_out += '<div class="tell-labels">'
+for label, color in TELL_LABELS:
+    html_out += f'<span class="tell-label"><span class="tell-label-dot" style="background:{color};opacity:0.5;"></span>{label}</span>'
+html_out += "</div>\n\n"
+
+# Pre-compute all pass data: pass_data[gen_key][case_id][skill] = bool
+pass_data = {}
+for gen in GENERATORS:
+    pass_data[gen["key"]] = {}
+    for ci in range(len(cases)):
+        case_id = cases[ci]["id"]
+        pass_data[gen["key"]][case_id] = {}
+        for skill in SKILLS:
+            if skill in gen["runs"] and len(gen["runs"][skill]["cases"]) > ci:
+                cs = gen["runs"][skill]["cases"][ci]
+                avg = avg_score(cs.get("scores", []))
+                pass_data[gen["key"]][case_id][skill] = avg > 80
 
 # Case sections
+html_out += '<div class="section-label">Cases</div>\n'
 for ci, ref_case in enumerate(cases):
     case_name = ref_case["name"]
     case_id = ref_case["id"]
 
+    # Add pass data as JSON for JS to read
+    html_out += f'<script type="application/json" class="case-data" data-cid="{case_id}">{json.dumps(pass_data)}</script>\n'
+
     html_out += f'<div class="case" id="case-{case_id}">\n'
-    html_out += f'<div class="case-header"><span class="case-name">{case_id}. {case_name}</span></div>\n'
+    html_out += f'<div class="case-header"><span class="case-name"><span class="case-id">{case_id}.</span>{case_name}</span></div>\n'
 
     # Tabs
     html_out += '<div class="tabs">\n'
     for skill in SKILLS:
-        html_out += f'<div class="tab" data-skill="{skill}" data-case="{case_id}">{SKILL_LABELS[skill]}</div>\n'
+        html_out += f'<div class="tab" data-skill="{skill}" data-case="{case_id}">{SKILL_LABELS[skill]} <span class="tab-mark"></span></div>\n'
     html_out += '</div>\n'
 
     # Tab contents - one set per generator
@@ -260,16 +499,16 @@ for ci, ref_case in enumerate(cases):
                 worst_idx = 0
             output = outputs[worst_idx] if worst_idx < len(outputs) else outputs[0]
             score = scores[worst_idx] if worst_idx < len(scores) else 0
+            whys = case_data.get("whys", [])
+            if not whys:
+                notes = case_data.get("notes", [])
+                whys = [n.get("note", "") for n in notes]
+            why = whys[worst_idx] if worst_idx < len(whys) else ""
 
-            html_out += f'<div class="attempt-label">attempt {worst_idx+1} (worst: {score})</div>\n'
             html_out += f'<div class="attempt-text">{highlight_tells(output)}</div>\n'
 
-            if case_data.get("problems"):
-                html_out += '<div class="problems">'
-                for p in case_data["problems"]:
-                    cls = ' class="gate"' if p.startswith("(gate)") else ""
-                    html_out += f'<div{cls}>{html.escape(p)}</div>'
-                html_out += '</div>\n'
+            if score <= 80:
+                html_out += '<div class="footer"><span>Score:</span><span class="footer-score">' + score_badge_inner(score) + '</span></div>\n'
 
             html_out += '</div>\n'
 
@@ -277,29 +516,50 @@ for ci, ref_case in enumerate(cases):
 
 # JavaScript
 html_out += """
+</div>
 <script>
-// Generator selector
+// Parse all case-data JSON blocks into a map
+const passData = {};
+document.querySelectorAll('script.case-data').forEach(el => {
+  Object.assign(passData, JSON.parse(el.textContent));
+});
+
+function updateMarks(gen) {
+  document.querySelectorAll('.tab').forEach(tab => {
+    const cid = tab.dataset.case;
+    const skill = tab.dataset.skill;
+    const passed = passData[gen] && passData[gen][cid] && passData[gen][cid][skill];
+    const markSpan = tab.querySelector('.tab-mark');
+    if (markSpan) {
+      markSpan.textContent = passed ? '✓' : '✗';
+      markSpan.className = 'tab-mark ' + (passed ? 'pass' : 'fail');
+    }
+  });
+}
+
 document.querySelectorAll('.gen-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const gen = btn.dataset.gen;
     document.querySelectorAll('.gen-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    // Toggle summary tables
-    document.querySelectorAll('.summary').forEach(t => {
+    document.querySelectorAll('.summary-wrap').forEach(t => {
       t.style.display = t.dataset.gen === gen ? '' : 'none';
     });
-    // Toggle tab contents
-    document.querySelectorAll('.tab-content').forEach(tc => {
-      if (tc.dataset.gen === gen) {
-        tc.style.display = tc.classList.contains('active') ? '' : 'none';
-      } else {
-        tc.style.display = 'none';
-      }
+    // Reset all cases: activate first tab for new generator
+    document.querySelectorAll('.case').forEach(caseEl => {
+      const tabs = caseEl.querySelectorAll('.tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      tabs[0].classList.add('active');
+      caseEl.querySelectorAll('.tab-content').forEach(tc => {
+        const match = tc.dataset.gen === gen && tc.dataset.skill === tabs[0].dataset.skill;
+        tc.classList.toggle('active', match);
+        tc.style.display = match ? '' : 'none';
+      });
     });
+    updateMarks(gen);
   });
 });
 
-// Skill tabs
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     const caseId = tab.dataset.case;
@@ -315,6 +575,9 @@ document.querySelectorAll('.tab').forEach(tab => {
     });
   });
 });
+
+// Initial marks
+updateMarks('mimo');
 </script>
 </body>
 </html>
