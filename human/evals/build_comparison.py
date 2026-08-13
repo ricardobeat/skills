@@ -1,47 +1,63 @@
 #!/usr/bin/env python3
-"""Generate HTML comparison of eval results with multiple generators."""
+"""Generate HTML comparison of eval results with multiple generators and judges."""
 import json
 import re
 import html
+import os
 
-with open("results.jsonl") as f:
+HERE = os.path.dirname(os.path.abspath(__file__))
+results_path = os.path.join(HERE, "results.jsonl")
+
+with open(results_path) as f:
     lines = f.readlines()
 
-# Find runs by model - scan all lines, keep latest per (model, skill)
 all_runs = [json.loads(l) for l in lines if l.strip()]
 
-# Split by generator model, keeping only the latest run per (model, skill)
-mimo_runs = {}
-minimax_runs = {}
-opus_runs = {}
-sonnet_runs = {}
-for r in all_runs:
-    if "skill" not in r or "model" not in r:
-        continue
-    model = r.get("model", "")
-    skill = r["skill"]
-    if "MiniMax-M3" in model or "minimax" in model.lower():
-        minimax_runs[skill] = r
-    elif "mimo" in model:
-        mimo_runs[skill] = r
-    elif "claude/opus" in model or "claude-opus" in model.lower():
-        opus_runs[skill] = r
-    elif "claude/sonnet" in model or "claude-sonnet" in model.lower():
-        sonnet_runs[skill] = r
-    elif "claude" in model or "opus" in model.lower():
-        # legacy fallback
-        opus_runs[skill] = r
+JUDGES = [
+    {"key": "mimo", "label": "Mimo v2.5 Pro"},
+    {"key": "opus", "label": "Claude Opus"},
+]
 
 GENERATORS = [
-    {"key": "mimo", "label": "mimo-v2.5-pro", "runs": mimo_runs},
-    {"key": "minimax", "label": "minimax/MiniMax-M3", "runs": minimax_runs},
-    {"key": "claude", "label": "claude/opus", "runs": opus_runs},
-    {"key": "sonnet", "label": "claude/sonnet", "runs": sonnet_runs},
+    {"key": "mimo", "label": "mimo-v2.5-pro"},
+    {"key": "minimax", "label": "minimax/MiniMax-M3"},
+    {"key": "claude", "label": "claude/opus"},
+    {"key": "sonnet", "label": "claude/sonnet"},
 ]
 
 SKILLS = ["human", "none", "humanizer"]
 SKILL_LABELS = {"human": "human", "none": "none", "humanizer": "humanizer"}
 SKILL_COLORS = {"human": "#2d6a4f", "none": "#9b2226", "humanizer": "#3a5a8c"}
+
+runs_by_judge = {"mimo": {}, "opus": {}}
+
+for r in all_runs:
+    if "skill" not in r or "model" not in r:
+        continue
+    model = r.get("model", "")
+    skill = r["skill"]
+    judge_raw = r.get("judge", "")
+
+    if judge_raw and "opus" in str(judge_raw).lower():
+        j_key = "opus"
+    else:
+        j_key = "mimo"
+
+    if "MiniMax-M3" in model or "minimax" in model.lower():
+        g_key = "minimax"
+    elif "mimo" in model.lower():
+        g_key = "mimo"
+    elif "claude/sonnet" in model.lower() or "claude-sonnet" in model.lower():
+        g_key = "sonnet"
+    elif "claude/opus" in model.lower() or "claude-opus" in model.lower() or "claude" in model.lower():
+        g_key = "claude"
+    else:
+        continue
+
+    if g_key not in runs_by_judge[j_key]:
+        runs_by_judge[j_key][g_key] = {}
+    runs_by_judge[j_key][g_key][skill] = r
+
 
 def highlight_tells(text):
     return html.escape(text)
@@ -59,6 +75,7 @@ TELL_LABELS = [
     ("meta-commentary", "#c77dff"),
 ]
 
+
 def score_badge(score):
     if score > 80:
         return f'<span class="score pass">{score}</span>'
@@ -72,15 +89,15 @@ def score_badge_inner(score):
     cls = "pass" if score > 80 else "borderline" if score >= 70 else "fail"
     return f'<span class="score {cls}">{score}</span>'
 
+
 def avg_score(scores):
     if not scores:
         return 0
     return sum(scores) / len(scores)
 
-# Build HTML
-ref_gen = GENERATORS[0]
-ref_runs = ref_gen["runs"]
-cases = ref_runs.get(SKILLS[0], {}).get("cases", [])
+
+# Case definitions reference
+cases = runs_by_judge["mimo"]["mimo"]["human"]["cases"]
 
 html_out = """<!DOCTYPE html>
 <html lang="en">
@@ -125,7 +142,7 @@ html_out = """<!DOCTYPE html>
   .container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.75rem; }
 
   /* Header */
-  .header { margin-bottom: 2.5rem; }
+  .header { margin-bottom: 2rem; }
   .header h1 {
     font-size: 1.75rem;
     font-weight: 700;
@@ -140,17 +157,35 @@ html_out = """<!DOCTYPE html>
   }
   .header .subtitle .sep { color: var(--border); margin: 0 0.5rem; }
 
-  /* Generator selector - pill tabs */
-  .gen-selector {
+  /* Selectors row */
+  .selectors-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .selector-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .selector-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .pill-tabs {
     display: inline-flex;
     gap: 2px;
-    margin-bottom: 1.5rem;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 3px;
   }
-  .gen-btn {
+  .pill-btn {
     padding: 0.4rem 0.9rem;
     border: none;
     border-radius: 6px;
@@ -162,8 +197,8 @@ html_out = """<!DOCTYPE html>
     font-family: inherit;
     transition: all 0.15s ease;
   }
-  .gen-btn:hover { color: var(--text); }
-  .gen-btn.active {
+  .pill-btn:hover { color: var(--text); }
+  .pill-btn.active {
     color: var(--text-bright);
     background: var(--border);
   }
@@ -365,80 +400,89 @@ html_out = """<!DOCTYPE html>
 
 <div class="header">
   <h1>Human Skill Eval</h1>
-  <div class="subtitle">Comparing generator models <span class="sep">·</span> Judge: mimo-v2.5-pro <span class="sep">·</span> Avg score > 80 = pass</div>
+  <div class="subtitle">Comparing generator models <span class="sep">·</span> Avg score > 80 = pass</div>
+</div>
+
+<div class="selectors-bar">
+  <div class="selector-group">
+    <span class="selector-label">Judge:</span>
+    <div class="pill-tabs">
+"""
+
+for j in JUDGES:
+    active = " active" if j["key"] == "mimo" else ""
+    html_out += f'      <button class="pill-btn judge-btn{active}" data-judge="{j["key"]}">{j["label"]}</button>\n'
+
+html_out += """    </div>
+  </div>
+  <div class="selector-group">
+    <span class="selector-label">Generator:</span>
+    <div class="pill-tabs">
+"""
+
+for gen in GENERATORS:
+    active = " active" if gen["key"] == "mimo" else ""
+    html_out += f'      <button class="pill-btn gen-btn{active}" data-gen="{gen["key"]}">{gen["label"]}</button>\n'
+
+html_out += """    </div>
+  </div>
 </div>
 
 """
-# Overall summary - one row per generator, three skill columns
-overall_rows = []
-for gen in GENERATORS:
-    runs = gen["runs"]
-    row = {"gen": gen, "cells": []}
+
+# Overall summary tables - one per judge
+for j in JUDGES:
+    jk = j["key"]
+    hidden = ' style="display:none"' if jk != "mimo" else ""
+    html_out += f'<div class="overall-wrap" data-judge="{jk}"{hidden}><table class="summary overall-table"><tr><th>Generator</th>'
     for skill in SKILLS:
-        if skill in runs:
-            run = runs[skill]
-            scores_all = []
-            for c in run["cases"]:
-                scores_all.extend(c.get("scores", []))
-            if scores_all:
-                avg = sum(scores_all) / len(scores_all)
+        html_out += f'<th>{SKILL_LABELS[skill]}</th>'
+    html_out += '</tr>\n'
+
+    for gen in GENERATORS:
+        gk = gen["key"]
+        runs = runs_by_judge.get(jk, {}).get(gk, {})
+        html_out += f'<tr><td class="skill-label">{gen["label"]}</td>'
+        for skill in SKILLS:
+            if skill in runs:
+                run = runs[skill]
                 passed = sum(1 for c in run["cases"] if avg_score(c.get("scores", [])) > 80)
                 total = len(run["cases"])
-                row["cells"].append({"avg": avg, "passed": passed, "total": total})
+                pc = "good" if passed >= 7 else "mid" if passed >= 4 else "bad"
+                html_out += f'<td><span class="pass-count {pc}">{passed}/{total}</span></td>'
             else:
-                row["cells"].append(None)
-        else:
-            row["cells"].append(None)
-    overall_rows.append(row)
-
-html_out += '<div class="overall-wrap"><table class="summary overall-table"><tr><th>Generator</th>'
-for skill in SKILLS:
-    html_out += f'<th>{SKILL_LABELS[skill]}</th>'
-html_out += '</tr>\n'
-for row in overall_rows:
-    html_out += f'<tr><td class="skill-label">{row["gen"]["label"]}</td>'
-    for cell in row["cells"]:
-        if cell is None:
-            html_out += '<td><span class="pass-count bad">—</span></td>'
-        else:
-            passed = cell["passed"]
-            total = cell["total"]
-            pc = "good" if passed >= 7 else "mid" if passed >= 4 else "bad"
-            html_out += f'<td><span class="pass-count {pc}">{passed}/{total}</span></td>'
-    html_out += '</tr>\n'
-html_out += '</table></div>\n\n'
-
-html_out += '<div class="gen-selector">\n'
-for gen in GENERATORS:
-    active = " active" if gen["key"] == "mimo" else ""
-    html_out += f'<div class="gen-btn{active}" data-gen="{gen["key"]}">{gen["label"]}</div>\n'
-html_out += "</div>\n\n"
-
-# Summary tables - one per generator
-for gen in GENERATORS:
-    runs = gen["runs"]
-    hidden = ' style="display:none"' if gen["key"] != "mimo" else ""
-    gen_key = gen["key"]
-    html_out += f'<div class="summary-wrap" data-gen="{gen_key}"{hidden}><table class="summary"><tr><th>Skill</th><th>Passed</th>'
-    for ci in range(len(cases)):
-        case_name = cases[ci]["name"]
-        html_out += f'<th>{case_name}</th>'
-    html_out += '</tr>\n'
-    for skill in SKILLS:
-        if skill not in runs:
-            continue
-        run = runs[skill]
-        total_cases = len(run["cases"])
-        passed = sum(1 for c in run["cases"] if avg_score(c.get("scores", [])) > 80)
-        pc = "good" if passed >= 7 else "mid" if passed >= 4 else "bad"
-        html_out += f'<tr><td class="skill-label" style="color:{SKILL_COLORS[skill]}">{SKILL_LABELS[skill]}</td>'
-        html_out += f'<td><span class="pass-count {pc}">{passed}/{total_cases}</span></td>'
-        for c in run["cases"]:
-            scores = c.get("scores", [])
-            avg = round(avg_score(scores))
-            html_out += f'<td>{score_badge(avg)}</td>'
+                html_out += '<td><span class="pass-count bad">—</span></td>'
         html_out += '</tr>\n'
     html_out += '</table></div>\n\n'
+
+# Summary tables - one per (judge, generator) combination
+for j in JUDGES:
+    jk = j["key"]
+    for gen in GENERATORS:
+        gk = gen["key"]
+        runs = runs_by_judge.get(jk, {}).get(gk, {})
+        hidden = ' style="display:none"' if (jk != "mimo" or gk != "mimo") else ""
+        html_out += f'<div class="summary-wrap" data-judge="{jk}" data-gen="{gk}"{hidden}><table class="summary"><tr><th>Skill</th><th>Passed</th>'
+        for ci in range(len(cases)):
+            case_name = cases[ci]["name"]
+            html_out += f'<th>{case_name}</th>'
+        html_out += '</tr>\n'
+
+        for skill in SKILLS:
+            if skill not in runs:
+                continue
+            run = runs[skill]
+            total_cases = len(run["cases"])
+            passed = sum(1 for c in run["cases"] if avg_score(c.get("scores", [])) > 80)
+            pc = "good" if passed >= 7 else "mid" if passed >= 4 else "bad"
+            html_out += f'<tr><td class="skill-label" style="color:{SKILL_COLORS[skill]}">{SKILL_LABELS[skill]}</td>'
+            html_out += f'<td><span class="pass-count {pc}">{passed}/{total_cases}</span></td>'
+            for c in run["cases"]:
+                scores = c.get("scores", [])
+                avg = round(avg_score(scores))
+                html_out += f'<td>{score_badge(avg)}</td>'
+            html_out += '</tr>\n'
+        html_out += '</table></div>\n\n'
 
 # Labels below all tables
 html_out += '<div class="tell-labels">'
@@ -446,18 +490,25 @@ for label, color in TELL_LABELS:
     html_out += f'<span class="tell-label"><span class="tell-label-dot" style="background:{color};opacity:0.5;"></span>{label}</span>'
 html_out += "</div>\n\n"
 
-# Pre-compute all pass data: pass_data[gen_key][case_id][skill] = bool
+# Pre-compute pass_data: pass_data[judge_key][gen_key][case_id][skill] = bool
 pass_data = {}
-for gen in GENERATORS:
-    pass_data[gen["key"]] = {}
-    for ci in range(len(cases)):
-        case_id = cases[ci]["id"]
-        pass_data[gen["key"]][case_id] = {}
-        for skill in SKILLS:
-            if skill in gen["runs"] and len(gen["runs"][skill]["cases"]) > ci:
-                cs = gen["runs"][skill]["cases"][ci]
-                avg = avg_score(cs.get("scores", []))
-                pass_data[gen["key"]][case_id][skill] = avg > 80
+for j in JUDGES:
+    jk = j["key"]
+    pass_data[jk] = {}
+    for gen in GENERATORS:
+        gk = gen["key"]
+        pass_data[jk][gk] = {}
+        for ci in range(len(cases)):
+            case_id = cases[ci]["id"]
+            pass_data[jk][gk][case_id] = {}
+            for skill in SKILLS:
+                run = runs_by_judge.get(jk, {}).get(gk, {}).get(skill, {})
+                if run and len(run.get("cases", [])) > ci:
+                    cs = run["cases"][ci]
+                    avg = avg_score(cs.get("scores", []))
+                    pass_data[jk][gk][case_id][skill] = avg > 80
+                else:
+                    pass_data[jk][gk][case_id][skill] = False
 
 # Case sections
 html_out += '<div class="section-label">Cases</div>\n'
@@ -477,41 +528,38 @@ for ci, ref_case in enumerate(cases):
         html_out += f'<div class="tab" data-skill="{skill}" data-case="{case_id}">{SKILL_LABELS[skill]} <span class="tab-mark"></span></div>\n'
     html_out += '</div>\n'
 
-    # Tab contents - one set per generator
+    # Tab contents - one set per (judge, generator, skill)
     for skill in SKILLS:
-        for gen in GENERATORS:
-            runs = gen["runs"]
-            if skill not in runs:
-                continue
-            case_data = runs[skill]["cases"][ci]
-            is_first_gen = gen["key"] == "mimo"
-            is_first_skill = skill == "human"
-            active = " active" if is_first_gen and is_first_skill else ""
-            hidden = "" if is_first_gen else ' style="display:none"'
+        for j in JUDGES:
+            jk = j["key"]
+            for gen in GENERATORS:
+                gk = gen["key"]
+                run = runs_by_judge.get(jk, {}).get(gk, {}).get(skill, {})
+                if not run or len(run.get("cases", [])) <= ci:
+                    continue
+                case_data = run["cases"][ci]
 
-            html_out += f'<div class="tab-content{active}" data-skill="{skill}" data-case="{case_id}" data-gen="{gen["key"]}"{hidden}>\n'
+                is_active = (jk == "mimo" and gk == "mimo" and skill == "human")
+                active_cls = " active" if is_active else ""
+                hidden = "" if is_active else ' style="display:none"'
 
-            scores = case_data.get("scores", [])
-            outputs = case_data["outputs"]
-            # show the best attempt, but score the cell on the average of all
-            if scores:
-                best_idx = scores.index(max(scores))
-            else:
-                best_idx = 0
-            output = outputs[best_idx] if best_idx < len(outputs) else outputs[0]
-            score = round(avg_score(scores))
-            whys = case_data.get("whys", [])
-            if not whys:
-                notes = case_data.get("notes", [])
-                whys = [n.get("note", "") for n in notes]
-            why = whys[best_idx] if best_idx < len(whys) else ""
+                html_out += f'<div class="tab-content{active_cls}" data-judge="{jk}" data-gen="{gk}" data-skill="{skill}" data-case="{case_id}"{hidden}>\n'
 
-            html_out += f'<div class="attempt-text">{highlight_tells(output)}</div>\n'
+                scores = case_data.get("scores", [])
+                outputs = case_data["outputs"]
+                if scores:
+                    best_idx = scores.index(max(scores))
+                else:
+                    best_idx = 0
+                output = outputs[best_idx] if best_idx < len(outputs) else outputs[0]
+                score = round(avg_score(scores))
 
-            if score <= 80:
-                html_out += '<div class="footer"><span>Score:</span><span class="footer-score">' + score_badge_inner(score) + '</span></div>\n'
+                html_out += f'<div class="attempt-text">{highlight_tells(output)}</div>\n'
 
-            html_out += '</div>\n'
+                if score <= 80:
+                    html_out += '<div class="footer"><span>Score:</span><span class="footer-score">' + score_badge_inner(score) + '</span></div>\n'
+
+                html_out += '</div>\n'
 
     html_out += '</div>\n\n'
 
@@ -519,71 +567,91 @@ for ci, ref_case in enumerate(cases):
 html_out += """
 </div>
 <script>
-// Parse all case-data JSON blocks into a map
+let activeJudge = 'mimo';
+let activeGen = 'mimo';
+
 const passData = {};
 document.querySelectorAll('script.case-data').forEach(el => {
   Object.assign(passData, JSON.parse(el.textContent));
 });
 
-function updateMarks(gen) {
+function updateUI() {
+  // 1. Overall table visibility
+  document.querySelectorAll('.overall-wrap').forEach(el => {
+    el.style.display = el.dataset.judge === activeJudge ? '' : 'none';
+  });
+
+  // 2. Generator summary table visibility
+  document.querySelectorAll('.summary-wrap').forEach(el => {
+    el.style.display = (el.dataset.judge === activeJudge && el.dataset.gen === activeGen) ? '' : 'none';
+  });
+
+  // 3. Update tab marks (check/cross) for all cases
   document.querySelectorAll('.tab').forEach(tab => {
     const cid = tab.dataset.case;
     const skill = tab.dataset.skill;
-    const passed = passData[gen] && passData[gen][cid] && passData[gen][cid][skill];
+    const passed = passData[activeJudge] && passData[activeJudge][activeGen] && passData[activeJudge][activeGen][cid] && passData[activeJudge][activeGen][cid][skill];
     const markSpan = tab.querySelector('.tab-mark');
     if (markSpan) {
       markSpan.textContent = passed ? '✓' : '✗';
       markSpan.className = 'tab-mark ' + (passed ? 'pass' : 'fail');
     }
   });
+
+  // 4. Update tab content visibility for each case
+  document.querySelectorAll('.case').forEach(caseEl => {
+    const activeTab = caseEl.querySelector('.tab.active');
+    const activeSkill = activeTab ? activeTab.dataset.skill : 'human';
+    caseEl.querySelectorAll('.tab-content').forEach(tc => {
+      const match = tc.dataset.judge === activeJudge && tc.dataset.gen === activeGen && tc.dataset.skill === activeSkill;
+      tc.classList.toggle('active', match);
+      tc.style.display = match ? '' : 'none';
+    });
+  });
 }
+
+document.querySelectorAll('.judge-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeJudge = btn.dataset.judge;
+    document.querySelectorAll('.judge-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateUI();
+  });
+});
 
 document.querySelectorAll('.gen-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const gen = btn.dataset.gen;
+    activeGen = btn.dataset.gen;
     document.querySelectorAll('.gen-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.summary-wrap').forEach(t => {
-      t.style.display = t.dataset.gen === gen ? '' : 'none';
-    });
-    // Reset all cases: activate first tab for new generator
-    document.querySelectorAll('.case').forEach(caseEl => {
-      const tabs = caseEl.querySelectorAll('.tab');
-      tabs.forEach(t => t.classList.remove('active'));
-      tabs[0].classList.add('active');
-      caseEl.querySelectorAll('.tab-content').forEach(tc => {
-        const match = tc.dataset.gen === gen && tc.dataset.skill === tabs[0].dataset.skill;
-        tc.classList.toggle('active', match);
-        tc.style.display = match ? '' : 'none';
-      });
-    });
-    updateMarks(gen);
+    updateUI();
   });
 });
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    const caseId = tab.dataset.case;
-    const skill = tab.dataset.skill;
-    const activeGen = document.querySelector('.gen-btn.active').dataset.gen;
-    tab.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
     const caseEl = tab.closest('.case');
-    caseEl.querySelectorAll('.tab-content').forEach(tc => {
-      const match = tc.dataset.skill === skill && tc.dataset.case === caseId && tc.dataset.gen === activeGen;
-      tc.classList.toggle('active', match);
-      tc.style.display = match ? '' : 'none';
-    });
+    caseEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    updateUI();
   });
 });
 
-// Initial marks
-updateMarks('mimo');
+// Set initial active tabs on cases
+document.querySelectorAll('.case').forEach(caseEl => {
+  const tabs = caseEl.querySelectorAll('.tab');
+  if (tabs.length > 0 && !caseEl.querySelector('.tab.active')) {
+    tabs[0].classList.add('active');
+  }
+});
+
+updateUI();
 </script>
 </body>
 </html>
 """
 
-with open("comparison.html", "w") as f:
+out_path = os.path.join(HERE, "comparison.html")
+with open(out_path, "w") as f:
     f.write(html_out)
-print("Written to comparison.html")
+print(f"Written to {out_path}")
