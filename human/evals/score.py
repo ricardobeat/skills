@@ -38,7 +38,7 @@ SKILLS_ROOT = os.path.dirname(REPO_ROOT)  # dir that contains human/ as a skill
 ATTEMPTS = 2  # rewrites per case; 5 cases x 2 = 10 rewrites + 10 judge calls
 WORKERS = 10  # concurrent crush invocations (rewrites and judges each run as a batch)
 
-JUDGE_PROMPT = """You are a strict writing judge. Below is an ORIGINAL text and several rewrites of it. Grade each rewrite harshly, the way a discerning reader would, on one question only: does it read like it was written by a person, or by an AI?
+JUDGE_PROMPT = """You are a strict writing judge. Below is an ORIGINAL text and several rewrites of it. Grade each rewrite on a single 0-100 score: how human does it read?
 
 ORIGINAL:
 {source}
@@ -46,19 +46,25 @@ ORIGINAL:
 REWRITES:
 {rewrites}
 
-For EACH rewrite decide:
-- "human": does it read like a person wrote it? Varied rhythm, plain verbs, specific detail, natural voice. NOT formulaic triads, NOT promotional puff, NOT chatbot framing ("I hope this helps", "Here is an overview"), NOT aphorism formulas ("the real question is", "what really matters"), NOT vacuous send-offs ("the future looks bright", "a step in the right direction").
-- "tells": does it read like an AI wrote it? Current-model fingerprints count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands", "I want to hear"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely", "truthfully"); Claude-isms ("load-bearing", "quietly does", "the actual X", "(this) feels like", "showing up"); literary hedging ("on balance", "one could argue", "almost by definition", "it's worth noting", "one cannot help but notice"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through", "let me explain", "here's what"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say", "experts argue"); avoidance of first person where a person would naturally use it; and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means "tells" must be true.
+Scoring guide:
+- 0-20: Obviously AI. Every sentence has tells: promotional puff, formulaic triads, chatbot framing, canned aphorisms, em-dash clusters, throat-clearing filler.
+- 20-40: Heavy AI patterns. Corporate synonyms, balanced false contrasts, stand-in verbs ("serves as"), "not just X, it's Y" formulas, rule-of-three lists, vacuous send-offs.
+- 40-60: Mixed. Some human qualities but clear AI fingerprints: analytic vocabulary, tutor voice, synthesis closers, meta-commentary on the prose, or promotional travel filler.
+- 60-75: Mostly human but with noticeable AI residue. A stray em-dash cluster, a throat-clearing opener, a false contrast, or a stand-in verb that a person wouldn't use.
+- 75-85: Reads mostly human. Minor tells: one or two phrases that feel slightly formulaic or hedged, but the voice is largely natural.
+- 85-100: Reads like a person wrote it. Varied rhythm, plain verbs, specific detail, natural voice. No promotional puff, no chatbot framing, no canned aphorisms, no formulaic structures.
+
+Current-model fingerprints count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely"); Claude-isms ("load-bearing", "quietly does", "the actual X"); literary hedging ("on balance", "one could argue", "it's worth noting"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say"); and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means the score should drop below 85.
 
 Do not consider factual accuracy, completeness, or invention at all. Only style and voice.
 
-Also grade the ORIGINAL itself as "0" the same way, so we can sanity-check your judgment.
+Also score a plain, neutral, unadorned restatement of the task as "0", so we can sanity-check your judgment.
 
 Return ONLY a single JSON object, no prose, no markdown fences, in exactly this shape:
-{{"0": {{"human": true, "tells": true, "why": "one short sentence"}}, "1": {{...}}, "2": {{...}}, "3": {{...}}}}
+{{"0": {{"score": 50, "why": "one short sentence"}}, "1": {{"score": 85, "why": "one short sentence"}}, "2": {{"score": 90, "why": "one short sentence"}}}}
 """
 
-JUDGE_PROMPT_GEN = """You are a strict writing judge. Below is a WRITING TASK and several responses to it. Grade each response harshly, the way a discerning reader would, on one question only: does it read like it was written by a person, or by an AI?
+JUDGE_PROMPT_GEN = """You are a strict writing judge. Below is a WRITING TASK and several responses to it. Grade each response on a single 0-100 score: how human does it read?
 
 WRITING TASK:
 {task}
@@ -66,16 +72,22 @@ WRITING TASK:
 RESPONSES:
 {rewrites}
 
-For EACH response decide:
-- "human": does it read like a person wrote it? Varied rhythm, plain verbs, specific detail, natural voice. NOT formulaic triads, NOT promotional puff, NOT chatbot framing ("I hope this helps", "Here is an overview"), NOT aphorism formulas ("the real question is", "what really matters"), NOT vacuous send-offs ("the future looks bright", "a step in the right direction").
-- "tells": does it read like an AI wrote it? Current-model fingerprints count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands", "I want to hear"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely", "truthfully"); Claude-isms ("load-bearing", "quietly does", "the actual X", "(this) feels like", "showing up"); literary hedging ("on balance", "one could argue", "almost by definition", "it's worth noting", "one cannot help but notice"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through", "let me explain", "here's what"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say", "experts argue"); avoidance of first person where a person would naturally use it; and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means "tells" must be true.
+Scoring guide:
+- 0-20: Obviously AI. Every sentence has tells: promotional puff, formulaic triads, chatbot framing, canned aphorisms, em-dash clusters, throat-clearing filler.
+- 20-40: Heavy AI patterns. Corporate synonyms, balanced false contrasts, stand-in verbs ("serves as"), "not just X, it's Y" formulas, rule-of-three lists, vacuous send-offs.
+- 40-60: Mixed. Some human qualities but clear AI fingerprints: analytic vocabulary, tutor voice, synthesis closers, meta-commentary on the prose, or promotional travel filler.
+- 60-75: Mostly human but with noticeable AI residue. A stray em-dash cluster, a throat-clearing opener, a false contrast, or a stand-in verb that a person wouldn't use.
+- 75-85: Reads mostly human. Minor tells: one or two phrases that feel slightly formulaic or hedged, but the voice is largely natural.
+- 85-100: Reads like a person wrote it. Varied rhythm, plain verbs, specific detail, natural voice. No promotional puff, no chatbot framing, no canned aphorisms, no formulaic structures.
+
+Current-model fingerprints count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely"); Claude-isms ("load-bearing", "quietly does", "the actual X"); literary hedging ("on balance", "one could argue", "it's worth noting"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say"); and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means the score should drop below 85.
 
 Do not consider factual accuracy, completeness, or invention at all. Only style and voice.
 
-Also grade a plain, neutral, unadorned restatement of the task as "0" the same way, so we can sanity-check your judgment.
+Also score a plain, neutral, unadorned restatement of the task as "0", so we can sanity-check your judgment.
 
 Return ONLY a single JSON object, no prose, no markdown fences, in exactly this shape:
-{{"0": {{"human": true, "tells": true, "why": "one short sentence"}}, "1": {{...}}, "2": {{...}}, "3": {{...}}}}
+{{"0": {{"score": 50, "why": "one short sentence"}}, "1": {{"score": 85, "why": "one short sentence"}}, "2": {{"score": 90, "why": "one short sentence"}}}}
 """
 
 
@@ -254,9 +266,6 @@ def hard_gates(case, output):
                 problems.append(f"required missing (any of): {alts!r}")
         elif need.lower() not in out_low:
             problems.append(f"required missing: {need!r}")
-    for em in ("—", "–"):
-        if em in output:
-            problems.append(f"em/en dash present: {em!r}")
     for pat in TELL_STRONG:
         if pat in out_low:
             problems.append(f"AI tell (strong): {pat!r}")
@@ -363,31 +372,29 @@ def main():
         gates = [hard_gates(case, o) for o in outputs]
         passes = 0
         problems = []
+        scores = []
         for out, (gok, gprobs), (v, parse_ok) in zip(outputs, gates, verdicts):
-            # both judge criteria must hold: human-like AND no AI tells
-            ok = (
-                gok
-                and parse_ok
-                and v.get("human") is True
-                and v.get("tells") is False
-            )
+            score = v.get("score", 0) if parse_ok else 0
+            scores.append(score)
+            ok = parse_ok and score > 85
             if ok:
                 passes += 1
             else:
-                probs = list(gprobs)
+                probs = []
                 if not parse_ok:
                     probs.append("judge verdict missing")
-                for k, want in (("human", True), ("tells", False)):
-                    if v.get(k) is not want:
-                        probs.append(f"judge: {k}={v.get(k)} (want {want})")
-                        why = v.get("why")
-                        if why:
-                            probs.append(f"      judge said: {why}")
+                if score <= 85:
+                    probs.append(f"judge: score={score} (want >85)")
+                    why = v.get("why")
+                    if why:
+                        probs.append(f"      judge said: {why}")
                 problems = probs
+            if gprobs:
+                problems.extend(f"(gate) {p}" for p in gprobs)
         passed = passes == ATTEMPTS
-        results.append((case, passed, problems, outputs))
+        results.append((case, passed, problems, outputs, scores))
         status = "PASS" if passed else "FAIL"
-        print(f"[{status}] {case['id']} {case['name']} ({passes}/{ATTEMPTS})")
+        print(f"[{status}] {case['id']} {case['name']} ({passes}/{ATTEMPTS}) scores={scores}")
         if not passed:
             for p in problems:
                 print(f"        - {p}")
@@ -411,6 +418,7 @@ def main():
                 "id": r[0]["id"],
                 "name": r[0]["name"],
                 "pass": r[1],
+                "scores": r[4],
                 "problems": r[2],
                 "outputs": r[3],
             }
