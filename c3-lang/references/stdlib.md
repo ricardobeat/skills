@@ -1,6 +1,6 @@
-# C3 Standard Library Reference (0.8.2)
+# C3 Standard Library Reference (0.8.3)
 
-Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, browse [github.com/c3lang/c3c/tree/v0.8.2/lib/std](https://github.com/c3lang/c3c/tree/v0.8.2/lib/std).
+Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, browse [github.com/c3lang/c3c/tree/v0.8.3/lib/std](https://github.com/c3lang/c3c/tree/v0.8.3/lib/std).
 
 > **Code-block convention:** Most fenced blocks below are reference summaries — method signatures, free-function call shapes, and option lists packed onto few lines for scannability. They are **not compilable C3** and are tagged `text` rather than `c3` to disable syntax highlighting. Where a section shows real, runnable C3 (e.g. the `libc` import, the custom-stream example), it is tagged `c3`.
 
@@ -14,7 +14,7 @@ Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, br
 
 ## Module Index
 
-Every public module shipped with the C3 0.8.2 standard library. Submodules are listed under their parent.
+Every public module shipped with the C3 0.8.3 standard library. Submodules are listed under their parent.
 
 | Module | What it provides |
 |---|---|
@@ -38,7 +38,7 @@ Every public module shipped with the C3 0.8.2 standard library. Submodules are l
 | ↳ `collections::maybe` | `Maybe{T}` — explicit optional wrapper |
 | ↳ `collections::object` | `Object` — JSON DOM (used by `json` / `ini` / `csv`) |
 | ↳ `collections::priorityqueue` | `PriorityQueue{T}` / `PriorityQueueMax{T}` (binary heap) |
-| ↳ `collections::range` | `Range{T}` / `ExclusiveRange{T}` |
+| ↳ `collections::range` | `Range{T}` / `ExclusiveRange{T}`; `range::upto/inclusive/exclusive` + `.to_array()` added 0.8.3 |
 | ↳ `collections::result` | `Result{Ok, Err}` — error-with-payload; prefer built-in optionals in most cases |
 | ↳ `collections::ringbuffer` | `RingBuffer{T, N}` — fixed-capacity circular buffer |
 | ↳ `collections::sortedmap` | `SortedMap{K, V}` — skip-list ordered map |
@@ -132,7 +132,7 @@ Every public module shipped with the C3 0.8.2 standard library. Submodules are l
 | ↳ `math::random` | `DefaultRandom`, `Sfc64Random`, `Pcg32Random`, `Mt19937Random`, `ChaCha20Random`, `math::srand/rand/rnd` |
 | ↳ `math::distributions` | Statistical distributions (`normal`, `uniform`, `bernoulli`, …) |
 | ↳ `math::easing` | Easing functions (`ease_in_sine`, `ease_out_cubic`, …) |
-| ↳ `math::rectangle` | `Rectangle{T}` — Ray/AABB/Sphere intersection helpers |
+| ↳ `math::rectangle` | `Rectangle{T}` — Ray/AABB/Sphere intersection helpers; `Bounds` / `BoundingBox{T}` (min/max region, inclusive edges) added 0.8.3. `Rect.contains_point` is exclusive on the max edge as of 0.8.3. |
 | ↳ `math::uuid` | UUID v1/v3/v4/v5 generation |
 | **`std::net`** | Networking (see below) |
 | ↳ `net::inetaddr` | `InetAddress` (IPv4/IPv6), part of `std::net` |
@@ -238,12 +238,33 @@ sz? io::fprintfn(out, fmt, …)
 sz? io::fprintn(out, value = "")
 
 // Stream interfaces (your structs can implement these)
+// interface methods take no receiver; implementations add `self` + @dynamic
 interface InStream  { fn char? read_byte();  fn sz? read(char[] buf); … }
 interface OutStream { fn void? write_byte(char c);  fn sz? write(char[] data); … }
 
 // Format string: %s, %d, %x, %X, %o, %b, %f, %g, %e, %c, %p, %h
 // No width-type qualifiers (no %lld/%u/%zu) — %d handles all integer widths.
 ```
+
+### Reading from an `InStream`
+
+Four helpers, differing only in how they treat a short read / EOF. Picking the wrong one is a common source of silent truncation bugs.
+
+```text
+sz?     io::read_buffer(stream, char[] buf)          // one read; EOF -> 0, not a fault. buf must be non-empty
+char[]? io::read_buffer_to_end(stream, char[] buf)   // loops until buf is full or EOF; returns the prefix actually read
+sz?     io::read_all(stream, char[] buf)             // like the above, but a short read is io::UNEXPECTED_EOF
+char[]? io::read_fully(alloc, stream)                // reads to end of stream, allocating
+```
+
+```c3
+// 5-byte stream, 10-byte buffer:
+io::read_buffer(&r, buf[:10])           // => 5   (then 0 on the next call, at EOF)
+io::read_buffer_to_end(&r, buf[:10])    // => slice of len 5
+io::read_all(&r, buf[:10])              // => fault io::UNEXPECTED_EOF
+```
+
+A single `read_buffer` may return fewer bytes than requested even mid-stream, so loop on it (or use `read_buffer_to_end`) rather than assuming one call fills the buffer. `read_buffer` returning `0` is the EOF signal — it does not raise `io::EOF`.
 
 ### Implementing `InStream` / `OutStream` on your own types
 
@@ -360,7 +381,7 @@ l.add_all(&other)   l.reserve(extra)   l.free()
 // Operators: l[i]  l[i] = v  len(l)  &l[i]
 ```
 
-### `FixedList{T, SIZE}` — stack-allocated fixed-cap list. Same API as `List` plus `push_try()`, `push_all_to_limit()`.
+### `FixedList{T, SIZE}` — stack-allocated fixed-cap list. Same API as `List` plus `push_try()`, `push_all_to_limit()`, `is_full()` (0.8.3).
 
 ### `HashMap{K, V}` — open-addressed hash map
 ```text
@@ -401,8 +422,19 @@ m.clone(alloc)   m.merge(&other)
 // Deque (double-ended growable)
 d.push(v)  d.push_front(v)  d.pop()  d.pop_first()  d.first() / d.last()
 d.get(i)   d.set(i, v)      d.reserve(extra)  d.shrink()  d.normalize()
-d.pop_into(slice)  d.pop_first_into(slice)
+d.pop_into(slice)  d.pop_first_into(slice)   d.prepend(slice)   // prepend: 0.8.3
+// LinkedList also gained prepend(slice) in 0.8.3
 // RingBuffer — fixed-cap circular; push, pop_first, first, last, get, set
+```
+
+### `Range{T}` / `ExclusiveRange{T}`
+```c3
+// constructor macros (0.8.3) — infer T from the arguments
+foreach (i : range::upto(3))          { }   // 0,1,2,3  — inclusive of `to`
+foreach (i : range::inclusive(1, 3))  { }   // 1,2,3
+foreach (i : range::exclusive(1, 3))  { }   // 1,2
+int[] a = range::inclusive(1, 3).to_array(mem);   // .to_array: 0.8.3
+r.len()   r.contains(v)   r[i]
 ```
 
 ### `PriorityQueue{T}` / `PriorityQueueMax{T}`
@@ -618,7 +650,7 @@ env::NATIVE_THREADING   env::NATIVE_STACKTRACE   env::HAS_NATIVE_ERRNO
 env::AUTHORS   env::AUTHOR_EMAILS   env::PROJECT_VERSION   env::PROJECT_PATH
 ```
 
-Use in `@if(env::WIN32)`, `$if env::ARCH_64_BIT:`, etc.
+Use in `$if env::ARCH_64_BIT:` etc. For conditional top-level declarations use `@feat(WIN32)` (0.8.3; `@if` there is deprecated) — `@feat` takes a bare flag, `$if` takes an `env::` constant.
 
 ---
 
@@ -971,7 +1003,14 @@ Comparator: `fn int cmp(T* a, T* b)` returning negative/zero/positive. Optional 
 Object*? json::parse(alloc, String, JsonFlavor = JSONC)         // from string
 Object*? json::tparse(String, JsonFlavor = JSONC)
 Object*? json::load(alloc, InStream, JsonFlavor = JSONC)        // from stream
-Object*? json::temp_load(InStream, JsonFlavor = JSONC)
+Object*? json::tload(InStream, JsonFlavor = JSONC)              // 0.8.3; `temp_load` deprecated
+// marshal / unmarshal directly between structs and JSON text (std::encoding::json)
+String   json::marshal(alloc, value, JsonIndent = NONE)         // String? marshal_try(...)
+void?    json::marshal_to(OutStream, value, JsonIndent = NONE)
+Type?    json::unmarshal(alloc, input, $Type)                   // 0.8.3
+// same for a parsed DOM (std::collections::object)
+Type?    object::unmarshal{Type}(alloc, Object*)                 // 0.8.3
+void?    object::unmarshal_to(alloc, Object*, out_ref)
 // Object usage (std::collections::object — JSON DOM)
 obj.get_string("key")?       obj.get_int("key")?     obj.get_object("key")?
 obj.set("key", val)          obj.append(item)        obj.iter()

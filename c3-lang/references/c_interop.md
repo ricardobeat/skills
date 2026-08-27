@@ -46,10 +46,10 @@ fn int my_func(int x) @export @cname("my_c_func") { return x * 2; }
 
 ```c3
 fn void hook() @weak { }                              // multiple defs allowed; non-weak wins
-fn void plat_init() @weaklink @if(env::LINUX) { }     // @weaklink affects only linkage
+fn void plat_init() @weaklink @feat(LINUX) { }        // @weaklink affects only linkage
 ```
 
-Combine `@weak` / `@weaklink` with `@if(env::OS)` for conditional platform stubs.
+Combine `@weak` / `@weaklink` with `@feat(OS)` for conditional platform stubs. As of 0.8.3 `@feat` replaces `@if` on non-generic top-level declarations; `@feat` takes a bare flag (`LINUX`, `DARWIN`, `!WIN32`), not an `env::` constant.
 
 ---
 
