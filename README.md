@@ -17,7 +17,15 @@ npx skills add ricardobeat/skills/c3-lang
 
 How to program in [C3 lang](https://c3-lang.org), a modern C alternative. Amazingly effective with Claude Code, almost as good as Go.
 
-- Updated for v0.8+
+- Updated for v0.8.3
+
+
+#### Older versions
+
+```sh
+# last 0.8.2 version of the skill
+npx skills add https://github.com/ricardobeat/skills/tree/c3-lang-v0.8.2/c3-lang
+```
 
 <img width="640" alt="c3 in claude code" src="https://github.com/user-attachments/assets/97b83c06-69c7-4861-ac98-7e103cd2510a" />
 
