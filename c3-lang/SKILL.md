@@ -108,6 +108,10 @@ if (try s = read_file("e.txt") && try t = read_file("f.txt")) { ... }
 | `if (catch err = x)` | inspect fault value |
 | `if (try val = x)` | unwrap on success |
 
+Faults referenced from another module **must** be module-qualified — `kvcache::ALLOC_FAILED`, never bare `ALLOC_FAILED`.
+
+After `if (catch err = x) { return; }`, `x` narrows to its plain value for the rest of the scope — use `x` directly, no `!!` needed.
+
 ---
 
 ## Memory
@@ -159,11 +163,23 @@ attrdef @Hot = @inline, @export;
 ## Compile-Time
 
 ```c3
-$if env::WIN32:  fn void init() { }  $else  fn void init() { }  $endif
-fn void win_only() @feat(WIN32) { }        // 0.8.3: @feat on top-level decls; @if is deprecated there
+// Top-level declarations: use @feat, NOT $if — $if/$endif cannot wrap a global declaration
+fn void init() @feat(WIN32) { }
+fn void init() @feat(!WIN32) { }
+
+// $if is for statements inside a function body ($else takes NO colon)
+fn void setup() {
+    $if env::WIN32:
+        io::printn("win");
+    $else
+        io::printn("other");
+    $endif
+}
 
 char[] data = $embed("assets/shader.glsl");
 ```
+
+`$else` takes **no** colon (`$if cond:` … `$else` … `$endif`). There is no else-if chain — `$elseif`, `$elif`, and `$else if` are all invalid. Nest a second `$if` inside `$else`, or use `$switch:` / `$case cond:` / `$default:` / `$endswitch` for multi-way branching.
 
 Key builtins: `$Typeof(expr)`, `$defined(expr)`, `$assert(cond)`, `Type::size` / `::alignment` / `::kind`, `@sizeof(expr)`, `$reflect(field).name`, `$eval("name")`, `$expand("expr")`, `$feat(F)` (`$feature` deprecated as of 0.8.3).
 
