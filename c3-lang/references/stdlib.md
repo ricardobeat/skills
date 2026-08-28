@@ -83,7 +83,7 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | ↳ `crypto::chacha20` | `ChaCha20` stream cipher + `crypt_clone` |
 | ↳ `crypto::dh` | Diffie-Hellman keypair generation |
 | ↳ `crypto::ed25519` | `ed25519::sign` / `ed25519::verify` |
-| ↳ `crypto::entropy` | `entropy::random_bytes` / `random_int` |
+| ↳ `crypto::entropy` | `entropy::fill(buffer)` / `entropy::make(alloc, length)` |
 | ↳ `crypto::keccak` | Keccak / SHA-3 / Shake primitives |
 | ↳ `crypto::rc4` | `Rc4` stream cipher (legacy) |
 | **`std::encoding`** | Text & data encoding formats (see below) |
@@ -107,21 +107,21 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | ↳ `hash::crc32`, `hash::crc64` | CRC |
 | ↳ `hash::adler32` | Adler-32 |
 | ↳ `hash::fnv32a`, `hash::fnv64a` | FNV-1a |
-| ↳ `hash::murmur` | MurmurHash3 |
+| ↳ `hash::murmur3` | MurmurHash3 |
 | ↳ `hash::wyhash2` | wyhash |
 | ↳ `hash::siphash` | SipHash |
 | ↳ `hash::metro64`, `hash::metro128` | MetroHash |
 | ↳ `hash::komi` | KomiHash |
 | ↳ `hash::a5hash` | A5Hash |
 | ↳ `hash::poly1305` | Poly1305 MAC |
-| ↳ `hash::gost` | GOST R 34.11-94 |
+| ↳ `hash::streebog` | GOST R 34.11-2012 (Streebog) |
 | ↳ `hash::hmac` | Generic `hmac` (works with any digest above) |
 | **`std::io`** | I/O, files, paths, streams (see below) |
 | ↳ `io::` | `io::print/printn/printf`, `io::readline`, `InStream` / `OutStream` interfaces, stream helper types |
 | ↳ `io::file` | `File` type, `file::open/load/save/exists/…` |
 | ↳ `io::file::mmap` | Memory-mapped `File` |
 | ↳ `io::path` | `Path` (`PathPosix` / `PathWin`), `path::cwd/home/temp/ls/…` |
-| **`std::libc`** | Typed wrappers around the platform C runtime (`libc::printf`, `libc::malloc`, …) |
+| **`libc`** | Typed wrappers around the platform C runtime (`libc::printf`, `libc::malloc`, `libc::errno()`, …). Top-level module — not `std::libc` |
 | **`std::math`** | Math functions, vectors, matrices (see below) |
 | ↳ `math::` | Trig/exp/log, `abs/sign/clamp/min/max`, `PI/E`, float-type limits |
 | ↳ `math::bigint` | Arbitrary-precision integers |
@@ -143,15 +143,16 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | **`std::os`** | Process control, env, backtrace, CPU detection (see below) |
 | ↳ `os::process` | `Process`, `os::process::spawn/run`, `p.join/terminate/stdout/stderr/…` |
 | ↳ `os::env` | `os::env::get_var/set_var`, `get_home_dir`, `get_config_dir`, `executable_path` |
-| ↳ `os::backtrace` | `os::backtrace::capture/resolve` |
-| ↳ `os::cpu` | `cpu::cores`, `cpu::arch_features`, `cpu::cache_line_size` |
-| ↳ `os::xdg` | XDG Base Directory paths on Linux |
+| ↳ `os::backtrace` | `os::backtrace::capture_current/get` |
+| ↳ `os::` | `os::num_cpu()` — logical core count (declared directly in `std::os`, per-platform) |
 | **`std::sort`** | `quicksort`, `mergesort`, `insertionsort`, `countingsort`, `binarysearch`, `is_sorted`, `sorted` |
-| **`std::threads`** | Threading primitives (see below) |
+| **`std::thread`** | Threading primitives (see below) |
 | ↳ `thread::` | `Thread`, `thread::sleep/yield`, mutex + condvar + once |
 | ↳ `thread::pool` | `ThreadPool` (deprecated 0.8.1) |
 | ↳ `thread::threadpool` | `FixedThreadPool` (deprecated 0.8.1) |
 | ↳ `thread::channel` | `BufferedChannel{T}`, `UnbufferedChannel{T}`, `UnboundedChannel{T}`, `OneShotChannel{T}` |
+| ↳ `thread::cpu` | `native_cpu()` — logical core count |
+| ↳ `thread::experimental::threadgroup` | `ThreadGroup{Task, Result}` — worker-pool abstraction (preferred over `ThreadPool`/`FixedThreadPool`) |
 | **`std::time`** | `Time`, `Duration`, `NanoDuration`, `DateTime` / `TzDateTime`, `Clock` |
 
 ---
@@ -264,7 +265,7 @@ io::read_buffer_to_end(&r, buf[:10])    // => slice of len 5
 io::read_all(&r, buf[:10])              // => fault io::UNEXPECTED_EOF
 ```
 
-A single `read_buffer` may return fewer bytes than requested even mid-stream, so loop on it (or use `read_buffer_to_end`) rather than assuming one call fills the buffer. `read_buffer` returning `0` is the EOF signal — it does not raise `io::EOF`.
+A single `read_buffer` may return fewer bytes than requested even mid-stream, so loop on it (or use `read_buffer_to_end`) rather than assuming one call fills the buffer. `read_buffer` returning `0` is the EOF signal — it swallows the `io::EOF` the underlying `stream.read` raises. Call the raw `stream.read(buf)` interface method directly only if you want that `io::EOF` fault instead.
 
 ### Implementing `InStream` / `OutStream` on your own types
 
@@ -348,16 +349,13 @@ PathList? path::ls(Allocator, Path dir, bool no_dirs=false, bool no_symlinks=fal
 p.append(alloc, ...parts, extension="")     // multi-part / extension
 ```
 
-### `std::io::file_mmap` — memory-mapped files
+### `std::io::file::mmap` — memory-mapped files
 ```text
-MFile? mfile::open(String path, String mode = "r")    // "r" / "rw"
-mfile.close()
-char[]  view = mfile.mem();                           // raw byte view (read-only for "r")
-usz     len  = mfile.size();
+FileMmap? file::mmap_file(File file, sz offset = 0, sz len = 0, VirtualMemoryAccess access = READ, bool shared = false)
+FileMmap? file::mmap_open(String filename, String mode, sz offset = 0, sz len = 0, VirtualMemoryAccess access = READ, bool shared = false)
+char[]    m.bytes()                                    // raw byte view
+void?     m.destroy()
 ```
-
-### `std::io::stream` — compression-friendly stream base types
-The `io::stream` module (and its submodules) provide base types for wrapping a `File` or any `InStream`/`OutStream` as a buffered or compressed stream — used by `compression::deflate` / `gzip` / `zip`. Most users don't import this directly.
 
 ---
 
@@ -743,15 +741,31 @@ random::next_bool(&r)       random::next_float(&r)   random::next_double(&r)
 ### `std::math::vector`
 
 ```text
-// Predefined aliases (use C3 vector type T[<N>])
-alias Vec2 = float[<2>];    Vec3 = float[<3>];   Vec4 = float[<4>];
-// And: int[<N>], double[<N>], long[<N>] vectors are first-class.
+// Predefined aliases (the underlying C3 vector type is T[<N>])
+alias Vec2 @weak = float[<2>];   Vec3 = float[<3>];   Vec4 = float[<4>];
+// int[<N>], double[<N>], long[<N>] vectors are also first-class.
 
-v.length()       v.length_sq()      v.normalize()      v.distance(other)
-v.dot(other)     v.cross(other)     v.angle(other)
-v.rotate(angle)  v.transform(mat4)  v.refract(n, r)
-v.lerp(other, t)        v.barycentric(a, b, c)
-v.project(model, proj, viewport)        v.unproject(...)
+// Any-width methods on float[<*>] / double[<*>]  (mirrored for both element types)
+v.length()    v.length_sq()    v.normalize()    v.distance(o)   v.distance_sq(o)
+v.dot(o)      v.sum()          v.product()      v.min() / v.max()
+v.lerp(o, t)  v.reflect(o)     v.clamp(lo, hi)  v.clamp_length(min, max)
+v.move_towards(target, max_dist)   v.equals(o) / v.not_equals(o)   v.is_normalized()
+v.ceil() v.floor() v.round() v.trunc() v.rint() v.nearbyint() v.roundeven()
+v.pow(exp)    v.fma(b, c)      v.copysign(sgn)
+v.comp_lt(o) / comp_le / comp_eq / comp_gt / comp_ge / comp_ne   // -> bool[<*>] masks
+
+// 2-element only
+v.cross(v2) -> scalar    v.rotate(angle)    v.angle(v2)    v.transform(Matrix4f)
+// 3-element only
+v.cross(v2) -> vector    v.angle(v2)        v.perpendicular()   v.rejection(v2)
+v.barycentric(a, b, c)   v.transform(mat)   v.refract(n, r)
+v.rotate_quat(q)         v.rotate_axis(axis, angle)
+v.project(model, proj, viewport)    v.unproject(model, proj, viewport)
+
+// Free functions in the module
+double[<3>] vector::cubic_hermite(v1, tangent1, v2, tangent2, double amount)   // + cubic_hermitef
+void        vector::orthonormalize(double[<3>]* v1, double[<3>]* v2)           // + orthonormalizef
+bool[<*>]   vector::mask_from_int($Type, mask)     mask.mask_to_int()
 ```
 
 ### Other math: `bigint`, `complex`, `matrix` (`Matrix2/3/4`, `Matrix2f/3f/4f`), `quaternion` (`Quaternionf`), `distributions`, `easing`, `shapes`, `uuid`.
@@ -766,30 +780,38 @@ time::US time::MS time::SEC time::MIN time::HOUR time::DAY time::WEEK time::MONT
 time::DURATION_ZERO   time::FAR_FUTURE   time::FAR_PAST
 
 // Helpers to build a Duration
-time::us(n)  time::ms(n)  time::sec(n)  time::min(n)  time::hour(n)  time::day(n)
+time::us(n)  time::ms(n)  time::sec(n)  time::min(n)  time::hour(n)
 
 // Time / Duration / NanoDuration
 Time t = time::now();         // wall clock (microseconds since epoch)
 Duration d = t1 - t0;         // arithmetic on Time values returns Duration
-t.add_seconds(n)  t.diff_hours(other)  …
+t.add_seconds(n)  t.diff_hours(other)  t.compare_to(other)  …
+Duration.to_ms(d)  Duration.to_nano(d)
+NanoDuration.to_ms(nd)  NanoDuration.to_sec(nd)  NanoDuration.to_duration(nd)
 
-// DateTime
+// DateTime — struct with fields .usec/.sec/.min/.hour/.day/.month/.weekday/.year/.year_day/.time
 DateTime dt = datetime::now();
 DateTime at = datetime::at(year, month=JANUARY, day=1, hour=0, min=0, sec=0, us=0);
-TzDateTime tz = datetime::at_tz(year, ..., gmt_offset = 0);
-dt.set(year, month, day, hour, min, sec, us)
-dt.add_seconds/minutes/hours/days/weeks/months/years(n)
-dt.to_local()  dt.to_gmt_offset(offset)  dt.with_gmt_offset(offset)
-dt.year / dt.month / dt.day / dt.hour / dt.min / dt.sec / dt.us / dt.weekday
+TzDateTime tz = datetime::at_tz(year, ..., gmt_offset = 0);   // TzDateTime { inline DateTime date_time; int gmt_offset; }
+DateTime from = datetime::from_time(Time t);
+TzDateTime from_tz = datetime::from_time_tz(Time t, int gmt_offset);
 
-// Format
-String DateTime.format_rfc3339(self, Allocator)    // also tformat_rfc3339
-String DateTime.format(self, Allocator, String fmt)
+dt.set(year, month, day, hour, min, sec, us)     dt.set_time(Time t)
+dt.add_seconds/minutes/hours/days/weeks/months/years(n)   // return a new DateTime
+dt.to_local()   dt.to_gmt_offset(offset)   dt.with_gmt_offset(offset)   // -> TzDateTime
+// TzDateTime mirrors the add_*/to_gmt_offset/with_gmt_offset set, preserving its offset
+
+// Format — free function taking the format first; also methods on both types
+String datetime::format(Allocator, DateTimeFormat fmt, TzDateTime dt)
+String datetime::tformat(DateTimeFormat fmt, TzDateTime dt)
+String dt.format(Allocator, DateTimeFormat fmt)     // on DateTime (assumes UTC) and TzDateTime
+// DateTimeFormat enum: ANSIC, UNIXDATE, RUBYDATE, RFC822, RFC822Z, RFC850, RFC1123, RFC1123Z, RFC3339, RFC3339Z, RFC3339MS, RFC3339ZMS, …
 
 // Monotonic clock (for timing)
 Clock c = clock::now();
 NanoDuration elapsed = c.mark();      // restart + return time since last mark
-NanoDuration since = c.to_now();      // peek without restart
+NanoDuration since  = c.to_now();     // peek without restart
+NanoDuration diff   = c1 - c2;        // Clock arithmetic via operator overloads
 ```
 
 ---
@@ -825,27 +847,20 @@ Path?   os::env::get_config_dir(Allocator)
 String? os::env::executable_path()
 ```
 
-### `std::os::backtrace` — `os::backtrace::capture(buf)`, `os::backtrace::resolve(...)`.
+### `std::os::backtrace` — `os::backtrace::capture_current(buf)`, `os::backtrace::get(Allocator)`.
 
-### `std::os::cpu` — CPU detection
+### CPU detection
 ```text
-usz       cpu::cores()                  // logical cores
-usz       cpu::physical_cores()         // physical cores
-CpuArch   cpu::arch()                   // X86_64, AARCH64, …  (matches env::ARCH_TYPE)
-bool      cpu::has_feature(CpuFeature)  // SSE4_2, AVX2, AVX512, NEON, AES_NI, …
-usz       cpu::cache_line_size()
+int os::num_cpu()          // logical cores, directly under std::os
+int thread::cpu::native_cpu()   // alternative, under std::thread::cpu
 ```
 
-### `std::os::xdg` — XDG Base Directory paths (Linux)
+### XDG directories (POSIX)
+There is no `std::os::xdg` module — `os/xdg.c3` declares `module std::os::posix` and exposes a single lookup:
 ```text
-Path? xdg::home(Allocator)              // usually $HOME
-Path? xdg::data_home(Allocator)         // ~/.local/share
-Path? xdg::config_home(Allocator)       // ~/.config
-Path? xdg::cache_home(Allocator)        // ~/.cache
-Path? xdg::state_home(Allocator)        // ~/.local/state
-Path? xdg::runtime_dir(Allocator)       // $XDG_RUNTIME_DIR
-Path? xdg::data(Allocator) / xdg::config(…) / xdg::cache(…)   // user + system dirs merged
+String? os::posix::xdg_user_dir_lookup(Allocator, String type)   // e.g. "DESKTOP", "DOWNLOAD"
 ```
+For config/home/cache paths use `os::env::get_home_dir` / `get_config_dir` above.
 
 ---
 
@@ -863,11 +878,10 @@ TcpSocketPair?   tcp::TcpSocketPair.init(&self)             // socket pair
 UdpSocket? net::udp::connect(String host, int port, SocketOption…)
 UdpSocket? net::udp::connect_async(String host, int port, SocketOption…)
 
-// Common socket operations (TcpSocket / UdpSocket implement InStream + OutStream)
+// Socket (TcpSocket / UdpSocket implement InStream + OutStream); base type is std::net::Socket
 s.read(buf)        s.write(buf)
-s.close()          s.set_option(opt, val)   s.get_*  (broadcast, keepalive, reuseaddr, …)
-s.set_send_timeout(ms)     s.set_recv_timeout(ms)
-s.peer_address()           s.local_address()
+s.close()          s.set_option(opt, val)   s.get_*  (broadcast, keepalive, reuseaddr, dontroute, oobline)
+s.shutdown(SocketShutdownHow.RECEIVE/SEND/BOTH)
 
 // Poll
 Poll[] polls = { { .socket = fd, .events = READ | WRITE } };
@@ -876,55 +890,51 @@ ulong? net::poll_ms(Poll[] polls, long timeout_ms)
 net::POLL_FOREVER
 
 // InetAddress
-InetAddress? net::inetaddr::ipv4_from_str(s)        InetAddress? net::inetaddr::ipv6_from_str(s)
+InetAddress? net::ipv4_from_str(s)        InetAddress? net::ipv6_from_str(s)
 addr.is_loopback() / .is_multicast() / .is_link_local() / .is_site_local() / .is_any_local()
 addr.to_string(alloc) / addr.to_tstring()
-// IpProtocol enum: V4, V6, UNSPECIFIED
+// IpProtocol enum: UNSPECIFIED, IPV4, IPV6
 
-// URL
+// URL — module std::net::url (not a separate "url_encoding" module)
 Url? net::url::parse(Allocator, s)          Url? net::url::tparse(s)
 UrlQueryValues net::url::parse_query(Allocator, query_string)
 String url.to_string(alloc)
 qv.add(key, value)         qv.free()
+String  net::url::encode(Allocator, String s, UrlEncodingMode mode)   // %20 for space
+String  net::url::tencode(String s, UrlEncodingMode mode)
+String? net::url::decode(Allocator, String s, UrlEncodingMode mode)   // %20 → space; fault on invalid
+String? net::url::tdecode(String s, UrlEncodingMode mode)
+// UrlEncodingMode enum: UNRESERVED, PATH, HOST, USERPASS, QUERY, FRAGMENT
 ```
 
-### `std::net::url_encoding` — percent-encoding helpers
-```text
-String url_encoding::encode(Allocator, String s)        // %20 for space
-String url_encoding::tencode(String s)
-String? url_encoding::decode(Allocator, String s)       // %20 → space; fault on invalid
-String? url_encoding::tdecode(String s)
-// Component encoders (stricter — don't escape reserved chars)
-String url_encoding::encode_path(alloc, s) / encode_query(alloc, s) / encode_component(alloc, s)
-```
-
-### `std::net::socket` — socket base types & options
-Most users never import this directly — it's the base of `net::tcp` / `net::udp`. Exposes the `SocketOption` enum, the underlying `Socket` type (returned by `socket(fd)` wrappers), and helpers like `socket::set_nonblocking(sock, true)`.
+Low-level socket plumbing (`NativeSocket`, `socket()`, `bind()`, `connect()`, `accept()`, `getsockopt`/`setsockopt`, `socketpair`) lives in `std::net::os` — most users never touch it directly; it's the base of `net::tcp` / `net::udp`.
 
 ---
 
-## `std::threads`
+## `std::thread`
 
 ```text
-// Threads (NativeThread)
-Thread t;     t.create(&worker_fn, arg)?    t.join()?    t.detach()?
-Thread::current_id()        // current OS thread id
-thread::sleep(Duration d)
+// Threads
+Thread t;     t.create(&worker_fn, arg, ThreadSettings{...})?    t.join()?    t.detach()?
+thread::current()           // -> Thread, the calling thread
+t.set_priority(ThreadPriority prio)   // instance method, not a free function
+thread::sleep(Duration d)   thread::sleep_ms(long ms)   thread::sleep_ns(NanoDuration ns)
 thread::yield()
-thread::set_priority(prio)  thread::set_stack_size(bytes)
+// Stack size / priority are set at creation time via ThreadSettings{ .stack_size = …, .priority = … }
+// passed to t.create(...) — there is no separate thread::set_stack_size function.
 
 // Mutexes (initialize before use)
 Mutex m;   m.init()?     m.lock()?    m.unlock()    m.try_lock()    m.destroy()
 RecursiveMutex rm;          rm.init()?
-TimedMutex tm;              tm.init()?    tm.timeout_lock(Duration)?
+TimedMutex tm;              tm.init()?    tm.lock_timeout(long ms)?
 TimedRecursiveMutex trm;    trm.init()?
 
 // Condition variables
-ConditionVariable cv;       cv.init()?    cv.wait(&m)?    cv.signal()    cv.broadcast()
-cv.timeout_wait(&m, Duration)?
+ConditionVariable cv;       cv.init()?    cv.wait(&m)?    cv.signal()?    cv.broadcast()?
+cv.wait_timeout(&m, ms_or_duration)?    cv.wait_until(&m, Time)?
 
 // Once-init
-Once o;        o.call(&init_fn)
+OnceFlag o;        o.call(&init_fn)
 
 // Channels — module std::thread::channel <Type>; all created via allocator, pointer-typed
 BufferedChannel{int}*   bc = channel::create_buffered{int}(mem, size = 1)?;
@@ -941,18 +951,20 @@ ec.try_pop()?                             // unbounded: try_pop only (push never
 ec.clear()
 
 // OneShotChannel: push / pop / close / destroy only — no try_* variants
-
-// Thread pool
-ThreadPool tp;              tp.init(ThreadSettings{ .thread_count = 4 })?
-tp.push(&task_fn, arg)      tp.join()    tp.destroy()    tp.stop_and_destroy()
 ```
 
-**`ThreadPool` and `FixedThreadPool` are deprecated as of 0.8.1.** They still work, but new code should not build on them.
+**`ThreadPool(<SIZE>)` and `FixedThreadPool` are deprecated as of 0.8.1.** They still work, but new code should not build on them — prefer `std::thread::experimental::threadgroup`'s `ThreadGroup` for a worker pool.
 
-### `std::threads::fixed_pool` — fixed-size worker pool (deprecated)
+### `std::thread::pool` — fixed-capacity generic thread pool (deprecated)
 ```text
-FixedThreadPool fp;           fp.init(allocator, .thread_count = 4)?   // or fixed_pool::init(...)
-fp.push(&task_fn, arg)?       fp.join()    fp.stop_and_join()
+ThreadPool(<8>) tp;         tp.init(ThreadSettings settings = {})?
+tp.push(ThreadFn func, void* arg)      tp.join()    tp.destroy()    tp.stop_and_destroy()
+```
+
+### `std::thread::threadpool` — `FixedThreadPool` worker pool (deprecated)
+```text
+FixedThreadPool fp;    fp.init(sz threads, sz queue_size = 0, ThreadSettings settings = {})?
+fp.push(ThreadPoolFn func, any[][] args...)?      fp.join()    fp.destroy()?    fp.stop_and_destroy()
 ```
 
 ---
@@ -1003,19 +1015,20 @@ Comparator: `fn int cmp(T* a, T* b)` returning negative/zero/positive. Optional 
 Object*? json::parse(alloc, String, JsonFlavor = JSONC)         // from string
 Object*? json::tparse(String, JsonFlavor = JSONC)
 Object*? json::load(alloc, InStream, JsonFlavor = JSONC)        // from stream
-Object*? json::tload(InStream, JsonFlavor = JSONC)              // 0.8.3; `temp_load` deprecated
+Object*? json::tload(InStream, JsonFlavor = JSONC)              // `temp_load` is a deprecated alias for this
 // marshal / unmarshal directly between structs and JSON text (std::encoding::json)
-String   json::marshal(alloc, value, JsonIndent = NONE)         // String? marshal_try(...)
+String   json::marshal(alloc, value, JsonIndent = NONE)         // JsonIndent: NONE/TAB/SPACE_1..SPACE_5
+String?  json::marshal_try(alloc, value, JsonIndent = NONE)     // fallible variant
 void?    json::marshal_to(OutStream, value, JsonIndent = NONE)
-Type?    json::unmarshal(alloc, input, $Type)                   // 0.8.3
-// same for a parsed DOM (std::collections::object)
-Type?    object::unmarshal{Type}(alloc, Object*)                 // 0.8.3
-void?    object::unmarshal_to(alloc, Object*, out_ref)
+json::unmarshal(alloc, input, $Type)                            // input: String or InStream
+// same for an already-parsed DOM (std::collections::object)
+Type?    object::unmarshal{Type}(alloc, Object*)                // frees slices on malformed data
+void?    object::unmarshal_to(alloc, Object*, out_ref)          // out_ref must be a pointer
 // Object usage (std::collections::object — JSON DOM)
-obj.get_string("key")?       obj.get_int("key")?     obj.get_object("key")?
-obj.set("key", val)          obj.append(item)        obj.iter()
-obj.kind                     // TYPE_NULL / TYPE_BOOL / TYPE_INT / TYPE_REAL / TYPE_STRING / TYPE_OBJECT / TYPE_ARRAY
-obj.to_value(T)              // structured conversion to a struct
+obj.get_string("key")?       obj.get_int("key")?     obj.get("key")?          // .get() returns Object*?
+obj.set("key", val)          obj.push(item)          obj.get_or_create_obj("key")
+obj.type                     // typeid — compare against `bool`/`int128`/`double`/`String`/etc, not an enum
+obj.to_value($Type)          // structured conversion to a struct/primitive
 
 // ini   (parse + encode)
 Object*? ini::parse(alloc, String, delim = '=')     Object*? ini::tparse(String, delim = '=')
@@ -1077,7 +1090,7 @@ char[32] mac = sha256::hmac(key, data);
 
 ```text
 // AES (modes: ECB, CBC, CTR)
-Aes aes;   aes.init(AES128 | AES192 | AES256, key, iv, mode = CTR);
+Aes aes;   aes.init(AesType type, key, iv, mode = CTR);   // type is ONE of AES128 / AES192 / AES256, not OR'd
 char[] ct = aes.encrypt(alloc, plain);   // or .tencrypt()
 char[] pt = aes.decrypt(alloc, cipher);  // or .tdecrypt()
 aes.encrypt_buffer(in, out);   aes.decrypt_buffer(in, out);
@@ -1098,7 +1111,8 @@ crypto::argon2::hash(...)
 // Ed25519 signatures
 ed25519::sign(...)         ed25519::verify(...)
 // Diffie-Hellman
-dh::generate_keypair(...)
+BigInt secret = dh::generate_secret(BigInt p, BigInt x, BigInt y)
+BigInt pubkey = dh::public_key(BigInt p, BigInt g, BigInt x)
 
 // RC4 (legacy stream cipher)
 Rc4 c;    c.init(key);    c.crypt(src, dst, len);   // in-place if src == dst
@@ -1108,8 +1122,9 @@ Rc4 c;    c.init(key);    c.crypt(src, dst, len);   // in-place if src == dst
 keccak::hash(data)?                           // one-shot, default Keccak-256
 Sha3_256 ctx;   ctx.init();   ctx.update(chunk);   char[32] d = ctx.final();
 
-// System entropy (no module import beyond `import std::crypto;`)
-crypto::entropy::random_bytes(buf)?    crypto::entropy::random_int()?
+// System entropy
+void?   crypto::entropy::fill(char[] buffer, bool timeout = false)                 // fills buffer in place
+char[]? crypto::entropy::make(Allocator allocator, sz length, bool timeout = false) // allocates a new buffer
 ```
 
 ---
