@@ -12,10 +12,13 @@ Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https:/
 **Docs:** [Language Fundamentals](https://c3-lang.org/language-fundamentals/variables/) · [Optionals (Essential)](https://c3-lang.org/language-common/optionals-essential/) · [Optionals (Advanced)](https://c3-lang.org/language-common/optionals-advanced/) · [Generics & Macros](https://c3-lang.org/generic-programming/generics/) · [Misc Advanced](https://c3-lang.org/misc-advanced/asm/) · [Stdlib source](https://github.com/c3lang/c3c/tree/v0.8.3/lib/std)
 
 **Reference files (load on demand):**
-- `references/stdlib.md` — full stdlib API (io, collections, math, threads, encoding, …)
-- `references/advanced.md` — macros, generics, interfaces, operator overloading, contracts
+- `references/stdlib.md` — curated stdlib API index (module map, `List`/`HashMap`, strings, I/O, JSON). Read before writing stdlib code.
+- `references/stdlib/*.txt` — complete per-module API dumps; `index.txt` lists all modules. Grep these for exact signatures.
+- `references/advanced.md` — macros, generics, interfaces/dynamic dispatch, operator overloading, contracts
 - `references/c_interop.md` — calling C, exporting C-callable symbols
-- `references/debugging-with-lldb.md` — how to debug C3 programs with LLDB: breakpoints, stepping, variables
+- `references/debugging-with-lldb.md` — LLDB breakpoints, stepping, variables
+
+**Locating c3c sources & stdlib:** source checkout → `<repo>/lib/std`. Homebrew → `$(brew --prefix c3c)/lib/std`. Linux `make install`/tarball → `/usr/local/lib/c3c/std` (or `/usr/local/share/c3c`).
 
 ---
 
@@ -30,9 +33,10 @@ const int MAX = 100;
 int[] arr = { 1, 2, 3 };      // slice
 int[4] fixed = { 1, 2, 3, 4 }; // fixed array (size left of name)
 
-typedef MyInt = int;          // distinct type, no implicit conversion
+typedef MyInt = int;           // distinct type, no implicit conversion
 typedef MyId @constinit = int; // also accepts literals
-alias MyPtr = int*;           // transparent alias
+typedef CStr = inline char*;   // implicit → base type, not ←
+alias MyPtr = int*;            // transparent alias — same type, pure rename
 
 fn int add(int a, int b) { return a + b; }
 fn int square(int x) => x * x;            // short body
@@ -112,6 +116,8 @@ Faults referenced from another module **must** be module-qualified — `kvcache:
 
 After `if (catch err = x) { return; }`, `x` narrows to its plain value for the rest of the scope — use `x` directly, no `!!` needed.
 
+`void?` is valid only as a return type — it has no variable form. Grab the fault from a call with `fault f = @catch(expr)`, or `if (catch f = expr)`, then branch with a plain `switch (f) { case SOME_FAULT: … }`.
+
 ---
 
 ## Memory
@@ -139,6 +145,58 @@ struct Config @mustinit { String path; int retries; }
 ```
 
 Key allocators: `mem::new(T)` / `mem::tnew(T)`, `mem::new_array(T,n)` / `mem::temp_array(T,n)`, `@clone(v)` / `@tclone(v)`, `mem::free(p)`.
+
+---
+
+## Safety & Builds
+
+Safe (debug) and fast (release) builds differ only in what a bug does at runtime.
+
+- **Safe** traps, with a trace, on division by zero, out-of-bounds indexing, null deref, `assert`/contract failure, and `unreachable()`.
+- **Fast** drops the checks; those same bugs become UB the optimizer assumes away.
+
+Defined where C leaves it UB: signed overflow always wraps (two's complement); narrow casts truncate silently. Locals zero-init by default; `@noinit` opts out (reading an unassigned `@noinit` traps in safe builds). Structs and arrays are values — assignment copies.
+
+Idioms: prefer `String`/slices over raw pointer+length; free functions over methods; `!!` only in `main`/tests/impossible paths; take an `Allocator` in library code; temp allocator for call-scoped data; `@inline` hot cross-module functions.
+
+---
+
+## Runtime Polymorphism (`any`, interfaces)
+
+`any` is a fat pointer (data + typeid), created implicitly from any pointer. Downcast by switching on `a.type`.
+
+```c3
+switch (a.type) { case Foo.typeid: …; default: …; }   // `.typeid` optional in a case
+```
+
+Interfaces are message-passing over `any`, not vtables. Callable methods must be `@dynamic`; the declaration lists a signature with no `self`.
+
+```c3
+interface Greeter { fn String greet(); }
+struct Foo (Greeter) { int x; }
+fn String Foo.greet(Foo* self) @dynamic => "hello";
+Greeter g = (Greeter)a;
+if (&g.greet) io::printn(g.greet());   // @optional methods need this check
+```
+
+`@dynamic` methods satisfy an interface without the type declaring it — works on built-ins too. Prefer generics (zero cost) when types are known at compile time; `any`/interfaces only when they aren't.
+
+---
+
+## Concurrency
+
+`std::thread` wraps native OS threads — no runtime, no safety checks.
+
+```c3
+Thread t;  t.create(&worker, arg)!;  int code = t.join()!!;  t.detach()!;
+Mutex m;  m.init()!;  m.lock()!;  defer m.unlock();
+m.@in_lock() { /* unlocked at block exit */ };
+
+BufferedChannel{int}* ch = channel::create_buffered(mem, size: 16)!;
+ch.push(42)!;  int v = ch.pop()!;
+```
+
+Channels: `BufferedChannel` (ring), `UnbufferedChannel` (one in-flight), `UnboundedChannel` (growable), `OneShotChannel` (one value). Faults: `CHANNEL_CLOSED`, `CHANNEL_BLOCKED`, `CHANNEL_EMPTY`. Use `ThreadPool` (dynamic); `FixedThreadPool` is deprecated.
 
 ---
 
@@ -238,3 +296,4 @@ c3lsp has a default diagnostics delay of **2000ms**. If diagnostics appear stale
 | Enum as bitmask | Use `bitstruct` instead |
 | Enum arithmetic | Use `.ordinal` for math; `++`/`--` wrap around |
 | Implicit narrowing / float→int | Explicit cast required |
+| Works in debug, misbehaves in release | Safe builds trap on UB; fast builds don't — test `c3c run` *and* `c3c build release` |
