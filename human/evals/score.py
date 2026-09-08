@@ -23,9 +23,10 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 DEFAULT_MODEL = "minimax/MiniMax-M3 --reasoning-effort minimal"
-JUDGE_MODEL = "opencode-go/deepseek-v4-pro"
+JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "opencode-go/deepseek-v4-pro")
 
 EVALS_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evals.json")
 GEN_EVALS_JSON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evals-gen.json")
@@ -54,9 +55,18 @@ Scoring guide:
 - 75-85: Reads mostly human. Minor tells: one or two phrases that feel slightly formulaic or hedged, but the voice is largely natural.
 - 85-100: Reads like a person wrote it. Varied rhythm, plain verbs, specific detail, natural voice. No promotional puff, no chatbot framing, no canned aphorisms, no formulaic structures.
 
-Current-model fingerprints count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely"); Claude-isms ("load-bearing", "quietly does", "the actual X"); literary hedging ("on balance", "one could argue", "it's worth noting"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say"); and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means the score should drop below 85.
+Watch especially for these patterns, which current models produce constantly and rate highly in themselves. Examples in parentheses are instances of the pattern, not an exhaustive list; grade the pattern wherever it appears.
+- Trendy model vocabulary used as a badge of insight: calling something structurally essential with a borrowed metaphor instead of saying what it does ("load-bearing", "seam" for any boundary, "the queue is the contract", "doing a lot of work"). A person would say what the thing actually does.
+- Invented technical-sounding compounds where plain words exist: hyphenating words into pseudo-precise jargon to sound more exact than the situation calls for ("connection-level errors" for connection errors, "header-aware retry", "queue-boundary split").
+- Emphasis by assertion rather than content: claiming exactness or importance instead of showing it ("which is exactly the case we hit", "which is precisely why", "this is the whole point", "full stop").
+- Commentary on the exchange instead of the subject: narrating one's attitude toward answering rather than answering ("happy to revisit this if", "fair point, though", "great catch, but"). A person just answers.
+- Self-narration of one's own reasoning as if reporting it to an observer: openers like "keeping X because...", "my thinking here...", "let me explain why", addressed to nobody.
 
-Do not consider factual accuracy, completeness, or invention at all. Only style and voice.
+Current-model fingerprints
+
+ count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely"); Claude-isms ("quietly does", "the actual X", "honest take", "belt and suspenders", "the unlock", "smoking gun"); literary hedging ("on balance", "one could argue", "it's worth noting"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say"); and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means the score should drop below 85.
+
+Do not consider factual accuracy, completeness, or invention at all. Only style and voice. Correctness of the underlying reasoning does not excuse a hard disqualifier: a comment can explain its subject perfectly and still fail on vocabulary.
 
 Also score a plain, neutral, unadorned restatement of the task as "0", so we can sanity-check your judgment.
 
@@ -80,9 +90,18 @@ Scoring guide:
 - 75-85: Reads mostly human. Minor tells: one or two phrases that feel slightly formulaic or hedged, but the voice is largely natural.
 - 85-100: Reads like a person wrote it. Varied rhythm, plain verbs, specific detail, natural voice. No promotional puff, no chatbot framing, no canned aphorisms, no formulaic structures.
 
-Current-model fingerprints count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely"); Claude-isms ("load-bearing", "quietly does", "the actual X"); literary hedging ("on balance", "one could argue", "it's worth noting"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say"); and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means the score should drop below 85.
+Watch especially for these patterns, which current models produce constantly and rate highly in themselves. Examples in parentheses are instances of the pattern, not an exhaustive list; grade the pattern wherever it appears.
+- Trendy model vocabulary used as a badge of insight: calling something structurally essential with a borrowed metaphor instead of saying what it does ("load-bearing", "seam" for any boundary, "the queue is the contract", "doing a lot of work"). A person would say what the thing actually does.
+- Invented technical-sounding compounds where plain words exist: hyphenating words into pseudo-precise jargon to sound more exact than the situation calls for ("connection-level errors" for connection errors, "header-aware retry", "queue-boundary split").
+- Emphasis by assertion rather than content: claiming exactness or importance instead of showing it ("which is exactly the case we hit", "which is precisely why", "this is the whole point", "full stop").
+- Commentary on the exchange instead of the subject: narrating one's attitude toward answering rather than answering ("happy to revisit this if", "fair point, though", "great catch, but"). A person just answers.
+- Self-narration of one's own reasoning as if reporting it to an observer: openers like "keeping X because...", "my thinking here...", "let me explain why", addressed to nobody.
 
-Do not consider factual accuracy, completeness, or invention at all. Only style and voice.
+Current-model fingerprints
+
+ count heavily: em-dash clusters; balanced false contrasts ("it's not X, it's Y", "not just X, but Y", "more than just X", "less like X, more like Y", "what was once X has become Y"); meta-commentary on the prose itself ("that is precisely what", "worth chasing", "how it lands"); conversational filler as throat-clearing ("honestly", "frankly", "to be honest", "genuinely"); Claude-isms ("quietly does", "the actual X", "honest take", "belt and suspenders", "the unlock", "smoking gun"); literary hedging ("on balance", "one could argue", "it's worth noting"); analytic vocabulary (comprehensive, nuanced, fundamentally, paradigm, in essence, robust, essentially); tutor/guide voice ("let's break this down", "here's the thing", "let me walk you through"); false balance ("on one hand... on the other hand"); paragraph-final synthesis closers ("taken together, these factors suggest that"); systematic rule-of-three triads; stand-in verbs instead of plain "is" ("serves as", "stands as", "marks", "represents"); throat-clearing openers ("in today's X world", "one of the most", "it's important to note", "at its core"); corporate synonyms (utilise, initiate, commence, facilitate, "poised to"); stacked compound-noun phrases ("evidence-based policymaking", "cost-effective solutions"); empty authenticity or travel filler ("off-the-beaten-path experience", "authentic", "gateway to"); canned attribution ("industry reports say"); and narration about loading skills or following instructions. Older ChatGPT-era tells (delve, tapestry, "I hope this helps", piled-up "Moreover/Additionally") count if present but are no longer the main signal. A single stray instance is not a failure, but two or more distinct tell categories in one response means the score should drop below 85.
+
+Do not consider factual accuracy, completeness, or invention at all. Only style and voice. Correctness of the underlying reasoning does not excuse a hard disqualifier: a comment can explain its subject perfectly and still fail on vocabulary.
 
 Also score a plain, neutral, unadorned restatement of the task as "0", so we can sanity-check your judgment.
 
@@ -172,6 +191,24 @@ def skill_text(skill):
             raw = raw.split("---", 2)[2]
         _SKILL_TEXT[skill] = raw.strip()
     return _SKILL_TEXT[skill]
+
+
+RETRYABLE_RE = re.compile(
+    r"ERROR|quota|too many requests|rate limit|payment required|credits?",
+    re.IGNORECASE,
+)
+
+
+def run_with_retry(run_fn, label, retries=3, backoff=(5, 15, 45)):
+    """Re-run a generation/judge call when the output is a provider error
+    (quota, rate limit, credits). Environmental failures, not model
+    performance, must not become eval records."""
+    for i in range(retries):
+        out = run_fn()
+        if out.strip() and not RETRYABLE_RE.search(out[:2000]):
+            return out
+        time.sleep(backoff[min(i, len(backoff) - 1)])
+    return out
 
 
 def run_generation(prompt, skill, model, workdir):
@@ -287,7 +324,7 @@ def hard_gates(case, output):
 def judge_one(prompt_text, judge_workdir):
     """LLM-judge a single output. Returns (verdict dict, parse_ok)."""
     for _ in range(2):  # retry once on unparseable output
-        raw = run_crush(prompt_text, judge_workdir)
+        raw = run_with_retry(lambda: run_crush(prompt_text, judge_workdir), "judge")
         data = extract_json(raw)
         if data:
             return data.get("1", {}), True
@@ -350,7 +387,10 @@ def main():
         cases = [c for c in cases if c["id"] in (3, 4)]
 
     def rewrite(case):
-        return strip_narration(strip_trailer(run_crush(case["prompt"], workdir)))
+        out = run_with_retry(
+            lambda: run_generation(case["prompt"], skill, model, workdir), "rewrite"
+        )
+        return strip_narration(strip_trailer(out))
 
     def judge(task):
         case, out = task

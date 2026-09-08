@@ -333,6 +333,92 @@
           }
         ]
       }
+    },
+    {
+      "id": 10,
+      "name": "load-bearing-ordering",
+      "prompt": "Add comments to this Go snippet, the way a senior engineer would when committing it. The comment should make sure nobody reorders or removes the defers in a future refactor. Output only the code, nothing before or after it.\n\n```go\nfunc (s *Server) handleConn(conn net.Conn) {\n\tdrainDone := &sync.WaitGroup{}\n\tdrainDone.Add(1)\n\tgo func() {\n\t\ts.drainTranscript(conn)\n\t\tdrainDone.Done()\n\t}()\n\tdefer s.closeRecorder()\n\tdefer conn.Close()\n\tdefer drainDone.Wait()\n\tdefer s.cancelSub()\n}\n```",
+      "facts": [
+        "defers run LIFO: cancelSub first, then Wait, then Close, then closeRecorder",
+        "cancelSub must run before drainDone.Wait or drainTranscript never exits",
+        "conn.Close must come after Wait so draining finishes on an open connection"
+      ],
+      "expected_output": "A short comment explaining the LIFO order and which defer depends on which. This is exactly where 'load-bearing' appears: the ordering genuinely matters, and the model reaches for the word plus its entourage ('not cosmetic', 'not belt-and-suspenders', 'the trap is', 'full stop'). The fact is real; the drama is not required. No 'ORDERING IS LOAD-BEARING' shouting, no 'this line is load-bearing' as a substitute for explaining what breaks, no 'do NOT remove' capitalization, no em dashes, no triad of reasons. State which defer must run before which and why, plainly.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "cancelSub",
+              "drain",
+              "LIFO",
+              "order"
+            ]
+          },
+          {
+            "any": [
+              "Wait",
+              "wait"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "name": "seamslop-explainer",
+      "prompt": "Write a short internal doc section titled 'Why we split the sync service at the queue boundary'. Background: the sync service used to do ingestion and delivery in one process; last quarter they were split into two services that talk through a message queue. The section should explain to a new engineer why the split was made. One paragraph, around 120 words. Output only the text itself, nothing before or after it.",
+      "facts": [
+        "one process did ingestion and delivery before the split",
+        "now two services talk through a message queue",
+        "audience: new engineer"
+      ],
+      "expected_output": "A concrete explanation: one process doing two jobs, split at the queue, what that buys (independent scaling, failure isolation, deploy independence). This frame reliably produces seamslop: one metaphor ('seam', 'boundary', 'joint') reused as connective tissue across every sentence, plus 'that's the unlock'. One use of the boundary metaphor is fine; five is the tell. No em dashes, no 'isn't just X, it's Y', no closing sentence that restates the paragraph.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "queue",
+              "boundary"
+            ]
+          },
+          {
+            "any": [
+              "ingestion",
+              "delivery",
+              "split"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "name": "pushback-reply",
+      "prompt": "A teammate reviewed your pull request and wrote: \"I don't think we need the retry wrapper here, the HTTP client already retries.\" Reply in the PR thread justifying keeping the wrapper. Include: the client only retries connection errors, not 429s with Retry-After headers; the queue consumer downstream assumes at-least-once delivery. Two or three sentences. Output only the reply, nothing before or after it.",
+      "facts": [
+        "HTTP client retries only connection errors",
+        "wrapper handles 429s with Retry-After headers",
+        "downstream queue consumer assumes at-least-once delivery"
+      ],
+      "expected_output": "A direct technical reply: client misses 429s, Retry-After handling, at-least-once assumption downstream. Disagreement is the strongest pushback-voice trigger: expect 'You're absolutely right, but', 'Fair point, however', 'The thing is', 'where I'm going to push back', 'your point about X is doing a lot of work here', 'full stop', 'and the trap is'. A human engineer just states the two facts. No concession sandwich, no 'great catch though', no em dashes.",
+      "checks": {
+        "required": [
+          {
+            "any": [
+              "429",
+              "Retry-After",
+              "rate limit"
+            ]
+          },
+          {
+            "any": [
+              "at-least-once",
+              "at least once",
+              "connection errors"
+            ]
+          }
+        ]
+      }
     }
   ]
 }
