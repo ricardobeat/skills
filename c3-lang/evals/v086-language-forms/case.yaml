@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: v086-language-forms
+expected_outcome: |
+  The program uses current 0.8.6 spellings, compiles with c3c compile-only, keeps optional handling explicit, and uses @feat and $if in their correct lexical scopes. Historical differences are described without mixing old and current behavior.

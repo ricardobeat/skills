@@ -1,17 +1,15 @@
-C3 Standard Library
-Public API reference. One file per namespace in stdlib/.
-Signatures: fn name(Type param) -> ReturnType
-Methods shown indented under their type.
+C3 0.8.6 Standard Library Declaration Index
+Generated from `c3c docgen --json` with the installed C3 0.8.6 compiler (macOS arm64 default target).
+These files preserve compiler-reported public declarations; private/local declarations are omitted.
+Read the entry for a task's namespace, then verify the exact API against installed stdlib source if compatibility matters.
 
 NAMESPACES
 
   atomic  ->  stdlib/atomic.txt
     std::atomic
     std::atomic::types
-
   bits  ->  stdlib/bits.txt
     std::bits
-
   collections  ->  stdlib/collections.txt
     std::collections::anylist
     std::collections::bitset
@@ -24,32 +22,38 @@ NAMESPACES
     std::collections::interfacelist
     std::collections::linkedlist
     std::collections::list
+    std::collections::list_common
     std::collections::map
     std::collections::maybe
     std::collections::object
     std::collections::pair
     std::collections::priorityqueue
     std::collections::range
+    std::collections::ref
     std::collections::result
     std::collections::ringbuffer
     std::collections::set
     std::collections::sortedmap
     std::collections::triple
-
+  compiler_rt  ->  stdlib/compiler_rt.txt
+    compiler_rt
   compression  ->  stdlib/compression.txt
     std::compression::deflate
     std::compression::gzip
     std::compression::qoi
     std::compression::zip
-
   core  ->  stdlib/core.txt
+    std::core
     std::core::array
     std::core::ascii
     std::core::bitorder
+    std::core::builtin
+    std::core::cinterop
     std::core::cpudetect
     std::core::dstring
     std::core::env
     std::core::log
+    std::core::machoruntime
     std::core::main_stub
     std::core::mem
     std::core::mem::alignment
@@ -69,8 +73,8 @@ NAMESPACES
     std::core::string::conv
     std::core::string::iterator
     std::core::test
+    std::core::types
     std::core::values
-
   crypto  ->  stdlib/crypto.txt
     std::crypto
     std::crypto::aes
@@ -92,22 +96,26 @@ NAMESPACES
     std::crypto::shake
     std::crypto::tuple_hash
     std::crypto::turbo_shake
-
   encoding  ->  stdlib/encoding.txt
     std::encoding
     std::encoding::base32
     std::encoding::base64
     std::encoding::codepage
     std::encoding::csv
+    std::encoding::experimental::regex
     std::encoding::hex
     std::encoding::ini
     std::encoding::json
     std::encoding::pem
     std::encoding::xml
-
+    std::encoding::xml::internal
   experimental  ->  stdlib/experimental.txt
     std::experimental::scheduler
-
+  gfx  ->  stdlib/gfx.txt
+    std::gfx
+    std::gfx::egl
+    std::gfx::gl
+    std::gfx::macos
   hash  ->  stdlib/hash.txt
     std::hash::a5hash
     std::hash::adler32
@@ -136,49 +144,53 @@ NAMESPACES
     std::hash::streebog
     std::hash::whirlpool
     std::hash::wyhash2
-
   io  ->  stdlib/io.txt
     std::io
     std::io::file
     std::io::file::mmap
     std::io::os
     std::io::path
-
+  libc  ->  stdlib/libc.txt
+    libc
   math  ->  stdlib/math.txt
     std::math
     std::math::bigint
     std::math::complex
     std::math::distributions
     std::math::easing
+    std::math::geometry
+    std::math::geometry::bounding_box
+    std::math::geometry::rectangle
     std::math::matrix
     std::math::quaternion
     std::math::random
     std::math::random::xoroshiro
     std::math::random::xoshiro
-    std::math::rectangle
     std::math::uuid
     std::math::vector
-
   net  ->  stdlib/net.txt
     std::net
     std::net::os
     std::net::tcp
     std::net::udp
     std::net::url
-
   os  ->  stdlib/os.txt
     libc::os
     std::os
     std::os::backtrace
+    std::os::darwin
+    std::os::darwin::cf
+    std::os::darwin::objc
     std::os::env
+    std::os::macos
+    std::os::macos::cg
+    std::os::posix
     std::os::process
-
+    std::os::win32
   sort  ->  stdlib/sort.txt
     std::sort
-
   termios  ->  stdlib/termios.txt
     libc::termios
-
   thread  ->  stdlib/thread.txt
     std::thread
     std::thread::channel
@@ -187,7 +199,6 @@ NAMESPACES
     std::thread::os
     std::thread::pool
     std::thread::threadpool
-
   time  ->  stdlib/time.txt
     std::time
     std::time::clock

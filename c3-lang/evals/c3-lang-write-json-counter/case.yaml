@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: c3-lang-write-json-counter
+expected_outcome: |
+  The program compiles on C3 0.8.6, checks args.len before indexing, uses @pool with json::tparse or an equivalent temp-allocated parse, handles file and parse faults, iterates the top-level JSON array, compares get_string("status") with "done", prints the count, and returns 0 on success and 1 on each failure path.

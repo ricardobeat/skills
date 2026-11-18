@@ -1,24 +1,39 @@
 ---
 name: c3-lang
-description: C3 language, writing, debugging, or reviewing .c3 files; c3c builds; C3 syntax, stdlib, and tooling
+description: Use when writing, debugging, reviewing, or migrating C3 code (.c3), invoking c3c/c3fmt, editing project.json or .c3l manifests, resolving C3 build errors, or choosing C3 standard-library APIs, even when the user only mentions a C3 file or compiler message. Defaults to C3 0.8.6.
 ---
 
 # C3 Programming Language
 
-C3 is a systems language — an evolution over C with modules, optionals, slices, defer, generics, and compile-time features. Compiler: `c3c` (LLVM backend). **Baseline: 0.8.3.** Naming conventions (PascalCase types, snake_case functions) are enforced by the lexer.
+C3 is a systems language with modules, optionals, slices, defer, generics, and compile-time features. Compiler: `c3c` (LLVM backend; experimental C backend in 0.8.5+). **Baseline: 0.8.6.** PascalCase types, snake_case functions, and CONSTANT_CASE constants are required by the language.
 
 Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https://github.com/c3lang/c3c) · [Discord](https://discord.gg/qN76R87)
 
-**Docs:** [Language Fundamentals](https://c3-lang.org/language-fundamentals/variables/) · [Optionals (Essential)](https://c3-lang.org/language-common/optionals-essential/) · [Optionals (Advanced)](https://c3-lang.org/language-common/optionals-advanced/) · [Generics & Macros](https://c3-lang.org/generic-programming/generics/) · [Misc Advanced](https://c3-lang.org/misc-advanced/asm/) · [Stdlib source](https://github.com/c3lang/c3c/tree/v0.8.3/lib/std)
+**Docs:** [Single-page manual](https://c3-lang.org/all/) · [Optionals](https://c3-lang.org/language-common/optionals-essential/) · [Generics](https://c3-lang.org/generic-programming/generics/) · [Attributes](https://c3-lang.org/language-common/attributes/) · [Project config](https://c3-lang.org/build-your-project/project-config/) · [Library packaging](https://c3-lang.org/misc-advanced/library-packaging/) · [Stdlib source](https://github.com/c3lang/c3c/tree/v0.8.6/lib/std)
 
 **Reference files (load on demand):**
-- `references/stdlib.md` — curated stdlib API index (module map, `List`/`HashMap`, strings, I/O, JSON). Read before writing stdlib code.
-- `references/stdlib/*.txt` — complete per-module API dumps; `index.txt` lists all modules. Grep these for exact signatures.
-- `references/advanced.md` — macros, generics, interfaces/dynamic dispatch, operator overloading, contracts
-- `references/c_interop.md` — calling C, exporting C-callable symbols
-- `references/debugging-with-lldb.md` — LLDB breakpoints, stepping, variables
+- `references/stdlib.md` — curated stdlib guide; open only the sections needed for the task
+- `references/stdlib/index.txt` — namespace index for the detailed signature snapshots
+- `references/stdlib/<namespace>.txt` — public declaration snapshots generated with C3 0.8.6; check these before guessing an API
+- `references/advanced.md` — macros, generics, interfaces, reflection, operator overloading, contracts
+- `references/c_interop.md` — declaring C symbols, exporting symbols, linking, exact assembly names
+- `references/build-and-dependencies.md` — project targets, dependency fetching, `.c3l` source libraries
+- `references/debugging-with-lldb.md` — breakpoints, stepping, variables, traps
 
-**Locating c3c sources & stdlib:** source checkout → `<repo>/lib/std`. Homebrew → `$(brew --prefix c3c)/lib/std`. Linux `make install`/tarball → `/usr/local/lib/c3c/std` (or `/usr/local/share/c3c`).
+**Locating c3c sources & stdlib:** source checkout → `<repo>/lib/std`. Homebrew → `$(brew --prefix c3c)/lib/c3/std`. Linux installations vary; inspect `c3c --build-env` or the installed distribution rather than assuming a path.
+
+---
+
+## Working Rules
+
+- Target C3 0.8.6 syntax. Run `c3c --version` before version-sensitive work.
+- Read the relevant stdlib signature file or the installed standard-library source before using an uncertain API. The snapshots were generated on macOS arm64; check the installed source for other platform bindings. Do not infer C3 APIs from C++, Rust, or older C3 examples.
+- For single files, verify with `c3c compile file.c3` or `c3c compile-run file.c3`. Use `compile-only` when linking is unavailable. For projects, run the narrowest relevant `c3c build`, `c3c test`, or `c3c run` target after changes.
+- Keep allocator and error-propagation choices explicit. Free heap resources, bound `@pool()` lifetimes, and handle every optional before producing the final code.
+- `c3fmt` formats source files. Copy `assets/.c3fmt` to the project root when the project has no formatter configuration.
+- Use `c3c --list-project-properties`, `--list-manifest-properties`, `--list-attributes`, `--list-builtins`, and `--list-type-properties` for exhaustive compiler-provided lists.
+
+**C3 0.8.6 state:** `@feat` / `$feat` accept feature lists, `excuse` / `constset` / `attrmacro` are the documented spellings, and `@asmname` preserves exact assembly symbol names. Source libraries and registry dependencies use `.c3l` packaging and checksum verification. `std::gfx`, `TreeSet`, `NonNull` / `Nullable`, cross-platform dylib helpers, and `file::open_fd` are available. Single-statement `else if` requires braces, and `std::encoding::experimental::regex` uses `IGNORE_CASE`, `NOT_BOL`, `NOT_EOL`, and `NO_MATCH` names.
 
 ---
 
@@ -78,17 +93,20 @@ int[4] fixed;
 takes_ptr(&fixed);     // fixed arrays don't decay — use & explicitly
 
 String hello = "world";
-char* cstr = hello.ptr;
+char* bytes = hello.ptr;
+ZString cstr = hello.zstr_tcopy();
 ```
+
+`String` is a byte slice. `bytes` is not necessarily NUL-terminated; use `zstr_copy(mem)` or `zstr_tcopy()` before passing an arbitrary string or subslice to a C API. `sz` is signed and `usz` is unsigned; both are valid size types.
 
 ---
 
 ## Error Handling (Optionals)
 
-`T?` = value or fault. Zero overhead. Optionals can't be function parameters — use `Maybe{T}` to store them in structs.
+`T?` = result or an empty value carrying a `fault` (called an "Excuse" in current docs). Zero overhead. Optional types are allowed for variables, expressions, and returns, but not in function or macro parameter declarations. Passing an optional expression to an ordinary parameter is allowed: the call runs only if all arguments have results, otherwise it yields the first fault without calling the function. Use `Maybe{T}` when a struct field needs optional-like storage.
 
 ```c3
-faultdef FILE_NOT_FOUND, PERMISSION_DENIED;
+excuse FILE_NOT_FOUND, PERMISSION_DENIED;
 
 fn String? read_file(String path) {
     if (!file::exists(path)) return FILE_NOT_FOUND~;  // ~ converts fault → empty optional
@@ -112,7 +130,7 @@ if (try s = read_file("e.txt") && try t = read_file("f.txt")) { ... }
 | `if (catch err = x)` | inspect fault value |
 | `if (try val = x)` | unwrap on success |
 
-Faults referenced from another module **must** be module-qualified — `kvcache::ALLOC_FAILED`, never bare `ALLOC_FAILED`.
+Declare faults with `excuse`; `faultdef` is a compatibility spelling and `faultset` was removed in 0.8.5. Faults referenced from another module **must** be module-qualified: `kvcache::ALLOC_FAILED`, never bare `ALLOC_FAILED`.
 
 After `if (catch err = x) { return; }`, `x` narrows to its plain value for the rest of the scope — use `x` directly, no `!!` needed.
 
@@ -132,7 +150,7 @@ mem::free(arr);
     String s = string::tformat("hello %s", name);
 };
 
-// defer — runs on any exit (return, break, fault)
+// defer runs on every exit; multiple defers run last-to-first
 fn void? process(String path) {
     File f = file::open(path, "r")!;
     defer f.close();
@@ -140,7 +158,7 @@ fn void? process(String path) {
     defer catch io::printn("failed"); // only on fault
 }
 
-// ZII: structs zero-init by default; @mustinit forbids it
+// ZII: structs zero-init by default; @mustinit disallows @noinit
 struct Config @mustinit { String path; int retries; }
 ```
 
@@ -169,7 +187,7 @@ Idioms: prefer `String`/slices over raw pointer+length; free functions over meth
 switch (a.type) { case Foo.typeid: …; default: …; }   // `.typeid` optional in a case
 ```
 
-Interfaces are message-passing over `any`, not vtables. Callable methods must be `@dynamic`; the declaration lists a signature with no `self`.
+Interfaces dispatch methods through interface metadata attached to `any` values, not by name lookup. Methods exposed for interface calls are marked `@dynamic`; interface declarations list signatures without a receiver.
 
 ```c3
 interface Greeter { fn String greet(); }
@@ -188,15 +206,15 @@ if (&g.greet) io::printn(g.greet());   // @optional methods need this check
 `std::thread` wraps native OS threads — no runtime, no safety checks.
 
 ```c3
-Thread t;  t.create(&worker, arg)!;  int code = t.join()!!;  t.detach()!;
-Mutex m;  m.init()!;  m.lock()!;  defer m.unlock();
+Thread t;  t.create(&worker, arg)!!;  int code = t.join()!!;  t.detach()!!;
+Mutex m;  m.init()!!;  m.lock()!!;  defer m.unlock();
 m.@in_lock() { /* unlocked at block exit */ };
 
-BufferedChannel{int}* ch = channel::create_buffered(mem, size: 16)!;
-ch.push(42)!;  int v = ch.pop()!;
+BufferedChannel{int}* ch = channel::create_buffered(mem, size: 16)!!;
+ch.push(42)!!;  int v = ch.pop()!!;
 ```
 
-Channels: `BufferedChannel` (ring), `UnbufferedChannel` (one in-flight), `UnboundedChannel` (growable), `OneShotChannel` (one value). Faults: `CHANNEL_CLOSED`, `CHANNEL_BLOCKED`, `CHANNEL_EMPTY`. Use `ThreadPool` (dynamic); `FixedThreadPool` is deprecated.
+Channels: `BufferedChannel` (ring), `UnbufferedChannel` (one in-flight), `UnboundedChannel` (growable), `OneShotChannel` (one value). Faults: `CHANNEL_CLOSED`, `CHANNEL_BLOCKED`, `CHANNEL_EMPTY`. `std::thread::ThreadPool` is the dynamic pool; `std::thread::pool::ThreadPoolOld{SIZE}` and `FixedThreadPool` are deprecated.
 
 ---
 
@@ -209,7 +227,7 @@ fn void pub_fn()  @public {}   // default
 fn void priv_fn() @private {}  // module-only
 fn void file_fn() @local {}    // file-only, cannot be overridden
 
-attrdef @Hot = @inline, @export;
+attrmacro @Hot = @inline, @export;
 ```
 
 **Imports are recursive** (`import mylib` includes `mylib::net`, etc). Use `@norecurse` to opt out.
@@ -239,11 +257,11 @@ char[] data = $embed("assets/shader.glsl");
 
 `$else` takes **no** colon (`$if cond:` … `$else` … `$endif`). There is no else-if chain — `$elseif`, `$elif`, and `$else if` are all invalid. Nest a second `$if` inside `$else`, or use `$switch:` / `$case cond:` / `$default:` / `$endswitch` for multi-way branching.
 
-Key builtins: `$Typeof(expr)`, `$defined(expr)`, `$assert(cond)`, `Type::size` / `::alignment` / `::kind`, `@sizeof(expr)`, `$reflect(field).name`, `$eval("name")`, `$expand("expr")`, `$feat(F)` (`$feature` deprecated as of 0.8.3).
+Key builtins: `$Typeof(expr)`, `$Typefrom(id)`, `$defined(expr)`, `$assert(cond)`, `Type::size` / `::alignment` / `::kind`, `@sizeof(expr)`, `$reflect(field).name`, `$eval("name")`, `$expand("expr")`, `$feat(F)`. Use `&&&` and `|||` when a compile-time condition must skip type-checking its right-hand side.
 
 Compile-time field access uses `a.$field` to read and `a.$field = b` to write (`a.$eval($field)` is an equivalent variant). The older `$field.get(a)` / `$field.set(a, b)` forms are deprecated as of 0.8.1.
 
-Conditional compilation of a top-level declaration uses `@feat(FLAG)` — `@feat(LINUX, MACOS)`, `@feat(!WIN32)`. As of 0.8.3 `@if` on non-generic top-level declarations is deprecated in favour of `@feat`; `@if` remains for generic declarations.
+Conditional compilation of a top-level declaration or module section uses `@feat(FLAG)`. Feature lists accept `&`, `|`, `!`, and parentheses; commas mean `|`, and repeated `@feat` attributes mean `&`. `$feat` accepts the same feature-list syntax. `@if` is restricted to generic declarations instantiated from generic parameters.
 
 See `references/advanced.md` for macros, generics, interfaces, and operator overloading.
 
@@ -256,14 +274,19 @@ c3c init myproject
 c3c run                      # build & run debug
 c3c build release
 c3c compile-run file.c3      # quick snippet test
-c3c test / c3c benchmark
-c3c vendor-fetch
+c3c compile-only file.c3     # check without linking
+c3c test [target]
+c3c benchmark [target]
+c3c source-lib src/lib.c3 -o my_lib
+c3c fetch <library>
+c3c project fetch [library ...]
+c3c vendor-fetch <library>
 c3c docgen
 ```
 
-`project.json` targets: `"type": "executable"`, `"safe": true/false`, `"opt": "O0"/"O3"`, `"strip-unused": true`.
+`project.json` targets support `"type": "executable" | "static-lib" | "dynamic-lib" | "source-lib" | "object-files" | "prepare" | "benchmark" | "test"`, `"depends-on"`, `"safe"`, `"opt"`, and `"strip-unused"`. Other useful 0.8.6 settings include `"features"`, `"function-sections"`, `"data-sections"`, `"stack-probe"`, `"stack-protector"`, `"env"`, and `"env-override"`. See `references/build-and-dependencies.md` for packaging and dependency rules.
 
-Verify a snippet: `c3c compile-run snippet.c3`. Add `--use-stdlib=no` for stdlib-free examples. `c3fmt` formats files; copy `assets/.c3fmt` to project root first.
+Verify a snippet with `c3c compile-run snippet.c3`. Add `--use-stdlib=no` for stdlib-free examples. Enable `--warn-unusedlocal` and `--warn-unusedparam` for a stricter review. Use `--stats=summary`, `full`, or `json` for compiler statistics.
 
 ---
 
@@ -274,11 +297,9 @@ fn void test_add() @test { assert(add(1, 2) == 3); }
 fn void bench_add() @benchmark { for (int i = 0; i < 1000; i++) add(i, i+1); }
 ```
 
+Run with `c3c test [target]` or `c3c benchmark [target]`. `std::core::test` provides `test::eq`, `test::@check`, and `test::@error` for richer assertions.
+
 ---
-
-## c3lsp Diagnostics Delay
-
-c3lsp has a default diagnostics delay of **2000ms**. If diagnostics appear stale or slow to update after edits, ask the user to reduce it via the `-diagnostics-delay` flag (e.g. `-diagnostics-delay=500`) in their LSP client configuration.
 
 ## Common Pitfalls
 
@@ -297,3 +318,10 @@ c3lsp has a default diagnostics delay of **2000ms**. If diagnostics appear stale
 | Enum arithmetic | Use `.ordinal` for math; `++`/`--` wrap around |
 | Implicit narrowing / float→int | Explicit cast required |
 | Works in debug, misbehaves in release | Safe builds trap on UB; fast builds don't — test `c3c run` *and* `c3c build release` |
+| `else if (x) foo();` rejected | Put the single statement in braces: `else if (x) { foo(); }` |
+| Duplicate designated initializer | `{ .a = 1, .a = 1 }` is an error |
+| `ulong x = -1` accepted before | Negative constants cannot implicitly convert to wider unsigned types |
+| Same-size signed/unsigned aggregate cast | Casts between `int[3]`/`uint[3]`, slices, and vectors now require explicit casts |
+| Old `attrdef` / `faultdef` spellings | Prefer `attrmacro` / `excuse` in current code |
+| Empty infinite loop never panics | Detection is opt-in: `--infinite-loop-detect=yes`, safe mode only |
+| Assuming `pool::ThreadPool` is current | Use `std::thread::ThreadPool`; `pool::ThreadPoolOld{SIZE}` is the deprecated fixed-capacity type |

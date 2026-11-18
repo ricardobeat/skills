@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: c3-lang-review-buggy-code
+expected_outcome: |
+  The review catches the unhandled optional, the fixed array passed to strcpy without &buf, the lack of NUL termination on an arbitrary String slice, and the unbounded strcpy with no capacity or length check. It does not claim that fn int main(), usz, or int::size are errors.

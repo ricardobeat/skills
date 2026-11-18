@@ -1,6 +1,8 @@
 # Debugging C3 with LLDB
 
-C3 compiles through LLVM, producing native binaries with DWARF debug info. This means standard LLDB workflows apply, with some C3-specific naming conventions and type behaviors.
+C3 compiles through LLVM, producing native binaries with DWARF debug info. Standard LLDB workflows apply, with some C3-specific naming conventions and type behaviors.
+
+Contents: [Building](#building-for-debug) · [Symbols](#symbol-naming) · [Launching](#launching-lldb) · [Breakpoints](#breakpoints) · [Stepping](#stepping) · [Variables](#inspecting-variables) · [Watchpoints](#watchpoints) · [Backtrace](#backtrace) · [C3 behaviors](#c3-specific-behaviors-in-lldb) · [Workflows](#common-workflows) · [Quick reference](#lldb-quick-reference)
 
 ## Building for Debug
 
@@ -25,7 +27,7 @@ c3c build                          # all targets
 }
 ```
 
-Build with `c3c build debug`, then `lldb out/debug`.
+Build with `c3c build debug`, then run `lldb` on the executable path configured by the project's `output` setting. Use `c3c build debug --print-output` to see generated paths. `-gline-tables-only` emits line tables without full variable debug info.
 
 ---
 
@@ -47,8 +49,8 @@ The runtime generates a C-level `main` entry point (in `main_stub.c3`) that call
 ## Launching LLDB
 
 ```bash
-# Attach to a compiled binary
-lldb out/debug
+# Attach to the concrete binary produced by your build target
+lldb <path-to-built-executable>
 
 # Or compile and debug in one step
 c3c compile -O0 -o myapp src/main.c3 && lldb myapp
@@ -90,7 +92,7 @@ This stops at the actual statement, where variables are live.
 
 ```
 (lldb) breakpoint set -n myapp.divide -c 'b == 0'
-(lldb) breakpoint set -f main.c3 -l 42 -c 'catch err != 0'
+(lldb) breakpoint set -f main.c3 -l 42 -c 'result > 100'
 ```
 
 ### Managing breakpoints
@@ -254,11 +256,11 @@ Navigate frames:
 
 ### Optionals (`T?`)
 
-Optionals appear as their underlying type in LLDB. An uninitialized optional may show garbage:
+Optionals appear as their underlying type in LLDB. Declared locals are zero-initialized unless marked `@noinit`; uninitialized memory from `@noinit`, external data, or optimized debug information may show garbage:
 
 ```
 (int) safe = 2                      # optional int — value present
-(int) safe = 0                      # could be zero-value or uninitialized
+(int) safe = 0                      # valid zero result, or an unavailable fault representation
 ```
 
 To check if an optional holds a fault, use `@catch` or `@ok` in C3 source — LLDB shows the raw internal representation.
@@ -318,7 +320,7 @@ Avoid adding `--stop false SIGTRAP` to `~/.lldbinit` permanently — it would si
 
 ```bash
 c3c build debug
-lldb out/myapp
+lldb <path-to-built-executable>
 (lldb) run                          # run until crash
 (lldb) bt                           # see where it crashed
 (lldb) frame variable               # inspect local state

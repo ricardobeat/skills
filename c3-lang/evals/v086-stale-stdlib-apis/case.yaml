@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: v086-stale-stdlib-apis
+expected_outcome: |
+  The answer identifies sort::binarysearch returning plain sz, its requirement to pass a fixed array by reference or as a slice, the obsolete int::parse spelling, Rc4.crypt taking two char[] slices instead of a length argument, and the fixed-array-to-slice conversion issue. It does not flag String.to_int() without a base as an error. It consults the current declaration snapshot or installed stdlib source and verifies the corrected code with the compiler.

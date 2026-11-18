@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: c3-lang-debug-switch-fallthrough
+expected_outcome: |
+  The answer catches that calling report(DONE) prints "Done": the premise is wrong. It explains that C3 switch bodies do not fall through implicitly, that an empty case falls to the next non-empty case, and that nextcase provides explicit fallthrough. It does not claim that C3 shares C's fallthrough behavior.

@@ -1,6 +1,8 @@
 # C3 — Advanced Features
 
-Load when the task touches macros, generics, interfaces/dynamic dispatch, operator overloading, or contracts.
+Load when the task touches macros, generics, interfaces/dynamic dispatch, reflection, operator overloading, or contracts.
+
+Contents: [Macros](#macros) · [Generics](#generics) · [Reflection and Tags](#reflection-and-tags) · [Interfaces and Dynamic Dispatch](#interfaces-and-dynamic-dispatch) · [Operator Overloading](#operator-overloading) · [Contracts](#contracts)
 
 ---
 
@@ -58,20 +60,19 @@ macro sum(...) {                      // parameter list is literally `...`
 }
 ```
 
-**Compile-time-only macros:** a macro with only `$`-prefixed params executes entirely at compile time.
+A macro whose parameters are all `$`-prefixed and whose body is valid in a constant context can be folded at compile time. `$` parameters are call-site compile-time values; they do not by themselves force compile-time execution. Use `@safemacro` to allow a macro with `#` parameters to omit its leading `@` at call sites.
 
 ---
 
 ## Generics
 
-C3 generics use ad-hoc parameterization — no separate module-based generics.
+C3 supports generic module sections and individual generic structs, aliases, functions, and macros. Declare parameters in `<>`, instantiate them in `{}`.
 
 **Type and constant parameters** — both supported:
 ```c3
-// Generic params go on the MODULE declaration, in angle brackets
-module stack <Type>;
+module stack;
 
-struct Stack {
+struct Stack <Type> {
     sz capacity;
     sz size;
     Type* elems;
@@ -95,6 +96,8 @@ struct Matrix {
     Type[ROWS * COLS] data;
 }
 alias Mat4f = Matrix{float, 4, 4};
+
+alias Pair<Type> = Type[2];
 ```
 
 **Grouping:** generics with identical parameter names in the same module auto-instantiate together. Different names create separate groups.
@@ -114,16 +117,36 @@ sum_all{int}(my_array);
 
 **Extending specific instantiations** — possible but loses access to generic params:
 ```c3
-fn String IntStack.to_string(&self) { /* only works on Stack{int} */ }
+fn String Stack{int}.to_string(&self) { /* only works on Stack{int} */ }
 ```
 
-**Generic inference** can look through pointers. Nested generics inside generic functions/methods are allowed.
+Generic functions generally need explicit `{...}` arguments unless inference is available in the exact context. Generic methods can access a type's generic parameters when extending all instantiations; methods attached to `Foo{int}` cannot use those parameters. Conditional declarations within a generic instantiation use `@if(Type::kind == ...)`, while feature flags use `@feat`.
+
+---
+
+## Reflection and Tags
+
+Use `Type::property` for type metadata and `$reflect(value_or_member)` for declarations and values. A function pointer type has `::params` (reflected parameter references), `::returns`, and `::param_struct`; a named function exposes `::param_struct` through `$reflect(function).param_struct`. Parameter references support `.name`, `.type`, `.default_value`, `.get_tag(...)`, and `.has_tag(...)`. `ReflectedParam` is deprecated.
+
+```c3
+alias Callback = fn void(int count @tag("minimum", 1) = 4);
+fn void run(int count = 4) {}
+
+$assert(Callback::params[0].has_tag("minimum"));
+$assert(Callback::params[0].get_tag("minimum") == 1);
+var $default_count = Callback::params[0].default_value;
+$echo $reflect(run).param_struct.name;
+```
+
+Generic instantiations expose `::generic_args`, `::generic_qname`, and `::is_generic(Template)`. Enums and constsets expose `::values`, `::len`, `::from_ordinal`, and `::lookup_field`.
+
+`@tag(name, value)` is valid on functions, macros, function parameters, types, members, globals, and locals. Define attribute bundles with `attrmacro`; `attrdef` remains a compatibility spelling.
 
 ---
 
 ## Interfaces and Dynamic Dispatch
 
-C3 interfaces use dynamic dispatch similar to Objective-C — runtime method lookup via `any` (typeid + void*).
+C3 interfaces dispatch through interface metadata attached to `any` values. This is not name-based message lookup.
 
 ```c3
 // Interface methods declare NO receiver — the implementation supplies it
@@ -244,7 +267,7 @@ Pre/post-condition checks. Compilers may use them for static analysis, runtime a
 ```c3
 <*
   @param n : "must be positive and under 1000"
-  @require n > 0 && n < 1000
+  @require [n] n > 0 && n < 1000 : "n must be positive and under 1000"
   @ensure return > 0
 *>
 fn int process(int n) { return n * 10; }
@@ -268,11 +291,13 @@ fn void copy(int* dst, int* src, sz len) { ... }
 // & prefix — also asserts non-null
 ```
 
-**Behavior by mode:**
-- **Safe mode** (`"safe": true` in project.json): `@require` → runtime assertion
-- **Release mode**: contracts → optimizer hints (assumed true, zero cost)
-- Compile-time-evaluable contracts → always checked at compile time
+`[own]` means the function retains the pointer beyond its scope, `[drop]` means the pointer and pointee become invalid on return, and `[init]` means the function initializes the pointee. Document faults with `@return? other_function!, io::EOF`.
 
-`c3c` currently checks: compile-time constant validation, runtime `@require` assertions, and caller-side verification.
+**Behavior by mode:**
+- Safe mode (`"safe": true` in project.json) checks pre- and post-conditions with runtime assertions.
+- Unsafe mode drops those checks; contracts may still guide optimization.
+- Compile-time-evaluable contracts are checked during compilation.
+
+`O0` and `O1` default to safe, while `O2` and higher default to unsafe. A project target can override this with `"safe"`. `c3c` currently provides level 3 contract checking: constant validation, runtime `@require` assertions, and caller-side verification.
 
 > Contracts don't prevent aliasing violations — a `[in]` pointer can still be written through an alias. They're advisory, not enforced by the type system.

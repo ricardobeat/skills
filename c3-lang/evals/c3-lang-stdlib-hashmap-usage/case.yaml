@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: c3-lang-stdlib-hashmap-usage
+expected_outcome: |
+  The example uses HashMap{String, int} or an alias, init(mem, ...), set, get with catch/??/!!, @each or key/value iterators, and free. It compiles and runs on C3 0.8.6. It does not use removed 0.7.x spellings or claim usz is invalid.

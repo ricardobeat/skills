@@ -1,6 +1,6 @@
-# C3 Standard Library Reference (0.8.3)
+# C3 Standard Library Reference (0.8.6)
 
-Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, browse [github.com/c3lang/c3c/tree/v0.8.3/lib/std](https://github.com/c3lang/c3c/tree/v0.8.3/lib/std).
+Curated index of the most useful APIs in the C3 0.8.6 stdlib. For exhaustive declarations, read `references/stdlib/<namespace>.txt` or browse [github.com/c3lang/c3c/tree/v0.8.6/lib/std](https://github.com/c3lang/c3c/tree/v0.8.6/lib/std).
 
 > **Code-block convention:** Most fenced blocks below are reference summaries — method signatures, free-function call shapes, and option lists packed onto few lines for scannability. They are **not compilable C3** and are tagged `text` rather than `c3` to disable syntax highlighting. Where a section shows real, runnable C3 (e.g. the `libc` import, the custom-stream example), it is tagged `c3`.
 
@@ -10,11 +10,27 @@ Curated index of the most useful APIs in the C3 stdlib. For exhaustive lists, br
 - Method receivers: `(&self, …)` means pointer receiver (mutating).
 - `Allocator` is the standard allocator interface — pass `mem` (heap) or `tmem` (temp).
 
+## Contents
+
+- [Module Index](#module-index) · [Current stdlib state](#current-stdlib-state) · [Additional APIs](#additional-apis) · [Performance and correctness](#performance-and-correctness) · [Built-ins](#built-ins-builtin-no-import-needed)
+- [I/O](#stdio--inputoutput) · [Containers](#stdcollections--containers) · [Strings](#stdcorestring) · [Memory](#stdcoremem)
+- [Environment](#stdcoreenv--build-time-constants) · [Arrays](#stdcorearray) · [Unicode](#stdcorestringconv--unicode)
+- [Math](#stdmath) · [Time](#stdtime) · [OS](#stdos) · [Networking](#stdnet--networking) · [Threads](#stdthread) · [Atomics](#stdatomic--atomict)
+- [Sorting](#stdsort) · [Encoding](#stdencoding) · [Hashing](#stdhash) · [Crypto](#stdcrypto) · [Experimental](#stdexperimental--unstable-apis) · [Compression](#stdcompression) · [libc](#libc--c-library-bindings)
+
+### Current stdlib state
+
+`std::io` provides `CachedInStream` and `CachedOutStream`. `std::net::Socket` exposes `peer_address`, `peer_port`, `local_address`, and `local_port`; `std::collections::set` provides `TreeSet`; `std::collections::range` provides `slice`; `std::io::path` provides `Path.is_link`. `std::thread::ThreadPool` is the dynamic pool, while `std::thread::pool` contains the deprecated generic `ThreadPoolOld{SIZE}`. `std::gfx`, integer vectors and rectangles, `NonNull` / `Nullable`, cross-platform `os::dlopen` / `os::dlsym`, `Duration.to_sec`, `file::open_fd`, compression `level` parameters, matrix helpers, `XmlSerializer.add_raw`, and `chmod` support are available. `std::encoding::experimental::regex` is unstable.
+
+### Performance and correctness
+
+The deflate inflater uses a table-driven decoder and rejects truncated input. `crc32` uses slicing-by-16; `adler32.update` uses blocked modulo and portable vectors. `List.insert_at` and `List.push_front` use one `memmove`, `List.push` has an inline fast path, and `List.remove_item` / `compact` and their `FixedList` counterparts are single-pass. `ZipArchive.extract` verifies CRC32 and preserves modification time; `ZipEntryReader.seek` rejects negative positions.
+
 ---
 
 ## Module Index
 
-Every public module shipped with the C3 0.8.3 standard library. Submodules are listed under their parent.
+Public modules in the C3 0.8.6 standard library. Names below use their importable module paths; some parent modules declare the types directly.
 
 | Module | What it provides |
 |---|---|
@@ -30,7 +46,6 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | ↳ `collections::enumset` | `EnumSet{Enum}` — bitset over enum ordinals |
 | ↳ `collections::fixedlist` | `FixedList{T, N}` — stack-allocated, fixed capacity |
 | ↳ `collections::map` | `HashMap{K, V}`, `OrderedMap{K, V}` — hash maps |
-| ↳ `collections::set` | `HashSet{T}`, `OrderedSet{T}` — hash sets |
 | ↳ `collections::interfacelist` | `InterfaceList{Iface}` — list of interface-typed values (base of `AnyList`) |
 | ↳ `collections::blockingqueue` | Thread-safe linked blocking queue |
 | ↳ `collections::linkedlist` | Doubly linked list |
@@ -38,7 +53,9 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | ↳ `collections::maybe` | `Maybe{T}` — explicit optional wrapper |
 | ↳ `collections::object` | `Object` — JSON DOM (used by `json` / `ini` / `csv`) |
 | ↳ `collections::priorityqueue` | `PriorityQueue{T}` / `PriorityQueueMax{T}` (binary heap) |
-| ↳ `collections::range` | `Range{T}` / `ExclusiveRange{T}`; `range::upto/inclusive/exclusive` + `.to_array()` added 0.8.3 |
+| ↳ `collections::range` | `Range{T}` / `ExclusiveRange{T}`; `range::upto/inclusive/exclusive`, `.to_array()`, and `range::slice` |
+| ↳ `collections::ref` | `NonNull{Type}` / `Nullable{Type}` pointer wrappers; checked null access |
+| ↳ `collections::set` | `HashSet{T}`, `OrderedSet{T}`, `TreeSet{TreeValue}` |
 | ↳ `collections::result` | `Result{Ok, Err}` — error-with-payload; prefer built-in optionals in most cases |
 | ↳ `collections::ringbuffer` | `RingBuffer{T, N}` — fixed-capacity circular buffer |
 | ↳ `collections::sortedmap` | `SortedMap{K, V}` — skip-list ordered map |
@@ -50,37 +67,30 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | ↳ `compression::qoi` | QOI image encode/decode, file I/O |
 | ↳ `compression::zip` | ZIP archive read/write/extract |
 | **`std::core`** | Core types & utilities (see below) |
-| ↳ `core::alloc` | Low-level allocator primitives |
-| ↳ `core::allocators` | Concrete allocator implementations (arena, page, …) |
-| ↳ `core::ansi` | ANSI escape-sequence constants and helpers |
-| ↳ `core::array` | `array::contains/index_of`, `array::contains_slice/index_of_slice`, `array::@filter/zip/reduce/any/all/…` |
+| ↳ `core::array` | `array::contains/index_of`, `array::@filter/zip/reduce`, 2-D slice helpers |
 | ↳ `core::ascii` | `is_*`/`to_*` char predicates, `AsciiCharset` bitmaps |
 | ↳ `core::bitorder` | Endian / bit-order conversion |
 | ↳ `core::builtin` | Built-in helpers (see `Built-ins` section above) |
-| ↳ `core::builtin_comparison` | `equals`, `compare`, `less`, `greater` over arbitrary types |
-| ↳ `core::cinterop` | Helpers for C interop (struct layout, calling-convention macros) |
-| ↳ `core::conv` | Unicode BOM / UTF-8 ↔ UTF-16 ↔ UTF-32 conversion |
+| ↳ `core::cinterop` | C integer types and interop helpers |
 | ↳ `core::dstring` | `DString` — mutable dynamic string |
 | ↳ `core::env` | Compile-time platform/compiler constants (`env::LINUX`, `env::WIN32`, …) |
-| ↳ `core::logging` | Severity-tagged logging (`log`, `log_warning`, …) |
-| ↳ `core::mem` | `mem::new/alloc/`, `mem::copy/move/clear/set/equals`, `@pool`, `Volatile`, `UnalignedRef` |
-| ↳ `core::mem_mempool` | Fixed-size slab / mempool allocator |
-| ↳ `core::refcount` | `RefCounted` helper for intrusive reference counting |
-| ↳ `core::runtime` | Runtime startup / panic / fault helpers |
-| ↳ `core::runtime_benchmark` | `@benchmark` infrastructure |
-| ↳ `core::runtime_test` | `@test` infrastructure (`assert_eq`, `test_eq`, …) |
-| ↳ `core::slice2d` | 2-D slice operations (`slice2d::get`, `set`, `row`, `col`, …) |
-| ↳ `core::string` | `String` / `ZString` / `WString`, `string::format/tformat/bformat/join/split/…` |
-| ↳ `core::string_escape` | `escape` / `unescape` for JSON / C / shell / URL-style strings |
-| ↳ `core::string_iterator` | `StringIterator` over codepoints / graphemes |
-| ↳ `core::string_to_real` | Internal float-parsing helpers |
-| ↳ `core::test` | Test framework macros (`@test`, `test::fails`, `test::eq`, …) |
+| ↳ `core::log` | Severity-tagged logging, `log::get_logger` |
+| ↳ `core::mem` | `mem::new/alloc`, `mem::copy/move/clear/set/equals`, `@pool`, `Volatile`, `UnalignedRef` |
+| ↳ `core::mem::alloc` / `mem::allocators` | Low-level allocator primitives and concrete allocators |
+| ↳ `core::mem::mempool` | Fixed-size slab / mempool allocator |
+| ↳ `core::mem::rc` / `mem::ref` | Reference-counted and generic reference helpers |
+| ↳ `core::runtime` | Startup, panic, tests, benchmarks, and fault helpers |
+| ↳ `core::string` | `String` / `ZString` / `WString`, formatting, splitting, conversion, parsing, escape |
+| ↳ `core::string::ansi` | ANSI escape-sequence constants and helpers |
+| ↳ `core::string::conv` | Unicode BOM / UTF-8 ↔ UTF-16 ↔ UTF-32 conversion |
+| ↳ `core::string::iterator` | `StringIterator` over codepoints / graphemes |
+| ↳ `core::test` | Test framework macros (`@test`, `test::eq`, `test::@check`, …) |
 | ↳ `core::types` | Compile-time type predicates (`types::is_int`, `is_equatable`, `flat_kind`, …) |
 | ↳ `core::values` | Misc value constants |
 | **`std::crypto`** | Symmetric ciphers, KDF, signatures, RNG |
 | ↳ `crypto::aes` | `Aes` — AES-128/192/256, ECB/CBC/CTR |
 | ↳ `crypto::argon2` | Argon2id password hashing |
-| ↳ `crypto::chacha20` | `ChaCha20` stream cipher + `crypt_clone` |
+| ↳ `crypto::chacha20` | `ChaCha20` stream cipher + `encrypt` / `decrypt` helpers |
 | ↳ `crypto::dh` | Diffie-Hellman keypair generation |
 | ↳ `crypto::ed25519` | `ed25519::sign` / `ed25519::verify` |
 | ↳ `crypto::entropy` | `entropy::fill(buffer)` / `entropy::make(alloc, length)` |
@@ -93,11 +103,14 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | ↳ `encoding::csv` | `CsvReader`, `csv::@each_row` |
 | ↳ `encoding::hex` | Hex encode/decode |
 | ↳ `encoding::ini` | INI parse + encode |
-| ↳ `encoding::json` | `json::parse/tparse/load`, `JsonFlavor` enum |
+| ↳ `encoding::json` | `json::parse/tparse/load`, `marshal/unmarshal`, `JsonFlavor` enum |
+| ↳ `encoding::experimental::regex` | POSIX regex engine; unstable API with `EXTENDED`, `IGNORE_CASE`, and `NEWLINE` flags |
 | ↳ `encoding::pem` | PEM block parse/encode |
 | ↳ `encoding::xml` | XML parse + serialize |
 | **`std::experimental`** | Unstable APIs — API/behavior may change between releases |
-| ↳ `experimental::scheduler` | Frame-budgeted task scheduler (real-time / game-loop helper) |
+| ↳ `experimental::scheduler` | Generic `FrameScheduler{Event}` event queue |
+| **`std::gfx`** | Cross-platform windows, input, events, OpenGL/Vulkan helpers |
+| ↳ `gfx::egl`, `gfx::gl`, `gfx::macos` | Backend-specific graphics integration |
 | **`std::hash`** | Hashing primitives (see below) |
 | ↳ `hash::sha1`, `hash::sha256`, `hash::sha512` | SHA family (struct + `sha*::hash()` shortcut) |
 | ↳ `hash::md5` | MD5 |
@@ -132,28 +145,38 @@ Every public module shipped with the C3 0.8.3 standard library. Submodules are l
 | ↳ `math::random` | `DefaultRandom`, `Sfc64Random`, `Pcg32Random`, `Mt19937Random`, `ChaCha20Random`, `math::srand/rand/rnd` |
 | ↳ `math::distributions` | Statistical distributions (`normal`, `uniform`, `bernoulli`, …) |
 | ↳ `math::easing` | Easing functions (`ease_in_sine`, `ease_out_cubic`, …) |
-| ↳ `math::rectangle` | `Rectangle{T}` — Ray/AABB/Sphere intersection helpers; `Bounds` / `BoundingBox{T}` (min/max region, inclusive edges) added 0.8.3. `Rect.contains_point` is exclusive on the max edge as of 0.8.3. |
-| ↳ `math::uuid` | UUID v1/v3/v4/v5 generation |
+| ↳ `math::geometry::rectangle` / `geometry::bounding_box` | `Rectangle{T}`, `Bounds`, `BoundingBox{T}`, ray/AABB/sphere intersection helpers |
+| ↳ `math::uuid` | UUID v4 via `uuid::generate()` / `uuid::generate_from_random(random)` |
 | **`std::net`** | Networking (see below) |
-| ↳ `net::inetaddr` | `InetAddress` (IPv4/IPv6), part of `std::net` |
-| ↳ `net::` | Socket base types, socket options, poll, connect helpers |
+| ↳ `net::` | `InetAddress`, `Socket`, socket options, poll, connect helpers |
 | ↳ `net::tcp` | `TcpSocket`, `TcpServerSocket`, `tcp::connect/listen/accept` |
 | ↳ `net::udp` | `UdpSocket`, `udp::connect` |
 | ↳ `net::url` | `url::parse`, `Url`, `UrlQueryValues`, `url_encode` / `url_decode` |
 | **`std::os`** | Process control, env, backtrace, CPU detection (see below) |
 | ↳ `os::process` | `Process`, `os::process::spawn/run`, `p.join/terminate/stdout/stderr/…` |
+| ↳ `os::darwin`, `os::macos`, `os::win32`, `os::posix` | Platform bindings reorganized by framework/header in 0.8.5 |
+| ↳ `os::` | `os::num_cpu()`, `DylibHandle`, `os::dlopen` / `os::dlsym`, `chmod` support |
 | ↳ `os::env` | `os::env::get_var/set_var`, `get_home_dir`, `get_config_dir`, `executable_path` |
 | ↳ `os::backtrace` | `os::backtrace::capture_current/get` |
-| ↳ `os::` | `os::num_cpu()` — logical core count (declared directly in `std::os`, per-platform) |
-| **`std::sort`** | `quicksort`, `mergesort`, `insertionsort`, `countingsort`, `binarysearch`, `is_sorted`, `sorted` |
+| **`std::sort`** | `quicksort`, `mergesort`, `insertionsort`, `countingsort`, `binarysearch`, `is_sorted` |
 | **`std::thread`** | Threading primitives (see below) |
-| ↳ `thread::` | `Thread`, `thread::sleep/yield`, mutex + condvar + once |
-| ↳ `thread::pool` | `ThreadPool` (deprecated 0.8.1) |
-| ↳ `thread::threadpool` | `FixedThreadPool` (deprecated 0.8.1) |
+| ↳ `thread::` | `Thread`, `ThreadPool` (dynamic), `thread::sleep/yield`, mutex + condvar + once |
+| ↳ `thread::pool` | Deprecated generic `ThreadPoolOld{SIZE}`; `ThreadPool{SIZE}` alias needs `OLD_THREADPOOL` |
+| ↳ `thread::threadpool` | `FixedThreadPool` (deprecated) |
 | ↳ `thread::channel` | `BufferedChannel{T}`, `UnbufferedChannel{T}`, `UnboundedChannel{T}`, `OneShotChannel{T}` |
 | ↳ `thread::cpu` | `native_cpu()` — logical core count |
-| ↳ `thread::experimental::threadgroup` | `ThreadGroup{Task, Result}` — worker-pool abstraction (preferred over `ThreadPool`/`FixedThreadPool`) |
+| ↳ `thread::experimental::threadgroup` | `ThreadGroup{Task, Result}` — alternative worker-pool abstraction |
 | **`std::time`** | `Time`, `Duration`, `NanoDuration`, `DateTime` / `TzDateTime`, `Clock` |
+
+---
+
+## Additional APIs
+
+`std::encoding::experimental::regex` is unstable. Compile with `regex::compile(mem, pattern, EXTENDED)`, then call `re.matches(str)`, `re.exec(mem, str)`, `re.replace(mem, str, replacement)`, `re.treplace(str, replacement)`, `re.split(mem, str)`, or `re.free()`. Current compile flags are `EXTENDED`, `IGNORE_CASE`, and `NEWLINE`; execution flags are `NOT_BOL` and `NOT_EOL`. Current faults include `NO_MATCH`, `UNINITIALIZED_REGEX`, `INVALID_CHAR_CLASS`, `TRAILING_BACKSLASH`, `INVALID_BACKREF`, `UNCLOSED_BRACKET`, `UNBALANCED_PAREN`, and `PATTERN_TOO_COMPLEX`. Allocation failure is reported as `mem::OUT_OF_MEMORY`. The old `ICASE`, `NOTBOL`, `NOTEOL`, `NOMATCH`, `NOSUB`, and POSIX-style `BADPAT`/`ERANGE` names are obsolete.
+
+`std::collections::ref` provides `NonNull{Type}` and `Nullable{Type}`: `ref::nonnull(ptr)`, `ref::nonnull_try(ptr)`, `ref::nullable(ptr)`, `.get()`, `.value()`, `.set()`, `.set_try()`, `.to_nullable()`, and `.to_nonnull()`. `Nullable` accessors return optionals.
+
+`std::gfx` provides windows, events, input, and OpenGL/Vulkan integration; `std::gfx::egl`, `std::gfx::gl`, and `std::gfx::macos` contain backend bindings. `std::os` provides `DylibHandle`, `os::dlopen`, and `os::dlsym` across supported platforms. `file::open_fd` and `file::chmod` / `File.chmod` are available. `Socket.peer_address`, `peer_port`, `local_address`, and `local_port` report TCP/UDP endpoints.
 
 ---
 
@@ -265,7 +288,7 @@ io::read_buffer_to_end(&r, buf[:10])    // => slice of len 5
 io::read_all(&r, buf[:10])              // => fault io::UNEXPECTED_EOF
 ```
 
-A single `read_buffer` may return fewer bytes than requested even mid-stream, so loop on it (or use `read_buffer_to_end`) rather than assuming one call fills the buffer. `read_buffer` returning `0` is the EOF signal — it swallows the `io::EOF` the underlying `stream.read` raises. Call the raw `stream.read(buf)` interface method directly only if you want that `io::EOF` fault instead.
+A single `read_buffer` may return fewer bytes than requested even mid-stream, so loop on it (or use `read_buffer_to_end`) rather than assuming one call fills the buffer. `InStream.read` consistently returns `0` at EOF and no longer raises `io::EOF`; it requires a non-empty destination buffer. `read_buffer` returning `0` is the EOF signal.
 
 ### Implementing `InStream` / `OutStream` on your own types
 
@@ -306,6 +329,7 @@ Width / precision / flags work like C printf: `%-10.2f`, `%+05d`, `%.*s` etc.
 ```text
 File? file::open(String filename, String mode)        // modes: "r","w","rb","wb","r+","a", …
 File? file::open_path(Path path, String mode)
+File? file::open_fd(Fd fd, String mode)
 File  file::from_handle(CFile c_file)
 bool  file::exists(String path)
 bool  file::is_file(String path)        bool file::is_dir(String path)
@@ -361,7 +385,7 @@ void?     m.destroy()
 
 ## `std::collections` — Containers
 
-All containers come in two init flavors: `.init(alloc, ...)` heap, `.tinit(...)` temp. All take a `Type` (or `Key`/`Value`) generic parameter — instantiate with `alias MyList = List{int};`.
+Allocator-backed containers commonly offer `.init(alloc, ...)` for the heap and `.tinit(...)` for the temp allocator. Fixed-capacity value containers such as `BitSet`, `EnumMap`, `EnumSet`, and `RingBuffer` have different initialization rules. Instantiate generic containers with braces, e.g. `alias MyList = List{int};`.
 
 ### `List{T}` — dynamic array
 ```text
@@ -379,9 +403,9 @@ l.add_all(&other)   l.reserve(extra)   l.free()
 // Operators: l[i]  l[i] = v  len(l)  &l[i]
 ```
 
-### `FixedList{T, SIZE}` — stack-allocated fixed-cap list. Same API as `List` plus `push_try()`, `push_all_to_limit()`, `is_full()` (0.8.3).
+### `FixedList{T, SIZE}` — stack-allocated fixed-cap list. Same API as `List` plus `push_try()`, `push_all_to_limit()`, `is_full()`. `List.remove_first` / `remove_last` accept an `unordered` flag, and `List` / `FixedList` provide `remove_item` and `compact`.
 
-### `HashMap{K, V}` — open-addressed hash map
+### `HashMap{K, V}` — separate-chaining hash map
 ```text
 HashMap{String, int} m;
 m.init(mem, capacity = 16, load_factor = 0.75);   // m.tinit(...) for temp
@@ -420,18 +444,19 @@ m.clone(alloc)   m.merge(&other)
 // Deque (double-ended growable)
 d.push(v)  d.push_front(v)  d.pop()  d.pop_first()  d.first() / d.last()
 d.get(i)   d.set(i, v)      d.reserve(extra)  d.shrink()  d.normalize()
-d.pop_into(slice)  d.pop_first_into(slice)   d.prepend(slice)   // prepend: 0.8.3
-// LinkedList also gained prepend(slice) in 0.8.3
+d.pop_into(slice)  d.pop_first_into(slice)   d.prepend(slice)
+// LinkedList also has prepend(slice)
 // RingBuffer — fixed-cap circular; push, pop_first, first, last, get, set
 ```
 
 ### `Range{T}` / `ExclusiveRange{T}`
 ```c3
-// constructor macros (0.8.3) — infer T from the arguments
+// constructor macros — infer T from the arguments
 foreach (i : range::upto(3))          { }   // 0,1,2,3  — inclusive of `to`
 foreach (i : range::inclusive(1, 3))  { }   // 1,2,3
 foreach (i : range::exclusive(1, 3))  { }   // 1,2
-int[] a = range::inclusive(1, 3).to_array(mem);   // .to_array: 0.8.3
+int[] a = range::inclusive(1, 3).to_array(mem);
+int[] part = range::slice(arr, r);
 r.len()   r.contains(v)   r[i]
 ```
 
@@ -450,18 +475,18 @@ b.or(other) / b.and(other) / b.xor(other)    // operators: | & ^ |= &= ^=
 
 ### `EnumMap{Enum, V}` — fixed-size map keyed by an enum
 ```text
-EnumMap{Color, String} m;   m.init("");  // default for unset keys
-m.set(RED, "warm");        m.get(BLUE)?  // String?
+EnumMap{Color, String} m;   m.init("");  // value supplied for every key
+m.set(RED, "warm");        String v = m.get(BLUE);   // returns the default, not an optional
 m.get_ref(RED);                       // for in-place mutation
 m.len()   // == Enum::len
 ```
 
 ### `EnumSet{Enum}` — bitset over an enum's values
 ```text
-EnumSet{Color} s;   s.init();
-s.add(RED)  s.add(BLUE)  s.remove(GREEN)  s.contains(RED)
-s.set_union(&other)   s.intersection(&other)   s.difference(&other)
-s.values();   // iterate
+EnumSet{Color} s;
+s.add(RED)  s.add(BLUE)  s.remove(GREEN)  s.has(RED)  s.clear()
+s.add_all(&other)  s.remove_all(&other)  s.retain_all(&other)
+s.and_of(&other)  s.or_of(&other)  s.diff_of(&other)  s.xor_of(&other)
 ```
 
 ### `Result{Ok, Err}` — value-or-error-with-payload
@@ -488,7 +513,8 @@ AnyList list;   list.init(mem);
 list.push(42);  list.push("hello");
 list.push(Point{ 1, 2 });
 
-int n = list.first(int);          // typed pop
+int n = list.first(int);          // typed read of first value
+int m = list.pop(int);            // typed removal
 String s = list.get(1, String);   // typed get by index
 any v = list.first_any();         // untyped (caller's responsibility)
 list.len();
@@ -526,22 +552,26 @@ s.split_to_buffer(delim, buffer, max, skip_empty)?  // no alloc, into existing s
 
 s.trim(chars = " \n\t\r\f\v")    s.trim_left(chars)    s.trim_right(chars)
 s.trim_charset(ascii_charset)
-s.strip_prefix(prefix)     s.strip_suffix(suffix)   // formerly strip / strip_end
+s.strip_prefix(prefix)     s.strip_suffix(suffix)
 s.starts_with(p)           s.ends_with(p)
 s.contains(sub)            s.contains_char(c)
-s.index_of(sub)            s.rindex_of(sub)     // 0.8.2: empty `sub` is accepted
+s.index_of(sub)            s.rindex_of(sub)     // empty `sub` is accepted
 s.index_of_char(c)         s.index_of_char_from(c, start)   s.rindex_of_char(c)
 s.index_of_chars(char_slice)
 s.count(sub)               s.compare_to(other)       s.compare_to_ignore_case(other)
-s.to_lower(alloc) / s.tlower()    s.to_upper(alloc) / s.tupper()
+s.convert_to_lower()       s.convert_to_upper()
+s.to_lower_copy(alloc) / s.to_lower_tcopy()
+s.to_upper_copy(alloc) / s.to_upper_tcopy()
 s.zstr_copy(alloc)         s.zstr_tcopy()
 s.hash()                   s.free(alloc)
 
 // ZString methods
 zs.str_view()              zs.char_len()        zs.len()        zs == other (.eq)
 
-// Parsing into integers / floats (find on `int.parse`, `long.parse`, `float.parse`, etc.)
-int? int::parse(s, int radix = 10)        // stdlib offers parse() helpers per type
+// Parsing into integers / floats (integer methods take an optional base, default 10)
+int?     n = s.to_int()           long? l = s.to_long(16)
+double?  d = s.to_double()        float? f = s.to_float()
+int?     n2 = string::to_integer{int}(value, 10)
 ```
 
 ### `std::core::dstring` — DString (dynamic, mutable string)
@@ -648,7 +678,7 @@ env::NATIVE_THREADING   env::NATIVE_STACKTRACE   env::HAS_NATIVE_ERRNO
 env::AUTHORS   env::AUTHOR_EMAILS   env::PROJECT_VERSION   env::PROJECT_PATH
 ```
 
-Use in `$if env::ARCH_64_BIT:` etc. For conditional top-level declarations use `@feat(WIN32)` (0.8.3; `@if` there is deprecated) — `@feat` takes a bare flag, `$if` takes an `env::` constant.
+Use in `$if env::ARCH_64_BIT:` etc. For conditional top-level declarations use `@feat(WIN32)`; `@feat` takes a feature list, while `$if` takes a compile-time `env::` constant.
 
 ---
 
@@ -674,7 +704,7 @@ array::slice2d(&arr, x = 0, xlen = 0, y = 0, ylen = 0)
 
 ---
 
-## `std::core::conv` — Unicode
+## `std::core::string::conv` — Unicode
 
 ```text
 conv::detect_bom(input)              // UnicodeBom enum
@@ -710,17 +740,17 @@ math::HALF_MAX / HALF_MIN / HALF_EPSILON …  (same for double/float128/bfloat16
 math::sin(x)   math::cos(x)   math::tan(x)   math::asin(x)   math::acos(x)   math::atan(x)
 math::atan2(y, x)
 math::sinh(x)  math::cosh(x)  math::tanh(x)  math::asinh(x)  math::acosh(x)  math::atanh(x)
-math::csc(x)   math::sec(x)   math::cot(x)    // formerly cosec, cotan
+math::csc(x)   math::sec(x)   math::cot(x)
 math::exp(x)   math::exp2(x)  math::exp10(x)
 math::log(x, base)             math::log2(x)   math::log10(x)   math::ln(x)
-math::pow(x, y)   math::sqrt(x)   math::cbrt(x)   math::hypot(a, b)
+math::pow(x, y)   math::sqrt(x)   math::hypot(a, b)
 
 // Numeric
 math::abs(x)   math::sign(x)   math::clamp(x, lo, hi)
 math::min(a, b, …)   math::max(a, b, …)
 math::ceil(x)  math::floor(x)  math::round(x)   math::trunc(x)
-math::fmod(x, y)  math::mad(a, b, c)            // mad was formerly muladd
-math::lerp(a, b, t)   math::lerp_smooth(a, b, t)
+math::mad(a, b, c)   math::sign(x)   math::is_inf(x)   math::signbit(x)
+math::lerp(a, b, t)   math::copysign(x, y)
 math::deg_to_rad(x)   math::rad_to_deg(x)
 ```
 
@@ -754,6 +784,7 @@ v.ceil() v.floor() v.round() v.trunc() v.rint() v.nearbyint() v.roundeven()
 v.pow(exp)    v.fma(b, c)      v.copysign(sgn)
 v.comp_lt(o) / comp_le / comp_eq / comp_gt / comp_ge / comp_ne   // -> bool[<*>] masks
 
+// Signed integer aliases added in 0.8.5: IntVec2, IntVec3, IntVec4, IntRect
 // 2-element only
 v.cross(v2) -> scalar    v.rotate(angle)    v.angle(v2)    v.transform(Matrix4f)
 // 3-element only
@@ -768,7 +799,9 @@ void        vector::orthonormalize(double[<3>]* v1, double[<3>]* v2)           /
 bool[<*>]   vector::mask_from_int($Type, mask)     mask.mask_to_int()
 ```
 
-### Other math: `bigint`, `complex`, `matrix` (`Matrix2/3/4`, `Matrix2f/3f/4f`), `quaternion` (`Quaternionf`), `distributions`, `easing`, `shapes`, `uuid`.
+### Other math: `bigint`, `complex`, `matrix` (`Matrix2/3/4`, `Matrix2f/3f/4f`), `quaternion` (`Quaternionf`), `distributions`, `easing`, `geometry`, `uuid`.
+
+Matrix helpers include `perspective_infinite`, `perspective_reverse_z`, `perspective_infinite_reverse_z`, `column`, `row`, `set_column`, `set_row`, and `scale_factors`. `math::sign` works with floats and vectors.
 
 ---
 
@@ -777,7 +810,7 @@ bool[<*>]   vector::mask_from_int($Type, mask)     mask.mask_to_int()
 ```text
 // Duration / time constants (all in microseconds)
 time::US time::MS time::SEC time::MIN time::HOUR time::DAY time::WEEK time::MONTH time::YEAR
-time::DURATION_ZERO   time::FAR_FUTURE   time::FAR_PAST
+time::DURATION_ZERO   time::FAR_FUTURE   time::FAR_PAST   time::FOREVER_PAST
 
 // Helpers to build a Duration
 time::us(n)  time::ms(n)  time::sec(n)  time::min(n)  time::hour(n)
@@ -785,9 +818,10 @@ time::us(n)  time::ms(n)  time::sec(n)  time::min(n)  time::hour(n)
 // Time / Duration / NanoDuration
 Time t = time::now();         // wall clock (microseconds since epoch)
 Duration d = t1 - t0;         // arithmetic on Time values returns Duration
-t.add_seconds(n)  t.diff_hours(other)  t.compare_to(other)  …
-Duration.to_ms(d)  Duration.to_nano(d)
+t.add_seconds(n)  t.diff_hours(other)  t.diff_months(other)  t.diff_years(other)
+Duration.to_ms(d)  Duration.to_sec(d)  Duration.to_nano(d)
 NanoDuration.to_ms(nd)  NanoDuration.to_sec(nd)  NanoDuration.to_duration(nd)
+time::day(n)  time::week(n)  time::month(n)  time::year(n)
 
 // DateTime — struct with fields .usec/.sec/.min/.hour/.day/.month/.weekday/.year/.year_day/.time
 DateTime dt = datetime::now();
@@ -953,12 +987,13 @@ ec.clear()
 // OneShotChannel: push / pop / close / destroy only — no try_* variants
 ```
 
-**`ThreadPool(<SIZE>)` and `FixedThreadPool` are deprecated as of 0.8.1.** They still work, but new code should not build on them — prefer `std::thread::experimental::threadgroup`'s `ThreadGroup` for a worker pool.
+`std::thread::ThreadPool` is the dynamic pool. `tp.init(mem, max_threads, queue_capacity = 0, keep_alive = time::MIN, thread_settings = {})?` configures it; `add_task`, `prewarm`, `queue_count`, `busy_count`, `worker_count`, `destroy`, and `destroy_now` manage work and lifetime.
 
-### `std::thread::pool` — fixed-capacity generic thread pool (deprecated)
+### `std::thread::pool` — deprecated generic compatibility pool
 ```text
-ThreadPool(<8>) tp;         tp.init(ThreadSettings settings = {})?
+ThreadPoolOld{8} tp;      tp.init()?
 tp.push(ThreadFn func, void* arg)      tp.join()    tp.destroy()    tp.stop_and_destroy()
+// ThreadPool{8} is the old alias, available only with OLD_THREADPOOL
 ```
 
 ### `std::thread::threadpool` — `FixedThreadPool` worker pool (deprecated)
@@ -998,9 +1033,8 @@ atomic::fetch_max(&x, v)     atomic::fetch_min(&x, v)
 sort::quicksort(array)             sort::quicksort(array, cmp_fn)
 sort::mergesort(array, alloc)      // stable
 sort::insertionsort(array)         sort::countingsort(array)
-sort::sort(array)                  // chooses a good default
-sort::sorted(alloc, array)         // returns a new sorted slice
-sort::binarysearch(sorted_array, key)?    // sz?  index when found
+sort::binarysearch(sorted_slice, key)  // plain sz: match or insertion position in [0, len]
+sort::binarysearch(&sorted_array, key) // fixed arrays must be passed by reference
 sort::is_sorted(array)
 ```
 
@@ -1043,23 +1077,26 @@ CsvRow? row = r.read_row(alloc);    r.tread_row()    r.skip_row()
 row.get_col(idx)    row.len()    row.free()
 csv::@each_row(stream, separator = ","; |row| { ... })
 
-// base64 (alphabets: STANDARD, URL) / base32 / hex — same shape
+// base64 (alphabets: STANDARD, URL); base32 and hex follow a similar shape
 String   base64::encode(alloc, src, padding = '=', &STANDARD)     String base64::tencode(src, …)
 char[]?  base64::decode(alloc, src, padding = '=', &STANDARD)     char[]? base64::tdecode(src)
 String   base64::encode_into(dst_buf, src, …)                      char[]? base64::decode_into(dst_buf, src)
 sz       base64::encode_len(n, padding)                           sz? base64::decode_len(n, padding)
-// hex: same shape minus alphabet/padding params; base32: same shape.
+// base32::encode / tencode return String?; check the return value.
+// hex: same shape minus alphabet/padding params.
 
 // xml   — parse + serialize.   See encoding::xml.
 // pem   — PEM block parse/encode.             See encoding::pem.
 // codepage — single-byte encoding tables.     See encoding::codepage.
 ```
 
+`json::marshal` and `json::unmarshal` support structs, arrays, slices, `String`, integers, floats, bools, enums, constsets, typedefs, and nested combinations of those. `json::marshal` rejects a float that is infinity or NaN; `json::marshal_try` returns an optional for that case. `json::marshal_to` writes to an `OutStream`. `json::unmarshal` accepts a `String` or `InStream` input and the target type as a compile-time `$Type` argument.
+
 ---
 
 ## `std::hash`
 
-Hashing structs are all `init / update(data) / final()`. Top-level `hash(data)` shortcut where useful.
+Many hashing structs use `init / update(data) / final()`, but the shape is not universal. BLAKE2 finalizes into a supplied buffer and BLAKE3 takes output length/seek values. Check `references/stdlib/hash.txt` or the installed source before using a digest API.
 
 | Module | Constants | Top-level | Struct | HMAC alias |
 |--------|-----------|-----------|--------|------------|
@@ -1097,9 +1134,10 @@ aes.encrypt_buffer(in, out);   aes.decrypt_buffer(in, out);
 aes.destroy();
 
 // ChaCha20
-ChaCha20 c;   c.init(key[32], nonce[12], counter = 0);   c.transform(buf);
-char[] ct = chacha20::encrypt(alloc, key, nonce, plain);  // alias `crypt_clone`
-char[] pt = chacha20::decrypt(alloc, key, nonce, cipher);
+ChaCha20 c;   c.init(key, nonce, counter = 0);   c.transform(buf);
+char[] ct = chacha20::encrypt(mem, plain, key, nonce);
+char[] pt = chacha20::decrypt(mem, cipher, key, nonce);
+char[] buffer = chacha20::tencrypt(plain, key, nonce);
 
 // Argon2 password hashing
 crypto::argon2::hash(...)
@@ -1115,12 +1153,13 @@ BigInt secret = dh::generate_secret(BigInt p, BigInt x, BigInt y)
 BigInt pubkey = dh::public_key(BigInt p, BigInt g, BigInt x)
 
 // RC4 (legacy stream cipher)
-Rc4 c;    c.init(key);    c.crypt(src, dst, len);   // in-place if src == dst
-// or: rc4::encrypt(alloc, key, plain) / decrypt(alloc, key, cipher)
+Rc4 c;    c.init(key);    c.crypt(src, dst);
+rc4::crypt(key, data);                       // in-place helper
 
-// Keccak / SHA-3 / Shake — same init/update/final pattern as the hash structs
-keccak::hash(data)?                           // one-shot, default Keccak-256
-Sha3_256 ctx;   ctx.init();   ctx.update(chunk);   char[32] d = ctx.final();
+// SHA-3 one-shot hashing; instantiate Sha3{bits} for streaming
+char[32] digest = sha3::hash(256, data);
+sha3::hash_into(256, digest, data);
+Sha3{256} ctx;   ctx.init();   ctx.update(chunk);
 
 // System entropy
 void?   crypto::entropy::fill(char[] buffer, bool timeout = false)                 // fills buffer in place
@@ -1133,16 +1172,15 @@ char[]? crypto::entropy::make(Allocator allocator, sz length, bool timeout = fal
 
 APIs here are shipped to gather feedback but **may change or be removed** between releases. Don't depend on them in production code without pinning a compiler version.
 
-### `std::experimental::FrameScheduler`
+### `std::experimental::FrameScheduler{Event}`
 ```text
-// Real-time / game-loop helper — schedule work within a per-frame budget.
-FrameScheduler sched;
-sched.init(.target_fps = 60, .budget_us = 16_000);
-sched.run(|frame| {
-    frame.time_ns;        // ns since last frame
-    frame.remaining_us;   // budget left this frame
-    // … update/render …
-});
+FrameScheduler{MyEvent} sched;
+sched.init();
+sched.queue_event(event);
+sched.queue_delayed_event(event, delay);
+MyEvent? next = sched.pop_event();
+bool pending = sched.has_delayed();
+sched.@destroy(; MyEvent e) {};
 ```
 
 ---
@@ -1151,12 +1189,14 @@ sched.run(|frame| {
 
 ```text
 // DEFLATE (RFC 1951)
-char[]? deflate::compress(alloc, input)             char[]? deflate::decompress(alloc, input)
-void?   deflate::compress_stream(alloc, InStream in, OutStream out)
+char[]? deflate::compress(alloc, input, level = DEFAULT_LEVEL)
+char[]? deflate::decompress(alloc, input)
+void?   deflate::compress_stream(alloc, InStream in, OutStream out, level = DEFAULT_LEVEL)
+// level: 1..9; MIN_LEVEL is fastest and MAX_LEVEL gives the smallest output
 void?   deflate::decompress_stream(InStream in, OutStream out)
 
 // gzip (RFC 1952) — wraps DEFLATE with header/CRC
-char[]? gzip::compress(alloc, src, hcrc=false, char[] extra={}, String name="", String comment="")
+char[]? gzip::compress(alloc, src, hcrc=false, extra={}, name="", comment="", level=DEFAULT_LEVEL)
 Gzip?   gzip::uncompress(alloc, src)             // returns Gzip (with metadata)
 char[]? gzip::uncompress_bytes(alloc, src)
 void?   gzip::compress_stream(OutStream w, src, hcrc=false, …)
@@ -1166,10 +1206,12 @@ void?   gzip::uncompress_stream(OutStream w, InStream src)
 ZipArchive? zip::open(alloc, path, mode = "r")          ZipArchive? zip::recover(alloc, path)
 za.close()                  za.count()              za.stat(filename) / za.stat_at(idx)
 za.read_file_all(alloc, name, password = "")
-za.write_file(name, data, method = DEFLATE)             za.add_directory(name)
+za.write_file(name, data, method = DEFLATE, level = DEFAULT_LEVEL)
+za.add_directory(name)
 za.extract(output_dir, password = "")
 za.open_reader(name, password = "")?  // ZipEntryReader (InStream)
-za.open_writer(name, method = DEFLATE)?  // ZipEntryWriter (OutStream)
+za.open_writer(name, method = DEFLATE, level = DEFAULT_LEVEL)?
+// ZipEntryWriter (OutStream); level is ignored for STORE
 
 // QOI image format
 char[]? qoi::encode(alloc, pixels, &desc)        char[]? qoi::decode(alloc, data, &desc, channels = AUTO)

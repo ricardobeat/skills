@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: c3-lang-migrate-0-7-to-0-8
+expected_outcome: |
+  The answer updates $sizeof(int) to @sizeof(int) or int::size, int.sizeof to int::size, file::read_all to file::load_temp with an explicit String cast, raw.strip() to raw.trim(), and LinkedHashMap to OrderedMap. It leaves usz alone because it is a valid unsigned size type in 0.8.6. The rewritten file compiles with c3c compile-only.
