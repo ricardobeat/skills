@@ -12,6 +12,7 @@ Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https:/
 **Docs:** [Single-page manual](https://c3-lang.org/all/) · [Optionals](https://c3-lang.org/language-common/optionals-essential/) · [Generics](https://c3-lang.org/generic-programming/generics/) · [Attributes](https://c3-lang.org/language-common/attributes/) · [Project config](https://c3-lang.org/build-your-project/project-config/) · [Library packaging](https://c3-lang.org/misc-advanced/library-packaging/) · [Stdlib source](https://github.com/c3lang/c3c/tree/v0.8.6/lib/std)
 
 **Reference files (load on demand):**
+- `references/ownership.md` — allocator lifetimes, `@pool()`/`tmem`, `@stack_mem`, `defer`/`defer catch`, leak & `VMEM_TEMP` verification
 - `references/stdlib.md` — curated stdlib guide; open only the sections needed for the task
 - `references/stdlib/index.txt` — namespace index for the detailed signature snapshots
 - `references/stdlib/<namespace>.txt` — public declaration snapshots generated with C3 0.8.6; check these before guessing an API
@@ -141,8 +142,8 @@ After `if (catch err = x) { return; }`, `x` narrows to its plain value for the r
 ## Memory
 
 ```c3
-// Heap
-int* arr = mem::new_array(int, n);   // zero-initialized
+// Heap (new_array zero-inits and returns a slice; alloc_array leaves uninit)
+int[] arr = mem::new_array(int, n);
 mem::free(arr);
 
 // Temp allocator — freed at @pool() exit; never return temp data past the scope
@@ -150,7 +151,12 @@ mem::free(arr);
     String s = string::tformat("hello %s", name);
 };
 
-// defer runs on every exit; multiple defers run last-to-first
+// Stack-first scratch with automatic heap spillover (add ~32B slack for header/align)
+@stack_mem(256; Allocator smem) {
+    if (try buf = alloc::alloc_array_try(smem, char, needed)) { ... }
+};
+
+// defer is block-scoped and runs last-to-first on every exit
 fn void? process(String path) {
     File f = file::open(path, "r")!;
     defer f.close();
@@ -162,7 +168,7 @@ fn void? process(String path) {
 struct Config @mustinit { String path; int retries; }
 ```
 
-Key allocators: `mem::new(T)` / `mem::tnew(T)`, `mem::new_array(T,n)` / `mem::temp_array(T,n)`, `@clone(v)` / `@tclone(v)`, `mem::free(p)`.
+Key allocators: `mem::new(T)` / `mem::tnew(T)`, `mem::new_array(T, n)` / `mem::temp_array(T, n)`, `mem::alloc_array(T, n)` / `mem::talloc_array(T, n)`, `alloc::alloc_array_try(a, T, n)`, `@clone(v)` / `@tclone(v)`, `mem::free(p)`. Verify lifetimes in tests with `mem::@assert_leak() { ... };` (`"MEMORY_ASSERTS"`) and `"VMEM_TEMP"` on debug/ASan targets. See `references/ownership.md` for ownership patterns, rollback idioms, and allocator rules.
 
 ---
 
@@ -310,7 +316,13 @@ Run with `c3c test [target]` or `c3c benchmark [target]`. `std::core::test` prov
 | Switch falls through unexpectedly | C3 auto-breaks; use `nextcase` for explicit fallthrough |
 | `a & b == c` wrong result | Bitwise binds **tighter** than `==` in C3 (opposite of C) — parenthesize |
 | `??` precedence surprise | `f() ?? x + 1` is `(f() ?? x) + 1` — binds tighter than arithmetic |
-| Temp data dies after `@pool()` | Copy results out before the block closes |
+| Temp data dies after `@pool()` | Copy results out before the block closes; enable `"VMEM_TEMP"` on debug/ASan targets to catch escapes |
+| `if (cond) defer cleanup();` runs too early | `defer` is **block-scoped**, not function-scoped — write `defer if (cond) cleanup();` |
+| `return` inside `@pool()` / `@stack_mem()` | Returns from the **enclosing function**, not the macro block — use `if (try ...)` to skip the rest of the block |
+| Side effect in `assert(fn())` breaks in release | `assert` is stripped in fast/unsafe (`-O2+`) builds — call first, then `assert(ok)` or `if (!ok) unreachable(...)` |
+| `mem::free` on a `libc::malloc` pointer | Never mix `libc` and `mem` allocators — breaks `TrackingAllocator` / `mem::@assert_leak()` |
+| `mem::clear` after `mem::new_array` | `new_array`/`temp_array` already zero-init; use `alloc_array`/`talloc_array` when overwriting all elements |
+| `mem::malloc` / `new_array` panics on OOM | Use `alloc::malloc_try` / `alloc::alloc_array_try` / `alloc::realloc_array_try` for fallible allocation |
 | `#param` side effects repeat | `#expr` args re-evaluated on each use — not memoized |
 | Dangling slice | Slice lifetime tied to underlying pointer — don't return stack/temp slices |
 | Unhandled optional | `String s = fn_returning_optional()` — missing `!`, `??`, or `catch` |

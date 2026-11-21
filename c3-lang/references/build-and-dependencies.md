@@ -50,6 +50,10 @@ Other 0.8.6 settings include `features`, `function-sections`, `data-sections`, `
 
 Safe mode, not a target's name, controls runtime contract checks and bounds/null checks. `O0` and `O1` default to safe; `O2` and above default to unsafe. A custom target can set `"safe": true` explicitly.
 
+Useful diagnostic features for `"features"` on debug/ASan/test targets:
+- `"VMEM_TEMP"` — backs `tmem` with `Vmem` and page-protects unused regions (in `O0`/`O1` or safe mode), turning escaped `@pool()` reads/writes into immediate faults.
+- `"MEMORY_ASSERTS"` — enables `mem::@assert_leak()` (`TrackingAllocator`) even on targets without full safe mode.
+
 ## Source libraries
 
 A `source-lib` target packs C3 sources, C sources, and headers into a `.c3l` library usable on any platform:

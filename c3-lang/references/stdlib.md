@@ -647,15 +647,16 @@ mem::compare_exchange(&p, old, new, ordering = SEQ_CONSISTENT)
 Volatile{int} v;     v.set(5);     int x = v.get();
 UnalignedRef{int} u;
 
-// Temp allocator (arena)
-@pool(sz reserve = 0; |...| { ... });             // create + free at scope exit
-mem::@scoped(allocator; |...| { ... })            // make `mem` reference allocator
-mem::@stack_mem(2048; |Allocator m| { ... })      // arena on stack
-mem::@stack_pool(2048; |...| { ... })             // stack-based @pool
+// Temp allocator (arena) — trailing macro blocks take no pipe delimiters
+@pool() { ... };                                  // create + free at scope exit
+@pool_init(mem, 256 * 1024) { ... };              // init tmem on a new OS thread
+mem::@scoped(allocator) { ... };                  // make `mem` reference allocator
+mem::@stack_mem(2048; Allocator m) { ... };       // stack arena with heap spillover
+mem::@stack_pool(2048) { ... };                   // stack-based @pool
 
-// Leak detection
-mem::@assert_leak(report = true; |...| { ... })   // panic if any allocs leak
-mem::@report_heap_allocs_in_scope(enabled = true; |...| { ... })
+// Leak detection (active in safe mode or with -D MEMORY_ASSERTS)
+mem::@assert_leak() { ... };                      // panic if any `mem` allocs leak
+mem::@report_heap_allocs_in_scope() { ... };
 ```
 
 ---
