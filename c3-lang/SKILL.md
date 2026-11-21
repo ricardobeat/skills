@@ -15,26 +15,22 @@ Resources: [c3-lang.org](https://c3-lang.org) · [github.com/c3lang/c3c](https:/
 - `references/ownership.md` — allocator lifetimes, `@pool()`/`tmem`, `@stack_mem`, `defer`/`defer catch`, leak & `VMEM_TEMP` verification
 - `references/stdlib.md` — curated stdlib guide; open only the sections needed for the task
 - `references/stdlib/index.txt` — namespace index for the detailed signature snapshots
-- `references/stdlib/<namespace>.txt` — public declaration snapshots generated with C3 0.8.6; check these before guessing an API
+- `references/stdlib/<namespace>.txt` — 0.8.6 public declaration snapshots
 - `references/advanced.md` — macros, generics, interfaces, reflection, operator overloading, contracts
 - `references/c_interop.md` — declaring C symbols, exporting symbols, linking, exact assembly names
 - `references/build-and-dependencies.md` — project targets, dependency fetching, `.c3l` source libraries
 - `references/debugging-with-lldb.md` — breakpoints, stepping, variables, traps
 
-**Locating c3c sources & stdlib:** source checkout → `<repo>/lib/std`. Homebrew → `$(brew --prefix c3c)/lib/c3/std`. Linux installations vary; inspect `c3c --build-env` or the installed distribution rather than assuming a path.
+**Locating stdlib source:** inspect `c3c --build-env` (or `<repo>/lib/std` in a compiler source checkout).
 
 ---
 
 ## Working Rules
 
-- Target C3 0.8.6 syntax. Run `c3c --version` before version-sensitive work.
-- Read the relevant stdlib signature file or the installed standard-library source before using an uncertain API. The snapshots were generated on macOS arm64; check the installed source for other platform bindings. Do not infer C3 APIs from C++, Rust, or older C3 examples.
-- For single files, verify with `c3c compile file.c3` or `c3c compile-run file.c3`. Use `compile-only` when linking is unavailable. For projects, run the narrowest relevant `c3c build`, `c3c test`, or `c3c run` target after changes.
-- Keep allocator and error-propagation choices explicit. Free heap resources, bound `@pool()` lifetimes, and handle every optional before producing the final code.
-- `c3fmt` formats source files. Copy `assets/.c3fmt` to the project root when the project has no formatter configuration.
-- Use `c3c --list-project-properties`, `--list-manifest-properties`, `--list-attributes`, `--list-builtins`, and `--list-type-properties` for exhaustive compiler-provided lists.
-
-**C3 0.8.6 state:** `@feat` / `$feat` accept feature lists, `excuse` / `constset` / `attrmacro` are the documented spellings, and `@asmname` preserves exact assembly symbol names. Source libraries and registry dependencies use `.c3l` packaging and checksum verification. `std::gfx`, `TreeSet`, `NonNull` / `Nullable`, cross-platform dylib helpers, and `file::open_fd` are available. Single-statement `else if` requires braces, and `std::encoding::experimental::regex` uses `IGNORE_CASE`, `NOT_BOL`, `NOT_EOL`, and `NO_MATCH` names.
+- Check `references/stdlib/<namespace>.txt` or the installed stdlib source before guessing an unfamiliar API.
+- Verify edits with the narrowest relevant `c3c build`, `c3c test`, `c3c run`, or `c3c compile-run` command (`compile-only` when linking is unavailable).
+- Format with `c3fmt`; copy `assets/.c3fmt` to the project root when none exists.
+- Query the compiler directly for exhaustive lists: `c3c --list-project-properties`, `--list-manifest-properties`, `--list-attributes`, `--list-builtins`, `--list-type-properties`.
 
 ---
 
@@ -290,9 +286,7 @@ c3c vendor-fetch <library>
 c3c docgen
 ```
 
-`project.json` targets support `"type": "executable" | "static-lib" | "dynamic-lib" | "source-lib" | "object-files" | "prepare" | "benchmark" | "test"`, `"depends-on"`, `"safe"`, `"opt"`, and `"strip-unused"`. Other useful 0.8.6 settings include `"features"`, `"function-sections"`, `"data-sections"`, `"stack-probe"`, `"stack-protector"`, `"env"`, and `"env-override"`. See `references/build-and-dependencies.md` for packaging and dependency rules.
-
-Verify a snippet with `c3c compile-run snippet.c3`. Add `--use-stdlib=no` for stdlib-free examples. Enable `--warn-unusedlocal` and `--warn-unusedparam` for a stricter review. Use `--stats=summary`, `full`, or `json` for compiler statistics.
+`project.json` target types: `executable`, `static-lib`, `dynamic-lib`, `source-lib`, `object-files`, `prepare`, `benchmark`, `test`. Useful flags: `--use-stdlib=no`, `--warn-unusedlocal`, `--warn-unusedparam`, `--stats=summary|full|json`. See `references/build-and-dependencies.md` for target settings, diagnostic features, and `.c3l` packaging.
 
 ---
 
