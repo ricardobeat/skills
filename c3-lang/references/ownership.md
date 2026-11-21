@@ -1,8 +1,6 @@
 # C3 — Memory Ownership and Lifetime Patterns (0.8.6)
 
-Load when designing data structures, choosing allocators (`mem`, `tmem`, `@stack_mem`, custom `Allocator`), writing teardown/rollback logic, or auditing C3 code for leaks and use-after-free bugs.
-
-C3 has no RAII destructors or `unique_ptr`. Instead, ownership stays explicit and predictable through four patterns: allocator-driven lifetimes, flat containers with indices, `defer` / `defer catch`, and contract/runtime verification.
+C3 has no RAII destructors or `unique_ptr`. Instead, ownership stays explicit through four patterns: allocator-driven lifetimes, flat containers with indices, `defer` / `defer catch`, and contract/runtime verification.
 
 ---
 
@@ -22,7 +20,7 @@ C3 has no RAII destructors or `unique_ptr`. Instead, ownership stays explicit an
 - **Secondary OS threads** have no temp allocator until initialized: wrap thread entry points in `@pool_init(mem, 256 * 1024) { ... };`.
 
 ```c3
-fn char[]? resolve_path(Allocator allocator, String dir, String name) {
+fn String? resolve_path(Allocator allocator, String dir, String name) {
     @pool() {
         String candidate = string::tformat("%s/%s", dir, name);
         if (!file::exists(candidate)) return NOT_FOUND~;
@@ -127,7 +125,7 @@ When growing, shrinking, or replacing an owned buffer, **allocate the new buffer
   - `@param [own] p` — callee takes ownership beyond the call
   - `@param [drop] p` — callee frees/invalidates `p` (e.g., `destroy` / `end` functions)
   - `@param [init] p` — callee initializes `*p`
-- Keep `destroy()` and `reset()` teardown symmetric when a runtime/heap can be reset in place: every owned side table, registry, and GC root cleared in `destroy()` must also be released or reset in `reset()`.
+- Keep `destroy()` and `reset()` teardown symmetric when a runtime or state struct can be reset in place: every owned table, cache, and registry freed in `destroy()` must also be released or reset in `reset()`.
 
 ---
 

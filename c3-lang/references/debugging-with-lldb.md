@@ -10,7 +10,7 @@ Contents: [Building](#building-for-debug) · [Symbols](#symbol-naming) · [Launc
 # Single file — quickest way to get a debug binary (debug info is automatic at -O0)
 c3c compile -O0 -o myapp src/main.c3
 
-# Project build — just build the debug target
+# Project build (using a target defined in project.json)
 c3c build debug                    # specific target
 c3c build                          # all targets
 ```
@@ -33,7 +33,7 @@ Build with `c3c build debug`, then run `lldb` on the executable path configured 
 
 ## Symbol Naming
 
-C3 compiles to LLVM symbols using the pattern `_module.symbol`. LLDB resolves names without the leading underscore.
+C3 emits module-qualified symbols in the form `module.symbol` (for example `myapp.divide` and `myapp.Point.dist`).
 
 | C3 source | LLDB symbol | Example |
 |-----------|-------------|---------|
@@ -297,20 +297,18 @@ Methods with value receiver `self` (no `&`) show `self` as a value type directly
 
 ### Runtime frames
 
-C3 programs include a runtime entry point (`main_stub.c3`). Your `main` appears as `module.main` in backtraces, one frame below the generated `main`. On macOS, one additional `dyld` frame appears at the very bottom (the dynamic linker entry point).
+C3 programs include a runtime entry point (`main_stub.c3`). Your `main` appears as `module.main` in backtraces, one frame below the generated C `main`.
 
-### SIGTRAP on panics
+### Traps on panics
 
-C3 uses trap instructions for panics and contract violations. LLDB always stops on these — this is usually what you want, since the trap location shows exactly what went wrong.
+C3 uses trap instructions for panics and contract violations, so LLDB stops directly at the failing location.
 
-**Linux:** The trap arrives as a POSIX `SIGTRAP` signal. If you need to let the process continue (rare), use:
+On POSIX targets where the trap arrives as `SIGTRAP`, you can let execution continue past it with:
 ```
 (lldb) process handle --pass true --stop false SIGTRAP
 ```
 
-**macOS:** The trap arrives as a Mach exception (`EXC_BREAKPOINT`), not a POSIX signal. `process handle SIGTRAP` has no effect. LLDB always stops on Mach-level traps — there is no built-in way to suppress them.
-
-Avoid adding `--stop false SIGTRAP` to `~/.lldbinit` permanently — it would silence all panic stops on Linux, robbing you of the primary debugging signal for crashes.
+Avoid adding `--stop false SIGTRAP` to `~/.lldbinit` permanently — it silences panic stops across sessions.
 
 ---
 

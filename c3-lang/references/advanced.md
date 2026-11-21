@@ -1,7 +1,5 @@
 # C3 — Advanced Features
 
-Load when the task touches macros, generics, interfaces/dynamic dispatch, reflection, operator overloading, or contracts.
-
 Contents: [Macros](#macros) · [Generics](#generics) · [Reflection and Tags](#reflection-and-tags) · [Interfaces and Dynamic Dispatch](#interfaces-and-dynamic-dispatch) · [Operator Overloading](#operator-overloading) · [Contracts](#contracts)
 
 ---
@@ -34,12 +32,12 @@ macro @measure(#expr) {
 
 // At-macro with scope management — `#` params, not `&`
 // (only the FIRST parameter may use `&`, and only as a self parameter)
-macro @swap(#a, #b) {
+macro @swap_vals(#a, #b) {
     var tmp = #a;
     #a = #b;
     #b = tmp;
 }
-@swap(x, y);      // std::core::builtin already provides @swap
+@swap_vals(x, y); // std::core::builtin already provides @swap
 
 // Trailing body block
 macro @each(a; @body(index, value)) {
@@ -126,7 +124,7 @@ Generic functions generally need explicit `{...}` arguments unless inference is 
 
 ## Reflection and Tags
 
-Use `Type::property` for type metadata and `$reflect(value_or_member)` for declarations and values. A function pointer type has `::params` (reflected parameter references), `::returns`, and `::param_struct`; a named function exposes `::param_struct` through `$reflect(function).param_struct`. Parameter references support `.name`, `.type`, `.default_value`, `.get_tag(...)`, and `.has_tag(...)`. `ReflectedParam` is deprecated.
+Use `Type::property` for type metadata and `$reflect(value_or_member)` for declarations and values. A function pointer type has `::params` (reflected parameter references), `::returns`, and `::param_struct`; a named function exposes `::param_struct` through `$reflect(function).param_struct`. Parameter references support `.name`, `.type`, `.default_value`, `.get_tag(...)`, and `.has_tag(...)`.
 
 ```c3
 alias Callback = fn void(int count @tag("minimum", 1) = 4);
@@ -140,7 +138,7 @@ $echo $reflect(run).param_struct.name;
 
 Generic instantiations expose `::generic_args`, `::generic_qname`, and `::is_generic(Template)`. Enums and constsets expose `::values`, `::len`, `::from_ordinal`, and `::lookup_field`.
 
-`@tag(name, value)` is valid on functions, macros, function parameters, types, members, globals, and locals. Define attribute bundles with `attrmacro`; `attrdef` remains a compatibility spelling.
+`@tag(name, value)` is valid on functions, macros, function parameters, types, members, globals, and locals. Define attribute bundles with `attrmacro`.
 
 ---
 
@@ -207,7 +205,7 @@ vaanyfn(2, b, 3.0);      // pointers created automatically — don't mutate args
 ```c3
 fn void inspect(any val) {
     switch (val.type) {
-        case int:   io::printfn("int: %d", *(int*)val.ptr);     // bare type, not `int.typeid`
+        case int:   io::printfn("int: %d", *(int*)val.ptr);     // bare type (standalone type IDs use int::typeid)
         case float: io::printfn("float: %f", *(float*)val.ptr);
         default:    io::printn("other");
     }

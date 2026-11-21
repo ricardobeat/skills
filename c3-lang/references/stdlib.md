@@ -12,19 +12,11 @@ Curated index of the most useful APIs in the C3 0.8.6 stdlib. For exhaustive dec
 
 ## Contents
 
-- [Module Index](#module-index) · [Current stdlib state](#current-stdlib-state) · [Additional APIs](#additional-apis) · [Performance and correctness](#performance-and-correctness) · [Built-ins](#built-ins-builtin-no-import-needed)
+- [Module Index](#module-index) · [Bit manipulation](#stdbits--bit-manipulation) · [Built-ins](#built-ins-builtin-no-import-needed)
 - [I/O](#stdio--inputoutput) · [Containers](#stdcollections--containers) · [Strings](#stdcorestring) · [Memory](#stdcoremem)
 - [Environment](#stdcoreenv--build-time-constants) · [Arrays](#stdcorearray) · [Unicode](#stdcorestringconv--unicode)
 - [Math](#stdmath) · [Time](#stdtime) · [OS](#stdos) · [Networking](#stdnet--networking) · [Threads](#stdthread) · [Atomics](#stdatomic--atomict)
 - [Sorting](#stdsort) · [Encoding](#stdencoding) · [Hashing](#stdhash) · [Crypto](#stdcrypto) · [Experimental](#stdexperimental--unstable-apis) · [Compression](#stdcompression) · [libc](#libc--c-library-bindings)
-
-### Current stdlib state
-
-`std::io` provides `CachedInStream` and `CachedOutStream`. `std::net::Socket` exposes `peer_address`, `peer_port`, `local_address`, and `local_port`; `std::collections::set` provides `TreeSet`; `std::collections::range` provides `slice`; `std::io::path` provides `Path.is_link`. `std::thread::ThreadPool` is the dynamic pool, while `std::thread::pool` contains the deprecated generic `ThreadPoolOld{SIZE}`. `std::gfx`, integer vectors and rectangles, `NonNull` / `Nullable`, cross-platform `os::dlopen` / `os::dlsym`, `Duration.to_sec`, `file::open_fd`, compression `level` parameters, matrix helpers, `XmlSerializer.add_raw`, and `chmod` support are available. `std::encoding::experimental::regex` is unstable.
-
-### Performance and correctness
-
-The deflate inflater uses a table-driven decoder and rejects truncated input. `crc32` uses slicing-by-16; `adler32.update` uses blocked modulo and portable vectors. `List.insert_at` and `List.push_front` use one `memmove`, `List.push` has an inline fast path, and `List.remove_item` / `compact` and their `FixedList` counterparts are single-pass. `ZipArchive.extract` verifies CRC32 and preserves modification time; `ZipEntryReader.seek` rejects negative positions.
 
 ---
 
@@ -110,7 +102,7 @@ Public modules in the C3 0.8.6 standard library. Names below use their importabl
 | **`std::experimental`** | Unstable APIs — API/behavior may change between releases |
 | ↳ `experimental::scheduler` | Generic `FrameScheduler{Event}` event queue |
 | **`std::gfx`** | Cross-platform windows, input, events, OpenGL/Vulkan helpers |
-| ↳ `gfx::egl`, `gfx::gl`, `gfx::macos` | Backend-specific graphics integration |
+| ↳ `gfx::egl`, `gfx::gl`, platform backends | Backend-specific graphics integration |
 | **`std::hash`** | Hashing primitives (see below) |
 | ↳ `hash::sha1`, `hash::sha256`, `hash::sha512` | SHA family (struct + `sha*::hash()` shortcut) |
 | ↳ `hash::md5` | MD5 |
@@ -154,29 +146,17 @@ Public modules in the C3 0.8.6 standard library. Names below use their importabl
 | ↳ `net::url` | `url::parse`, `Url`, `UrlQueryValues`, `url_encode` / `url_decode` |
 | **`std::os`** | Process control, env, backtrace, CPU detection (see below) |
 | ↳ `os::process` | `Process`, `os::process::spawn/run`, `p.join/terminate/stdout/stderr/…` |
-| ↳ `os::darwin`, `os::macos`, `os::win32`, `os::posix` | Platform bindings reorganized by framework/header in 0.8.5 |
+| ↳ `os::posix`, `os::win32`, platform bindings | OS-specific system bindings |
 | ↳ `os::` | `os::num_cpu()`, `DylibHandle`, `os::dlopen` / `os::dlsym`, `chmod` support |
 | ↳ `os::env` | `os::env::get_var/set_var`, `get_home_dir`, `get_config_dir`, `executable_path` |
 | ↳ `os::backtrace` | `os::backtrace::capture_current/get` |
 | **`std::sort`** | `quicksort`, `mergesort`, `insertionsort`, `countingsort`, `binarysearch`, `is_sorted` |
 | **`std::thread`** | Threading primitives (see below) |
 | ↳ `thread::` | `Thread`, `ThreadPool` (dynamic), `thread::sleep/yield`, mutex + condvar + once |
-| ↳ `thread::pool` | Deprecated generic `ThreadPoolOld{SIZE}`; `ThreadPool{SIZE}` alias needs `OLD_THREADPOOL` |
-| ↳ `thread::threadpool` | `FixedThreadPool` (deprecated) |
 | ↳ `thread::channel` | `BufferedChannel{T}`, `UnbufferedChannel{T}`, `UnboundedChannel{T}`, `OneShotChannel{T}` |
 | ↳ `thread::cpu` | `native_cpu()` — logical core count |
 | ↳ `thread::experimental::threadgroup` | `ThreadGroup{Task, Result}` — alternative worker-pool abstraction |
 | **`std::time`** | `Time`, `Duration`, `NanoDuration`, `DateTime` / `TzDateTime`, `Clock` |
-
----
-
-## Additional APIs
-
-`std::encoding::experimental::regex` is unstable. Compile with `regex::compile(mem, pattern, EXTENDED)`, then call `re.matches(str)`, `re.exec(mem, str)`, `re.replace(mem, str, replacement)`, `re.treplace(str, replacement)`, `re.split(mem, str)`, or `re.free()`. Current compile flags are `EXTENDED`, `IGNORE_CASE`, and `NEWLINE`; execution flags are `NOT_BOL` and `NOT_EOL`. Current faults include `NO_MATCH`, `UNINITIALIZED_REGEX`, `INVALID_CHAR_CLASS`, `TRAILING_BACKSLASH`, `INVALID_BACKREF`, `UNCLOSED_BRACKET`, `UNBALANCED_PAREN`, and `PATTERN_TOO_COMPLEX`. Allocation failure is reported as `mem::OUT_OF_MEMORY`. The old `ICASE`, `NOTBOL`, `NOTEOL`, `NOMATCH`, `NOSUB`, and POSIX-style `BADPAT`/`ERANGE` names are obsolete.
-
-`std::collections::ref` provides `NonNull{Type}` and `Nullable{Type}`: `ref::nonnull(ptr)`, `ref::nonnull_try(ptr)`, `ref::nullable(ptr)`, `.get()`, `.value()`, `.set()`, `.set_try()`, `.to_nullable()`, and `.to_nonnull()`. `Nullable` accessors return optionals.
-
-`std::gfx` provides windows, events, input, and OpenGL/Vulkan integration; `std::gfx::egl`, `std::gfx::gl`, and `std::gfx::macos` contain backend bindings. `std::os` provides `DylibHandle`, `os::dlopen`, and `os::dlsym` across supported platforms. `file::open_fd` and `file::chmod` / `File.chmod` are available. `Socket.peer_address`, `peer_port`, `local_address`, and `local_port` report TCP/UDP endpoints.
 
 ---
 
@@ -288,7 +268,7 @@ io::read_buffer_to_end(&r, buf[:10])    // => slice of len 5
 io::read_all(&r, buf[:10])              // => fault io::UNEXPECTED_EOF
 ```
 
-A single `read_buffer` may return fewer bytes than requested even mid-stream, so loop on it (or use `read_buffer_to_end`) rather than assuming one call fills the buffer. `InStream.read` consistently returns `0` at EOF and no longer raises `io::EOF`; it requires a non-empty destination buffer. `read_buffer` returning `0` is the EOF signal.
+A single `read_buffer` may return fewer bytes than requested even mid-stream, so loop on it (or use `read_buffer_to_end`) rather than assuming one call fills the buffer. `InStream.read` returns `0` at EOF and requires a non-empty destination buffer. `read_buffer` returning `0` is the EOF signal.
 
 ### Implementing `InStream` / `OutStream` on your own types
 
@@ -415,7 +395,7 @@ m.get_ref(key)              m.get_or_create_ref(key)    // for in-place mutation
 m.@get_or_set(key, default_expr)                  // returns existing OR sets+returns default
 m.keys(alloc) / m.tkeys()   m.values(alloc) / m.tvalues()
 m.iter()  m.key_iter()  m.value_iter()            // foreach-compatible
-m.@each(; |k, v| { ... })   m.@each_entry(; |entry| { ... })
+m.@each(; k, v) { ... };    m.@each_entry(; entry) { ... };
 m.len()  m.is_empty()  m.clear()  m.free()
 // Operators: m[k]  m[k] = v  &m[k]
 ```
@@ -450,7 +430,7 @@ d.pop_into(slice)  d.pop_first_into(slice)   d.prepend(slice)
 ```
 
 ### `Range{T}` / `ExclusiveRange{T}`
-```c3
+```text
 // constructor macros — infer T from the arguments
 foreach (i : range::upto(3))          { }   // 0,1,2,3  — inclusive of `to`
 foreach (i : range::inclusive(1, 3))  { }   // 1,2,3
@@ -497,7 +477,7 @@ Result{int, String} r = ok(42);
 Result{int, String} b = err("oops");
 r.ok()?          // 42 or RESULT_ERROR~
 r.err()?         // String or RESULT_OK~
-r.@or_else(; e) { return e; }   // diverges on error — requires @body to return/break/etc
+r.@or_else(; e) { return e; };  // diverges on error — requires @body to return/break/etc
 ```
 
 ### `Maybe{T}` — explicit optional wrapper
@@ -520,9 +500,10 @@ any v = list.first_any();         // untyped (caller's responsibility)
 list.len();
 ```
 
-### Other collection types: `Tuple` family, `Range{T}`, `ExclusiveRange{T}`, `OrderedMap{K, V}`, `OrderedSet{T}`, `LinkedBlockingQueue{T}`, `InterfaceList{Iface}` (base of `AnyList`).
+### `NonNull{Type}` / `Nullable{Type}` (`std::collections::ref`)
+`ref::nonnull(ptr)`, `ref::nonnull_try(ptr)`, `ref::nullable(ptr)`, `.get()`, `.value()`, `.set()`, `.set_try()`, `.to_nullable()`, and `.to_nonnull()`. `Nullable` accessors return optionals.
 
-`OrderedMap` / `OrderedSet` were named `LinkedHashMap` / `LinkedHashSet` before 0.8.1; the old names still resolve but are deprecated.
+### Other collection types: `Pair{A, B}`, `Triple{A, B, C}`, `OrderedMap{K, V}`, `OrderedSet{T}`, `TreeSet{T}`, `LinkedBlockingQueue{T}`, `InterfaceList{Iface}` (base of `AnyList`).
 
 ---
 
@@ -530,9 +511,9 @@ list.len();
 
 ```text
 // Types
-typedef String  = inline char[];      // string slice
-typedef ZString = inline char*;       // C-style NUL-terminated
-typedef WString = inline Char16*;     // UTF-16 NUL-terminated
+typedef String  @constinit = inline char[];   // string slice
+typedef ZString @constinit = inline char*;    // C-style NUL-terminated
+typedef WString @constinit = inline ushort*;  // UTF-16 NUL-terminated
 
 // Formatting (allocate-and-return)
 String string::format(Allocator, fmt, …)        String string::tformat(fmt, …)
@@ -688,19 +669,19 @@ Use in `$if env::ARCH_64_BIT:` etc. For conditional top-level declarations use `
 Functional helpers — most are macros, work on any array-like:
 
 ```text
-array::contains(arr, v)           array::index_of(arr, v)         array::rindex_of(arr, v)
-array::contains_slice(arr, needle)   array::index_of_slice(arr, needle)   // subsequence search, sz?
-array::concat(alloc, a, b)        array::tconcat(a, b)
-array::@reduce(arr, identity, |a, b| a + b)
-array::@sum(arr)                  array::@product(arr)
-array::@filter(alloc, arr, |x| x > 0)        array::@tfilter(arr, |x| ...)
-array::@indices_of(alloc, arr, |x| ...)      array::@tindices_of(arr, |x| ...)
-array::@any(arr, |x| ...)         array::@all(arr, |x| ...)
-array::even(alloc, arr)           array::odd(alloc, arr)
+array::contains(arr, v)              array::index_of(arr, v)           array::rindex_of(arr, v)
+array::contains_slice(arr, needle)   array::index_of_slice(arr, needle) // subsequence search, sz?
+array::concat(alloc, a, b)           array::tconcat(a, b)
+array::@reduce(arr, identity, fn (acc, e, i) => acc + e)
+array::@sum(arr)                     array::@product(arr)
+array::@filter(alloc, arr, fn (x, i) => x > 0)        array::@tfilter(arr, fn (x, i) => ...)
+array::@indices_of(alloc, arr, fn (x, i) => ...)      array::@tindices_of(arr, fn (x, i) => ...)
+array::@any(arr, fn (x, i) => ...)                    array::@all(arr, fn (x, i) => ...)
+array::even(alloc, arr)              array::odd(alloc, arr)
 array::unlace(alloc, arr, &left, &right)
-array::@zip(alloc, a, b, |x,y| op, fill_with = …)    array::@tzip(...)
-array::@zip_into(left, right, |a, b| op)
-array::slice2d(&arr, x = 0, xlen = 0, y = 0, ylen = 0)
+array::@zip(alloc, a, b, fn R (A x, B y) => op, fill_with: ...) array::@tzip(...)
+array::@zip_into(left, right, fn (a, b) => op)
+array::slice2d(&arr, x: 0, xlen: 0, y: 0, ylen: 0)
 ```
 
 ---
@@ -785,7 +766,7 @@ v.ceil() v.floor() v.round() v.trunc() v.rint() v.nearbyint() v.roundeven()
 v.pow(exp)    v.fma(b, c)      v.copysign(sgn)
 v.comp_lt(o) / comp_le / comp_eq / comp_gt / comp_ge / comp_ne   // -> bool[<*>] masks
 
-// Signed integer aliases added in 0.8.5: IntVec2, IntVec3, IntVec4, IntRect
+// Signed integer aliases: IntVec2, IntVec3, IntVec4, IntRect
 // 2-element only
 v.cross(v2) -> scalar    v.rotate(angle)    v.angle(v2)    v.transform(Matrix4f)
 // 3-element only
@@ -916,6 +897,7 @@ UdpSocket? net::udp::connect_async(String host, int port, SocketOption…)
 // Socket (TcpSocket / UdpSocket implement InStream + OutStream); base type is std::net::Socket
 s.read(buf)        s.write(buf)
 s.close()          s.set_option(opt, val)   s.get_*  (broadcast, keepalive, reuseaddr, dontroute, oobline)
+s.peer_address()   s.peer_port()            s.local_address()   s.local_port()
 s.shutdown(SocketShutdownHow.RECEIVE/SEND/BOTH)
 
 // Poll
@@ -950,7 +932,7 @@ Low-level socket plumbing (`NativeSocket`, `socket()`, `bind()`, `connect()`, `a
 
 ```text
 // Threads
-Thread t;     t.create(&worker_fn, arg, ThreadSettings{...})?    t.join()?    t.detach()?
+Thread t;     t.create(&worker_fn, arg, ThreadSettings{...})?    t.join()?  // or t.detach()?
 thread::current()           // -> Thread, the calling thread
 t.set_priority(ThreadPriority prio)   // instance method, not a free function
 thread::sleep(Duration d)   thread::sleep_ms(long ms)   thread::sleep_ns(NanoDuration ns)
@@ -988,20 +970,7 @@ ec.clear()
 // OneShotChannel: push / pop / close / destroy only — no try_* variants
 ```
 
-`std::thread::ThreadPool` is the dynamic pool. `tp.init(mem, max_threads, queue_capacity = 0, keep_alive = time::MIN, thread_settings = {})?` configures it; `add_task`, `prewarm`, `queue_count`, `busy_count`, `worker_count`, `destroy`, and `destroy_now` manage work and lifetime.
-
-### `std::thread::pool` — deprecated generic compatibility pool
-```text
-ThreadPoolOld{8} tp;      tp.init()?
-tp.push(ThreadFn func, void* arg)      tp.join()    tp.destroy()    tp.stop_and_destroy()
-// ThreadPool{8} is the old alias, available only with OLD_THREADPOOL
-```
-
-### `std::thread::threadpool` — `FixedThreadPool` worker pool (deprecated)
-```text
-FixedThreadPool fp;    fp.init(sz threads, sz queue_size = 0, ThreadSettings settings = {})?
-fp.push(ThreadPoolFn func, any[][] args...)?      fp.join()    fp.destroy()?    fp.stop_and_destroy()
-```
+`std::thread::ThreadPool` is the dynamic thread pool. `tp.init(mem, max_threads, queue_capacity: 0, keep_alive: time::MIN, thread_settings: {})?` configures it; `add_task`, `prewarm`, `queue_count`, `busy_count`, `worker_count`, `destroy`, and `destroy_now` manage work and lifetime.
 
 ---
 
@@ -1050,7 +1019,7 @@ Comparator: `fn int cmp(T* a, T* b)` returning negative/zero/positive. Optional 
 Object*? json::parse(alloc, String, JsonFlavor = JSONC)         // from string
 Object*? json::tparse(String, JsonFlavor = JSONC)
 Object*? json::load(alloc, InStream, JsonFlavor = JSONC)        // from stream
-Object*? json::tload(InStream, JsonFlavor = JSONC)              // `temp_load` is a deprecated alias for this
+Object*? json::tload(InStream, JsonFlavor = JSONC)
 // marshal / unmarshal directly between structs and JSON text (std::encoding::json)
 String   json::marshal(alloc, value, JsonIndent = NONE)         // JsonIndent: NONE/TAB/SPACE_1..SPACE_5
 String?  json::marshal_try(alloc, value, JsonIndent = NONE)     // fallible variant
@@ -1076,7 +1045,7 @@ long?    ini::save(OutStream, Object*, delim = '=', pad = true)
 CsvReader r;     r.init(stream, separator = ",");
 CsvRow? row = r.read_row(alloc);    r.tread_row()    r.skip_row()
 row.get_col(idx)    row.len()    row.free()
-csv::@each_row(stream, separator = ","; |row| { ... })
+csv::@each_row(stream, separator: ","; String[] row) { ... };
 
 // base64 (alphabets: STANDARD, URL); base32 and hex follow a similar shape
 String   base64::encode(alloc, src, padding = '=', &STANDARD)     String base64::tencode(src, …)
@@ -1092,6 +1061,8 @@ sz       base64::encode_len(n, padding)                           sz? base64::de
 ```
 
 `json::marshal` and `json::unmarshal` support structs, arrays, slices, `String`, integers, floats, bools, enums, constsets, typedefs, and nested combinations of those. `json::marshal` rejects a float that is infinity or NaN; `json::marshal_try` returns an optional for that case. `json::marshal_to` writes to an `OutStream`. `json::unmarshal` accepts a `String` or `InStream` input and the target type as a compile-time `$Type` argument.
+
+`std::encoding::experimental::regex` (unstable): compile with `regex::compile(mem, pattern, EXTENDED)`, then use `re.matches(str)`, `re.exec(mem, str)`, `re.replace(mem, str, replacement)`, `re.treplace(str, replacement)`, `re.split(mem, str)`, and `re.free()`. Compile flags: `EXTENDED`, `IGNORE_CASE`, `NEWLINE`. Execution flags: `NOT_BOL`, `NOT_EOL`. Faults: `NO_MATCH`, `UNINITIALIZED_REGEX`, `INVALID_CHAR_CLASS`, `TRAILING_BACKSLASH`, `INVALID_BACKREF`, `UNCLOSED_BRACKET`, `UNBALANCED_PAREN`, `PATTERN_TOO_COMPLEX`, and `mem::OUT_OF_MEMORY`.
 
 ---
 

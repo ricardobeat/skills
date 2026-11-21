@@ -1,7 +1,7 @@
 C3 0.8.6 Standard Library Declaration Index
-Generated from `c3c docgen --json` with the installed C3 0.8.6 compiler (macOS arm64 default target).
+Generated from `c3c docgen --json` with C3 0.8.6.
 These files preserve compiler-reported public declarations; private/local declarations are omitted.
-Read the entry for a task's namespace, then verify the exact API against installed stdlib source if compatibility matters.
+Platform-specific modules vary by target; check the installed stdlib source for other OS bindings.
 
 NAMESPACES
 

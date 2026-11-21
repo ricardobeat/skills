@@ -1,7 +1,5 @@
 # C3 — Projects, Dependencies, and Packaging (0.8.6)
 
-Load when editing `project.json`, choosing build or fetch commands, creating a `.c3l` library, or configuring target dependencies.
-
 ## Project commands
 
 ```bash
@@ -14,7 +12,7 @@ c3c clean
 c3c docgen
 ```
 
-`c3c build` finds `project.json` by walking upward from the current directory. Use `c3c docgen` for generated API docs. The default project templates define `debug` and `release` targets.
+`c3c build` finds `project.json` by walking upward from the current directory. `c3c init myproject` creates a single executable target named `myproject` with `"opt": "O0"`; pass `-O2`/`-O3` or define extra targets in `project.json` for release builds. Use `c3c docgen` for generated API docs.
 
 ## Target configuration
 
@@ -46,7 +44,7 @@ Target types include `executable`, `static-lib`, `dynamic-lib`, `source-lib`, `o
 
 `project.json` strings expand `${NAME}` from the environment, except in `exec`, `exec-override`, `type`, `targets`, `vendor`, and `$schema`. Use `$${` for a literal `${`. Project-level `env` and target-level `env-override` contain `"NAME=value"` strings used by `exec` scripts. Scripts require `--trust=full`.
 
-Other 0.8.6 settings include `features`, `function-sections`, `data-sections`, `stack-probe`, `stack-probe-size`, `stack-protector`, `debug-info`, `sanitize`, `trap-on-wrap`, `memory-env`, `fp-math`, `langrev`, `test-sources`, `dependency-search-paths`, and `max-vector-size`. Run `c3c --list-project-properties` for the authoritative list. `project.json5` supports comments.
+Other settings include `features`, `function-sections`, `data-sections`, `stack-probe`, `stack-probe-size`, `stack-protector`, `debug-info`, `sanitize`, `trap-on-wrap`, `memory-env`, `fp-math`, `langrev`, `test-sources`, `dependency-search-paths`, and `max-vector-size`. Run `c3c --list-project-properties` for the full list. `project.json` supports `//` and `/* */` comments.
 
 Safe mode, not a target's name, controls runtime contract checks and bounds/null checks. `O0` and `O1` default to safe; `O2` and above default to unsafe. A custom target can set `"safe": true` explicitly.
 
@@ -97,7 +95,7 @@ Registry downloads are verified against `checksum: "sha256:<hex>"`. Dependency e
 
 Dependencies are found through dependency paths, the project's `fetch-url` / `--fetch-url`, or the default registry for a library's transitive dependencies. Scripts from a library manifest require `--trust=full`.
 
-## Compiler flags added in 0.8.4 through 0.8.6
+## Useful compiler flags
 
 ```text
 --backend=c                         experimental C backend; --cflags <flag> forwards C flags
@@ -118,4 +116,4 @@ Dependencies are found through dependency paths, the project's `fetch-url` / `--
 --no-compress                       uncompressed source-lib output
 ```
 
-`--stats=full` replaces the removed `--print-large-functions`. `--panic-msg=no` traps only when `--show-backtrace=no` is also set; otherwise it prints a short message with file, function, and line. `--show-backtrace=no` omits that location information.
+`--panic-msg=no` traps only when `--show-backtrace=no` is also set; otherwise it prints a short message with file, function, and line. `--show-backtrace=no` omits that location information.
